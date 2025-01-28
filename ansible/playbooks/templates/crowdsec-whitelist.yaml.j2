@@ -1,6 +1,10 @@
+name: crowdsecurity/whitelists
+description: "Whitelist events from trusted sources"
 whitelist:
-  reason: "Trusted IPs"
+  reason: "private and trusted ip/ranges"
   ip:
+    - "127.0.0.1"
+    - "::1"
     - "100.64.0.0/10"  # Tailscale CIDR
     {% for ip in all_tailscale_ips %}
     - "{{ ip }}"
@@ -17,3 +21,7 @@ whitelist:
     {% for ip in cloudflare_region2_ips_v6 %}
     - "{{ ip }}"
     {% endfor %}
+  cidr:
+    - "192.168.0.0/16"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"

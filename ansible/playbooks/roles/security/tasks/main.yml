@@ -315,66 +315,31 @@
 
 - name: Install and Configure CrowdSec
   block:
-    # 新しいインストールスクリプトの使用
-    - name: Add CrowdSec repository
-      shell: curl -s https://install.crowdsec.net | sh
-      args:
-        creates: /etc/crowdsec
-      register: crowdsec_repo_result
-
-    - name: Install CrowdSec
-      apt:
-        name: crowdsec
-        state: present
-        update_cache: yes
-
-    - name: Install CrowdSec firewall bouncer
-      apt:
-        name: crowdsec-firewall-bouncer-iptables
-        state: present
-
-    # CrowdSecの基本設定
-    - name: Configure CrowdSec collections
-      command: "{{ item }}"
+    # 既存のwhitelistファイルをクリーンアップ
+    - name: Remove existing whitelist files
+      file:
+        path: "{{ item }}"
+        state: absent
       loop:
-        - cscli collections install crowdsecurity/nginx
-        - cscli collections install crowdsecurity/linux
-        - cscli collections install crowdsecurity/http-cve
-        - cscli collections install crowdsecurity/sshd
+        - /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
+        - /etc/crowdsec/parsers/s02-enrich/whitelist.yml
+      
+    # 正しい形式でwhitelistを作成
+    - name: Configure CrowdSec whitelist
+      template:
+        src: templates/whitelists.yaml.j2
+        dest: /etc/crowdsec/parsers/s02-enrich/whitelists.yaml
+        mode: '0600'
+      notify: Restart crowdsec
 
-    # CloudflareとTailscaleのIPをホワイトリスト化
-    - name: Retrieve Tailscale IPs for CrowdSec whitelist
-      block:
-        - name: Get Tailscale status in JSON format
-          command: tailscale status --json
-          register: tailscale_full_status
-          changed_when: false
+    # ボウンサー用のディレクトリを作成
+    - name: Create bouncer directory
+      file:
+        path: /etc/crowdsec-firewall-bouncer
+        state: directory
+        mode: '0755'
 
-        - name: Set fact for all Tailscale IPs
-          set_fact:
-            all_tailscale_ips: "{{ (tailscale_full_status.stdout | from_json).Peer | json_query('*.TailscaleIPs[]') }}"
-
-        - name: Configure CrowdSec whitelist
-          template:
-            src: templates/crowdsec-whitelist.yaml.j2
-            dest: /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
-            mode: '0600'
-
-        - name: Configure CrowdSec whitelist
-          template:
-            src: templates/crowdsec-whitelist.yaml.j2
-            dest: /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
-            mode: '0600'
-
-    # CrowdSecサービスの有効化と起動
-    - name: Enable and start CrowdSec
-      systemd:
-        name: crowdsec
-        state: started
-        enabled: yes
-        daemon_reload: yes
-
-    # Bouncerの設定
+    # ボウンサーの設定
     - name: Configure firewall bouncer
       command: cscli bouncers add crowdsec-firewall-bouncer
       register: bouncer_token
