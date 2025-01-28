@@ -313,8 +313,43 @@
   debug:
     msg: '{{ result.stdout }}'
 
-- name: Install and Configure CrowdSec
+- name: Install and Configure CrowdSec with Firewall Bouncer
+  become: true
   block:
+    # Install CrowdSec repository and Security Engine
+    - name: Add CrowdSec repository and install CrowdSec
+      shell: |
+        curl -s https://install.crowdsec.net | sudo sh
+        apt install -y crowdsec
+      register: crowdsec_install
+      changed_when: "'CrowdSec installed' not in crowdsec_install.stdout"
+    
+    # Ensure CrowdSec service is running
+    - name: Ensure CrowdSec service is running
+      systemd:
+        name: crowdsec
+        state: started
+        enabled: true
+
+    # Install firewall bouncer for CrowdSec
+    - name: Check if firewall bouncer is installed
+      command: dpkg -l | grep crowdsec-firewall-bouncer
+      register: firewall_bouncer_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Install firewall bouncer
+      shell: |
+        apt install -y crowdsec-firewall-bouncer
+      when: firewall_bouncer_installed.rc != 0
+
+    # Ensure firewall bouncer service is running
+    - name: Ensure firewall bouncer service is running
+      systemd:
+        name: crowdsec-firewall-bouncer
+        state: started
+        enabled: true
+
     # Remove existing whitelist files
     - name: Remove existing whitelist files
       file:
@@ -339,17 +374,26 @@
         state: directory
         mode: '0755'
 
-    # Check if the bouncer already exists
-    - name: Check if firewall bouncer exists
-      command: cscli bouncers list
+    # Check if bouncer exists
+    - name: Check if bouncer exists
+      command: cscli bouncers list -o json
       register: bouncer_list
       changed_when: false
 
-    - name: Add firewall bouncer if not present
+    # Add bouncer if not exists
+    - name: Add bouncer if not exists
       command: cscli bouncers add crowdsec-firewall-bouncer
       register: bouncer_token
       when: "'crowdsec-firewall-bouncer' not in bouncer_list.stdout"
       changed_when: true
+      failed_when: "'level=fatal' in bouncer_token.stderr"
+
+    # Save bouncer API key
+    - name: Save bouncer API key
+      copy:
+        content: "{{ bouncer_token.stdout }}"
+        dest: /etc/crowdsec-firewall-bouncer/api_key.txt
+      when: bouncer_token is defined
 
     # Configure bouncer settings
     - name: Configure bouncer settings
@@ -357,9 +401,9 @@
         src: templates/crowdsec-firewall-bouncer.yaml.j2
         dest: /etc/crowdsec-firewall-bouncer/crowdsec-firewall-bouncer.yaml
         mode: '0600'
+      vars:
+        bouncer_api_key: "{{ lookup('file', '/etc/crowdsec-firewall-bouncer/api_key.txt') }}"
       notify: Restart crowdsec-firewall-bouncer
-
-  become: true
 
 - name: Ensure ClamAV configuration
   block:
