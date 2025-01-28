@@ -1,0 +1,8 @@
+whitelist:
+  reason: "Trusted IPs"
+  ip:
+    - "100.64.0.0/10"  # Tailscale
+    - "{{ cloudflare_region1_ips_v4 | join('\n    - ') }}"
+    - "{{ cloudflare_region2_ips_v4 | join('\n    - ') }}"
+    - "{{ cloudflare_region1_ips_v6 | join('\n    - ') }}"
+    - "{{ cloudflare_region2_ips_v6 | join('\n    - ') }}"

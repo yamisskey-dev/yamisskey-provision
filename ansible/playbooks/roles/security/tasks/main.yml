@@ -309,6 +309,62 @@
   debug:
     msg: '{{ result.stdout }}'
 
+- name: Install and Configure CrowdSec
+  block:
+    # リポジトリの追加とインストール
+    - name: Add CrowdSec repository
+      shell: curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
+      args:
+        creates: /etc/apt/sources.list.d/crowdsec_crowdsec.list
+
+    - name: Install CrowdSec packages
+      apt:
+        name:
+          - crowdsec
+          - crowdsec-firewall-bouncer-iptables
+        state: present
+        update_cache: yes
+
+    # CrowdSecの基本設定
+    - name: Configure CrowdSec collections
+      command: "{{ item }}"
+      loop:
+        - cscli collections install crowdsecurity/nginx
+        - cscli collections install crowdsecurity/linux
+        - cscli collections install crowdsecurity/http-cve
+        - cscli collections install crowdsecurity/http-bad-user-agent
+        - cscli collections install crowdsecurity/sshd
+
+    # CloudflareとTailscaleのIPをホワイトリスト化
+    - name: Configure CrowdSec whitelist
+      template:
+        src: templates/crowdsec-whitelist.yaml.j2
+        dest: /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
+        mode: '0600'
+
+    # CrowdSecサービスの有効化と起動
+    - name: Enable and start CrowdSec
+      systemd:
+        name: crowdsec
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    # Bouncerの設定
+    - name: Configure firewall bouncer
+      command: cscli bouncers add crowdsec-firewall-bouncer
+      register: bouncer_token
+      changed_when: false
+
+    - name: Configure bouncer settings
+      template:
+        src: templates/crowdsec-firewall-bouncer.yaml.j2
+        dest: /etc/crowdsec-firewall-bouncer/crowdsec-firewall-bouncer.yaml
+        mode: '0600'
+      notify: Restart crowdsec-firewall-bouncer
+
+  become: true
+
 - name: Ensure ClamAV configuration
   block:
     - name: Ensure log directory for ClamAV exists
