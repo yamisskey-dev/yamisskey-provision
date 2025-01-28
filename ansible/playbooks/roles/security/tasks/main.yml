@@ -379,7 +379,13 @@
       command: cscli bouncers list -o json
       register: bouncer_list
       changed_when: false
-      failed_when: bouncer_list.rc != 0  # 確実にエラーを検知
+      failed_when: bouncer_list.rc != 0
+
+    # Remove bouncer if exists (optional step to clean up)
+    - name: Remove existing bouncer
+      command: cscli bouncers delete crowdsec-firewall-bouncer
+      when: "'crowdsec-firewall-bouncer' in bouncer_list.stdout"
+      changed_when: true
 
     # Add bouncer if not exists
     - name: Add bouncer if not exists
@@ -387,14 +393,14 @@
       register: bouncer_token
       when: "'crowdsec-firewall-bouncer' not in bouncer_list.stdout"
       changed_when: true
-      failed_when: bouncer_token.rc != 0  # コマンドの成功を確認
+      failed_when: bouncer_token.rc != 0
 
     # Save bouncer API key
     - name: Save bouncer API key
       copy:
-        content: "{{ bouncer_token.stdout | default('') }}"  # デフォルト値を設定
+        content: "{{ bouncer_token.stdout | default('') }}"
         dest: /etc/crowdsec-firewall-bouncer/api_key.txt
-      when: bouncer_token is defined and bouncer_token.stdout | length > 0  # 定義されており、出力が空でない場合にのみ実行
+      when: bouncer_token is defined and bouncer_token.stdout is defined and bouncer_token.stdout | length > 0
 
     # Configure bouncer settings
     - name: Configure bouncer settings
@@ -403,8 +409,9 @@
         dest: /etc/crowdsec-firewall-bouncer/crowdsec-firewall-bouncer.yaml
         mode: '0600'
       vars:
-        bouncer_api_key: "{{ lookup('file', '/etc/crowdsec-firewall-bouncer/api_key.txt') | default('') }}"  # デフォルト値を設定
+        bouncer_api_key: "{{ lookup('file', '/etc/crowdsec-firewall-bouncer/api_key.txt') }}"
       notify: Restart crowdsec-firewall-bouncer
+      when: bouncer_token is defined and bouncer_token.stdout is defined and bouncer_token.stdout | length > 0
 
 - name: Ensure ClamAV configuration
   block:
