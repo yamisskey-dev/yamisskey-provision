@@ -315,7 +315,7 @@
 
 - name: Install and Configure CrowdSec
   block:
-    # 既存のwhitelistファイルをクリーンアップ
+    # Remove existing whitelist files
     - name: Remove existing whitelist files
       file:
         path: "{{ item }}"
@@ -323,8 +323,8 @@
       loop:
         - /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
         - /etc/crowdsec/parsers/s02-enrich/whitelist.yml
-      
-    # 正しい形式でwhitelistを作成
+
+    # Create whitelist in the correct format
     - name: Configure CrowdSec whitelist
       template:
         src: templates/crowdsec-whitelists.yaml.j2
@@ -332,19 +332,26 @@
         mode: '0600'
       notify: Restart crowdsec
 
-    # ボウンサー用のディレクトリを作成
+    # Create bouncer directory
     - name: Create bouncer directory
       file:
         path: /etc/crowdsec-firewall-bouncer
         state: directory
         mode: '0755'
 
-    # ボウンサーの設定
-    - name: Configure firewall bouncer
-      command: cscli bouncers add crowdsec-firewall-bouncer
-      register: bouncer_token
+    # Check if the bouncer already exists
+    - name: Check if firewall bouncer exists
+      command: cscli bouncers list
+      register: bouncer_list
       changed_when: false
 
+    - name: Add firewall bouncer if not present
+      command: cscli bouncers add crowdsec-firewall-bouncer
+      register: bouncer_token
+      when: "'crowdsec-firewall-bouncer' not in bouncer_list.stdout"
+      changed_when: true
+
+    # Configure bouncer settings
     - name: Configure bouncer settings
       template:
         src: templates/crowdsec-firewall-bouncer.yaml.j2
