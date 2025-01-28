@@ -327,7 +327,7 @@
     # 正しい形式でwhitelistを作成
     - name: Configure CrowdSec whitelist
       template:
-        src: templates/whitelists.yaml.j2
+        src: templates/crowdsec-whitelists.yaml.j2
         dest: /etc/crowdsec/parsers/s02-enrich/whitelists.yaml
         mode: '0600'
       notify: Restart crowdsec
