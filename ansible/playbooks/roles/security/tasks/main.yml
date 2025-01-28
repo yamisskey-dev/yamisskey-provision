@@ -220,9 +220,13 @@
   register: tailscale_status
   changed_when: false
 
+- name: Check if Tailscale needs to be started
+  set_fact:
+    tailscale_needs_start: "{{ tailscale_status.stdout is not regex('.*100\\..*') }}"
+
 - name: Start Tailscale only if not already connected
-  shell: tailscale up --ssh --accept-dns=false --reset
-  when: tailscale_status is defined and 'Connected' not in tailscale_status.stdout
+  shell: tailscale up --ssh --accept-dns=false --reset --accept-risk=lose-ssh
+  when: tailscale_needs_start | bool
   register: tailscale_start
 
 - name: Retrieve and parse Tailscale IP addresses
