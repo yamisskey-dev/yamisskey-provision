@@ -340,15 +340,31 @@
         - cscli collections install crowdsecurity/nginx
         - cscli collections install crowdsecurity/linux
         - cscli collections install crowdsecurity/http-cve
-        - cscli collections install crowdsecurity/http-bad-user-agent
         - cscli collections install crowdsecurity/sshd
 
     # CloudflareとTailscaleのIPをホワイトリスト化
-    - name: Configure CrowdSec whitelist
-      template:
-        src: templates/crowdsec-whitelist.yaml.j2
-        dest: /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
-        mode: '0600'
+    - name: Retrieve Tailscale IPs for CrowdSec whitelist
+      block:
+        - name: Get Tailscale status in JSON format
+          command: tailscale status --json
+          register: tailscale_full_status
+          changed_when: false
+
+        - name: Set fact for all Tailscale IPs
+          set_fact:
+            all_tailscale_ips: "{{ (tailscale_full_status.stdout | from_json).Peer | json_query('*.TailscaleIPs[]') }}"
+
+        - name: Configure CrowdSec whitelist
+          template:
+            src: templates/crowdsec-whitelist.yaml.j2
+            dest: /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
+            mode: '0600'
+
+        - name: Configure CrowdSec whitelist
+          template:
+            src: templates/crowdsec-whitelist.yaml.j2
+            dest: /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
+            mode: '0600'
 
     # CrowdSecサービスの有効化と起動
     - name: Enable and start CrowdSec
