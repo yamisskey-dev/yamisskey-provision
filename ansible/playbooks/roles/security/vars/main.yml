@@ -151,7 +151,6 @@ sysctl_settings:
   - { name: 'vm.mmap_rnd_bits', value: '32' }
   - { name: 'vm.mmap_rnd_compat_bits', value: '16' }
   - { name: 'vm.overcommit_memory', value: '1' }
-  - { name: 'vm.page_cluster', value: '3' }
   - { name: 'vm.swappiness', value: '10' }
   - { name: 'vm.unprivileged_userfaultfd', value: '0' }
   - { name: 'vm.vfs_cache_pressure', value: '50' }
