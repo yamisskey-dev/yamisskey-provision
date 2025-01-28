@@ -6,6 +6,7 @@ packages:
   - rsync
   - zip
   - nginx
+  - libmodsecurity3t64
   - certbot
   - python3-certbot-dns-cloudflare
   - tor
