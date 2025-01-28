@@ -315,19 +315,23 @@
 
 - name: Install and Configure CrowdSec
   block:
-    # リポジトリの追加とインストール
+    # 新しいインストールスクリプトの使用
     - name: Add CrowdSec repository
-      shell: curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | bash
+      shell: curl -s https://install.crowdsec.net | sh
       args:
-        creates: /etc/apt/sources.list.d/crowdsec_crowdsec.list
+        creates: /etc/crowdsec
+      register: crowdsec_repo_result
 
-    - name: Install CrowdSec packages
+    - name: Install CrowdSec
       apt:
-        name:
-          - crowdsec
-          - crowdsec-firewall-bouncer-iptables
+        name: crowdsec
         state: present
         update_cache: yes
+
+    - name: Install CrowdSec firewall bouncer
+      apt:
+        name: crowdsec-firewall-bouncer-iptables
+        state: present
 
     # CrowdSecの基本設定
     - name: Configure CrowdSec collections
