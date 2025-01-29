@@ -7,7 +7,6 @@ services:
     links:
       - db
       - redis
-      - meilisearch
     depends_on:
       db:
         condition: service_healthy
@@ -49,19 +48,6 @@ services:
       test: "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
       interval: 5s
       retries: 20
-
-  meilisearch:
-    restart: always
-    image: getmeili/meilisearch:v1.3.4
-    environment:
-      - MEILI_NO_ANALYTICS=true
-      - MEILI_ENV=production
-    env_file:
-      - .config/meilisearch.env
-    networks:
-      - internal_network
-    volumes:
-      - ./meili_data:/meili_data
 
 networks:
   internal_network:
