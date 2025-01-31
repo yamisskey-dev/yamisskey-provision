@@ -43,8 +43,6 @@ services:
       test: "keydb-cli ping"
       interval: 5s
       retries: 20
-    sysctls:
-      net.core.somaxconn: '65535'
 
   db:
     restart: always
@@ -61,10 +59,6 @@ services:
       test: "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
       interval: 5s
       retries: 20
-    sysctls:
-      vm.swappiness: '10'
-      vm.dirty_ratio: '60'
-      vm.dirty_background_ratio: '2'
     deploy:
       resources:
         limits:
