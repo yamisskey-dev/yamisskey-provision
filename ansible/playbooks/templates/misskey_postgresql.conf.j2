@@ -7,20 +7,26 @@
 # Data Storage: ssd
 
 listen_addresses = '*'
-max_connections = 128
-shared_buffers = 7GB
-effective_cache_size = 21GB
-maintenance_work_mem = 1792MB
+max_connections = 256
+shared_buffers = 10GB
+effective_cache_size = 20GB
+maintenance_work_mem = 2GB
 checkpoint_completion_target = 0.9
 wal_buffers = 16MB
 default_statistics_target = 100
 random_page_cost = 1.1
 effective_io_concurrency = 200
-work_mem = 14MB
+work_mem = 32MB
 huge_pages = off
-min_wal_size = 1GB
-max_wal_size = 4GB
+min_wal_size = 2GB
+max_wal_size = 8GB
 max_worker_processes = 16
 max_parallel_workers_per_gather = 4
 max_parallel_workers = 16
 max_parallel_maintenance_workers = 4
+synchronous_commit = off
+full_page_writes = off
+autovacuum_work_mem = 2GB
+autovacuum_vacuum_scale_factor = 0.1
+autovacuum_analyze_scale_factor = 0.05
+track_io_timing = on

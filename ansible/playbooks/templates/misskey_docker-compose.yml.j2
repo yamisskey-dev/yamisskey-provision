@@ -1,5 +1,5 @@
 version: "3"
-       
+
 services:
   web:
     build: .
@@ -20,19 +20,32 @@ services:
     volumes:
       - ./files:/misskey/files
       - ./.config:/misskey/.config:ro
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          memory: 8G
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
 
   redis:
     restart: always
-    image: redis:7-alpine
+    image: eqalpha/keydb:alpine
     networks:
       - internal_network
     volumes:
       - ./redis:/data
+    command: keydb-server --server-threads 4 --maxclients 10000 --maxmemory 4gb --maxmemory-policy allkeys-lru --save "" --appendonly no
     healthcheck:
-      test: "redis-cli ping"
+      test: "keydb-cli ping"
       interval: 5s
       retries: 20
-    
+    sysctls:
+      net.core.somaxconn: '65535'
+
   db:
     restart: always
     image: postgres:15-alpine
@@ -48,6 +61,16 @@ services:
       test: "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
       interval: 5s
       retries: 20
+    sysctls:
+      vm.swappiness: '10'
+      vm.dirty_ratio: '60'
+      vm.dirty_background_ratio: '2'
+    deploy:
+      resources:
+        limits:
+          memory: 24G
+        reservations:
+          memory: 16G
 
 networks:
   internal_network:
