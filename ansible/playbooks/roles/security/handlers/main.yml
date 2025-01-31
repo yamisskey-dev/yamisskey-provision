@@ -45,3 +45,27 @@
   systemd:
     name: ssh
     state: restarted
+
+- name: Restart systemd-resolved
+  systemd:
+    name: systemd-resolved
+    state: restarted
+  become: true
+
+- name: Restart Docker
+  systemd:
+    name: docker
+    state: restarted
+  become: true
+
+- name: Start dnscrypt-proxy
+  command: docker compose -f /opt/dnscrypt-proxy/docker-compose.yml up -d
+  become: true
+
+- name: Check DNS resolution
+  command: dig @127.0.0.1 -p 5053 google.com
+  register: dns_check
+  changed_when: false
+  failed_when: dns_check.rc != 0
+  become: true
+

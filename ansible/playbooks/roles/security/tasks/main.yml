@@ -476,90 +476,101 @@
   command: sysctl -p
   become: true
 
-- name: Ensure systemd-resolved is enabled and started
-  systemd:
-    name: systemd-resolved
-    state: started
-    enabled: true
+- name: Setup dnscrypt-proxy
+  block:
+    - name: Ensure dnscrypt-proxy directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/dnscrypt-proxy
+        - /opt/dnscrypt-proxy/config
+
+    - name: Deploy dnscrypt-proxy docker-compose configuration
+      template:
+        src: templates/dnscrypt-proxy_docker-compose.yml.j2
+        dest: /opt/dnscrypt-proxy/docker-compose.yml
+        mode: '0644'
+      notify: Start dnscrypt-proxy
+
+    - name: Add DNS health check script
+      copy:
+        dest: /usr/local/bin/check-dns
+        content: |
+          #!/bin/bash
+          dig @127.0.0.1 -p 5053 google.com > /dev/null || docker compose -f /opt/dnscrypt-proxy/docker-compose.yml restart
+        mode: '0755'
+
+    - name: Add DNS monitoring cron job
+      cron:
+        name: "DNS health check"
+        job: "/usr/local/bin/check-dns"
+        minute: "*/5"
   become: true
 
-- name: Configure systemd-resolved DNS servers
+- name: Configure systemd-resolved
   block:
-    - name: Set DNS in /etc/systemd/resolved.conf
-      lineinfile:
-        path: /etc/systemd/resolved.conf
-        regexp: '^#?DNS='
-        line: 'DNS=127.0.0.1'
-      become: true
+    - name: Configure systemd-resolved DNS settings
+      template:
+        src: templates/resolved.conf.j2
+        dest: /etc/systemd/resolved.conf
+        mode: '0644'
+      notify: Restart systemd-resolved
 
-    - name: Set DNSPort in /etc/systemd/resolved.conf
-      lineinfile:
-        path: /etc/systemd/resolved.conf
-        regexp: '^#?DNSPort='
-        line: 'DNSPort=5053'
-      become: true
-
-    - name: Restart systemd-resolved to apply DNS settings
+    - name: Ensure systemd-resolved is enabled and started
       systemd:
         name: systemd-resolved
-        state: restarted
-      become: true
+        state: started
+        enabled: true
 
-- name: Ensure /etc/resolv.conf points to systemd-resolved stub resolver
-  file:
-    src: /run/systemd/resolve/stub-resolv.conf
-    dest: /etc/resolv.conf
-    state: link
-    force: yes
+    - name: Ensure correct resolv.conf configuration
+      file:
+        src: /run/systemd/resolve/stub-resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+        force: yes
+
+    - name: Configure Docker daemon DNS settings
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "dns": ["127.0.0.1", "1.1.1.1"],
+            "dns-opts": ["use-vc"],
+            "dns-search": []
+          }
+        mode: '0644'
+      notify: Restart Docker
   become: true
 
-- name: Configure Docker daemon DNS settings with Cloudflare DNS
-  copy:
-    dest: /etc/docker/daemon.json
-    content: |
-      {
-        "dns": ["1.1.1.1", "1.0.0.1"]
-      }
-    mode: '0644'
-  become: true
+- name: Verify DNS configuration
+  block:
+    - name: Test DNS resolution with dig
+      command: dig @127.0.0.1 -p 5053 cloudflare.com
+      register: dig_result
+      changed_when: false
 
-- name: Restart Docker daemon
-  systemd:
-    name: docker
-    state: restarted
-    enabled: true
-  become: true
+    - name: Test DNS resolution with nslookup
+      command: nslookup -port=5053 cloudflare.com 127.0.0.1
+      register: nslookup_result
+      changed_when: false
 
-# DNS resolution test tasks remain as is
-- name: Test DNS resolution with dig
-  command: dig cloudflare.com
-  register: dig_result
-  changed_when: false
+    - name: Test DNS resolution with ping
+      command: ping -c 3 cloudflare.com
+      register: ping_result
+      changed_when: false
 
-- name: Test DNS resolution with nslookup
-  command: nslookup cloudflare.com
-  register: nslookup_result
-  changed_when: false
+    - name: Test SRV record resolution with dig
+      command: dig @127.0.0.1 -p 5053 srv _origintunneld._tcp.argotunnel.com
+      register: srv_dig_result
+      changed_when: false
 
-- name: Test DNS resolution with ping
-  command: ping -c 3 cloudflare.com
-  register: ping_result
-  changed_when: false
-
-- name: Display DNS test results
-  debug:
-    msg: |
-      dig result: {{ dig_result.stdout }}
-      nslookup result: {{ nslookup_result.stdout }}
-      ping result: {{ ping_result.stdout }}
-  become: true
-
-- name: Test SRV record resolution with dig
-  command: dig srv _origintunneld._tcp.argotunnel.com
-  register: srv_dig_result
-  changed_when: false
-
-- name: Display SRV test results
-  debug:
-    msg: "SRV dig result: {{ srv_dig_result.stdout }}"
+    - name: Display DNS test results
+      debug:
+        msg: |
+          dig result: {{ dig_result.stdout }}
+          nslookup result: {{ nslookup_result.stdout }}
+          ping result: {{ ping_result.stdout }}
+          SRV dig result: {{ srv_dig_result.stdout }}
   become: true
