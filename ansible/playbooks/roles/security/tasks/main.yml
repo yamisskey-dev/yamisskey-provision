@@ -489,14 +489,14 @@
       lineinfile:
         path: /etc/systemd/resolved.conf
         regexp: '^#?DNS='
-        line: 'DNS=1.1.1.1'
+        line: 'DNS=127.0.0.1'
       become: true
 
-    - name: Set FallbackDNS in /etc/systemd/resolved.conf
+    - name: Set DNSPort in /etc/systemd/resolved.conf
       lineinfile:
         path: /etc/systemd/resolved.conf
-        regexp: '^#?FallbackDNS='
-        line: 'FallbackDNS=1.0.0.1'
+        regexp: '^#?DNSPort='
+        line: 'DNSPort=5053'
       become: true
 
     - name: Restart systemd-resolved to apply DNS settings
