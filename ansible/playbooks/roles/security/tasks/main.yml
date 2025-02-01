@@ -476,41 +476,37 @@
   command: sysctl -p
   become: true
 
-- name: Setup dnscrypt-proxy
-  block:
-    - name: Ensure dnscrypt-proxy directory structure
+- name: Setup dnscrypt-proxy (System Install)
+  hosts: all
+  become: true
+  tasks:
+    - name: Install dnscrypt-proxy
+      package:
+        name: dnscrypt-proxy
+        state: present
+
+    - name: Ensure dnscrypt-proxy configuration directory exists
       file:
-        path: "{{ item }}"
+        path: /etc/dnscrypt-proxy
         state: directory
         mode: '0755'
-      loop:
-        - /opt/dnscrypt-proxy
-        - /opt/dnscrypt-proxy/config
 
-    - name: Deploy dnscrypt-proxy docker-compose configuration
+    - name: Deploy dnscrypt-proxy configuration
       template:
-        src: templates/dnscrypt-proxy_docker-compose.yml.j2
-        dest: /opt/dnscrypt-proxy/docker-compose.yml
+        src: templates/dnscrypt-proxy.toml.j2
+        dest: /etc/dnscrypt-proxy/dnscrypt-proxy.toml
         mode: '0644'
-      notify: Start dnscrypt-proxy
+      notify: Restart dnscrypt-proxy
 
-    - name: Add DNS health check script
-      copy:
-        dest: /usr/local/bin/check-dns
-        content: |
-          #!/bin/bash
-          dig @127.0.0.1 -p 5053 google.com > /dev/null || docker compose -f /opt/dnscrypt-proxy/docker-compose.yml restart
-        mode: '0755'
+    - name: Enable and start dnscrypt-proxy service
+      systemd:
+        name: dnscrypt-proxy
+        state: started
+        enabled: true
 
-    - name: Add DNS monitoring cron job
-      cron:
-        name: "DNS health check"
-        job: "/usr/local/bin/check-dns"
-        minute: "*/5"
+- name: Configure systemd-resolved to use dnscrypt-proxy
   become: true
-
-- name: Configure systemd-resolved
-  block:
+  tasks:
     - name: Configure systemd-resolved DNS settings
       template:
         src: templates/resolved.conf.j2
@@ -542,27 +538,22 @@
           }
         mode: '0644'
       notify: Restart Docker
-  become: true
 
 - name: Verify DNS configuration
-  block:
+  become: true
+  tasks:
     - name: Test DNS resolution with dig
-      command: dig @127.0.0.1 -p 5053 cloudflare.com
+      command: dig @127.0.2.1 cloudflare.com
       register: dig_result
       changed_when: false
 
     - name: Test DNS resolution with nslookup
-      command: nslookup -port=5053 cloudflare.com 127.0.0.1
+      command: nslookup cloudflare.com 127.0.2.1
       register: nslookup_result
       changed_when: false
 
-    - name: Test DNS resolution with ping
-      command: ping -c 3 cloudflare.com
-      register: ping_result
-      changed_when: false
-
     - name: Test SRV record resolution with dig
-      command: dig @127.0.0.1 -p 5053 srv _origintunneld._tcp.argotunnel.com
+      command: dig @127.0.2.1 srv _origintunneld._tcp.argotunnel.com
       register: srv_dig_result
       changed_when: false
 
@@ -571,6 +562,4 @@
         msg: |
           dig result: {{ dig_result.stdout }}
           nslookup result: {{ nslookup_result.stdout }}
-          ping result: {{ ping_result.stdout }}
           SRV dig result: {{ srv_dig_result.stdout }}
-  become: true
