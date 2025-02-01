@@ -505,8 +505,7 @@
         enabled: true
 
 - name: Configure systemd-resolved to use dnscrypt-proxy
-  become: true
-  tasks:
+  block:
     - name: Configure systemd-resolved DNS settings
       template:
         src: templates/resolved.conf.j2
@@ -538,10 +537,10 @@
           }
         mode: '0644'
       notify: Restart Docker
+  become: true
 
 - name: Verify DNS configuration
-  become: true
-  tasks:
+  block:
     - name: Test DNS resolution with dig
       command: dig @127.0.2.1 cloudflare.com
       register: dig_result
@@ -563,3 +562,4 @@
           dig result: {{ dig_result.stdout }}
           nslookup result: {{ nslookup_result.stdout }}
           SRV dig result: {{ srv_dig_result.stdout }}
+  become: true
