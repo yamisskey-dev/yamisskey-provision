@@ -313,7 +313,6 @@
   debug:
     msg: '{{ result.stdout }}'
 
-# ansible/playbooks/roles/security/tasks/crowdsec.yml
 - name: Install and Configure CrowdSec with Firewall Bouncer
   become: true
   block:
@@ -351,6 +350,23 @@
         dest: /etc/crowdsec/parsers/s02-enrich/whitelists.yaml
         mode: '0600'
       notify: Restart crowdsec
+
+    # データベース初期化のステップを追加
+    - name: Initialize CrowdSec database
+      command: cscli hub update
+      register: hub_update
+      changed_when: hub_update.rc == 0
+      failed_when: false
+
+    - name: Ensure CrowdSec service is started
+      systemd:
+        name: crowdsec
+        state: started
+        enabled: true
+
+    - name: Wait for CrowdSec to be ready
+      wait_for:
+        timeout: 10
 
     - name: Remove existing bouncer
       command: cscli bouncers delete crowdsec-firewall-bouncer
