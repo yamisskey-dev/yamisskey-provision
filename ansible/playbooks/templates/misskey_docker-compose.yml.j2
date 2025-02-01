@@ -36,7 +36,19 @@ services:
       - internal_network
     volumes:
       - ./redis:/data
-    command: keydb-server --server-threads 4 --maxclients 10000 --maxmemory 4gb --maxmemory-policy allkeys-lru --save "" --appendonly yes
+    command: keydb-server \
+      --server-threads 16 \
+      --maxclients 10000 \
+      --maxmemory 22gb \
+      --maxmemory-policy allkeys-lru \
+      --hz 100 \
+      --tcp-backlog 1024 \
+      --no-appendfsync-on-rewrite \
+      --save "" \
+      --appendonly yes \
+      --appendfsync everysec \
+      --auto-aof-rewrite-percentage 100 \
+      --auto-aof-rewrite-min-size 64mb
     healthcheck:
       test: "keydb-cli ping"
       interval: 5s
