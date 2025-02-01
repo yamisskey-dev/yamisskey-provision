@@ -313,10 +313,10 @@
   debug:
     msg: '{{ result.stdout }}'
 
+# ansible/playbooks/roles/security/tasks/crowdsec.yml
 - name: Install and Configure CrowdSec with Firewall Bouncer
   become: true
   block:
-    # Install CrowdSec repository and Security Engine
     - name: Add CrowdSec repository and install CrowdSec
       shell: |
         curl -s https://install.crowdsec.net | sudo sh
@@ -324,94 +324,62 @@
       register: crowdsec_install
       changed_when: "'CrowdSec installed' not in crowdsec_install.stdout"
     
-    # Ensure CrowdSec service is running
-    - name: Ensure CrowdSec service is running
-      systemd:
-        name: crowdsec
-        state: started
-        enabled: true
-
-    # Install firewall bouncer for CrowdSec
-    - name: Check if firewall bouncer is installed
-      command: dpkg -l | grep crowdsec-firewall-bouncer
-      register: firewall_bouncer_installed
-      changed_when: false
-      failed_when: false
-
     - name: Install firewall bouncer
-      shell: |
-        apt install -y crowdsec-firewall-bouncer
-      when: firewall_bouncer_installed.rc != 0
-
-    # Ensure firewall bouncer service is running
-    - name: Ensure firewall bouncer service is running
-      systemd:
+      apt:
         name: crowdsec-firewall-bouncer
-        state: started
-        enabled: true
+        state: present
 
-    # Remove existing whitelist files
-    - name: Remove existing whitelist files
+    - name: Create required directories
       file:
         path: "{{ item }}"
-        state: absent
+        state: directory
+        mode: '0755'
       loop:
-        - /etc/crowdsec/parsers/s02-enrich/whitelist.yaml
-        - /etc/crowdsec/parsers/s02-enrich/whitelist.yml
+        - /etc/crowdsec/bouncers
+        - /etc/crowdsec/parsers/s02-enrich
 
-    # Create whitelist in the correct format
+    - name: Configure main CrowdSec config
+      template:
+        src: crowdsec-config.yaml.j2
+        dest: /etc/crowdsec/config.yaml
+        mode: '0600'
+      notify: Restart crowdsec
+
     - name: Configure CrowdSec whitelist
       template:
-        src: templates/crowdsec-whitelists.yaml.j2
+        src: crowdsec-whitelists.yaml.j2
         dest: /etc/crowdsec/parsers/s02-enrich/whitelists.yaml
         mode: '0600'
       notify: Restart crowdsec
 
-    # Create bouncer directory
-    - name: Create bouncer directory
-      file:
-        path: /etc/crowdsec-firewall-bouncer
-        state: directory
-        mode: '0755'
-  
-    # Check if bouncer exists
-    - name: Check if bouncer exists
-      command: cscli bouncers list -o json
-      register: bouncer_list
-      changed_when: false
-      failed_when: bouncer_list.rc != 0
-
-    # Remove bouncer if exists (optional step to clean up)
     - name: Remove existing bouncer
       command: cscli bouncers delete crowdsec-firewall-bouncer
-      when: "'crowdsec-firewall-bouncer' in bouncer_list.stdout"
-      changed_when: true
+      register: bouncer_delete
+      failed_when: 
+        - bouncer_delete.rc != 0
+        - "'bouncer not found' not in bouncer_delete.stderr"
+      changed_when: bouncer_delete.rc == 0
 
-    # Add bouncer if not exists
-    - name: Add bouncer if not exists
+    - name: Add new bouncer
       command: cscli bouncers add crowdsec-firewall-bouncer
       register: bouncer_token
-      when: "'crowdsec-firewall-bouncer' not in bouncer_list.stdout"
       changed_when: true
-      failed_when: bouncer_token.rc != 0
 
-    # Save bouncer API key
-    - name: Save bouncer API key
-      copy:
-        content: "{{ bouncer_token.stdout | default('') }}"
-        dest: /etc/crowdsec-firewall-bouncer/api_key.txt
-      when: bouncer_token is defined and bouncer_token.stdout is defined and bouncer_token.stdout | length > 0
-
-    # Configure bouncer settings
-    - name: Configure bouncer settings
+    - name: Configure bouncer
       template:
-        src: templates/crowdsec-firewall-bouncer.yaml.j2
-        dest: /etc/crowdsec-firewall-bouncer/crowdsec-firewall-bouncer.yaml
+        src: crowdsec-firewall-bouncer.yaml.j2
+        dest: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
         mode: '0600'
-      vars:
-        bouncer_api_key: "{{ lookup('file', '/etc/crowdsec-firewall-bouncer/api_key.txt') }}"
       notify: Restart crowdsec-firewall-bouncer
-      when: bouncer_token is defined and bouncer_token.stdout is defined and bouncer_token.stdout | length > 0
+
+    - name: Ensure services are enabled and started
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - crowdsec
+        - crowdsec-firewall-bouncer
 
 - name: Ensure ClamAV configuration
   block:

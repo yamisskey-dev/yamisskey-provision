@@ -4,7 +4,7 @@ update_frequency: 10s
 log_mode: file
 log_dir: /var/log/
 log_level: info
-api_url: http://localhost:8080/
-api_key: {{ bouncer_token.stdout }}
+api_url: http://127.0.0.1:8180/
+api_key: "{{ bouncer_token.stdout.split('\n')[1] | trim }}"
 deny_action: DROP
 deny_log: true

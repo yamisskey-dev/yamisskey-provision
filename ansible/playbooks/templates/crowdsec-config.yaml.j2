@@ -1,0 +1,22 @@
+common:
+  daemonize: true
+  log_media: file
+  log_level: info
+  log_dir: /var/log/
+  log_max_size: 20
+  compress_logs: true
+  log_max_files: 10
+config_paths:
+  config_dir: /etc/crowdsec/
+  data_dir: /var/lib/crowdsec/data/
+  simulation_path: /etc/crowdsec/simulation.yaml
+  hub_dir: /etc/crowdsec/hub/
+  index_path: /etc/crowdsec/hub/.index.json
+  notification_dir: /etc/crowdsec/notifications/
+  plugin_dir: /usr/lib/crowdsec/plugins/
+api:
+  server:
+    listen_uri: 127.0.0.1:8180
+    profiles_path: /etc/crowdsec/profiles.yaml
+  client:
+    credentials_path: /etc/crowdsec/local_api_credentials.yaml
