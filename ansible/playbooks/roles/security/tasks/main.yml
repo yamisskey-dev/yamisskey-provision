@@ -381,9 +381,16 @@
       register: bouncer_token
       changed_when: true
 
+    - name: Debug full bouncer token output
+      debug:
+        msg: 
+          - "stdout: {{ bouncer_token.stdout }}"
+          - "stdout_lines: {{ bouncer_token.stdout_lines }}"
+        verbosity: 0
+
     - name: Extract API key
       set_fact:
-        bouncer_api_key: "{{ bouncer_token.stdout | regex_search('API key: (.+)$', '\\1') | first }}"
+        bouncer_api_key: "{{ bouncer_token.stdout_lines[1] | trim }}"
 
     - name: Configure bouncer
       template:
