@@ -38,7 +38,7 @@ services:
       - internal_network
     volumes:
       - ./redis:/data
-    command: keydb-server --server-threads 4 --maxclients 10000 --maxmemory 4gb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    command: keydb-server --server-threads 4 --maxclients 10000 --maxmemory 4gb --maxmemory-policy allkeys-lru --save "" --appendonly yes
     healthcheck:
       test: "keydb-cli ping"
       interval: 5s
