@@ -390,7 +390,7 @@
 
     - name: Extract API key
       set_fact:
-        bouncer_api_key: "{{ bouncer_token.stdout_lines[1] | trim }}"
+        bouncer_api_key: "{{ bouncer_token.stdout_lines[2] | trim }}"
 
     - name: Configure bouncer
       template:
