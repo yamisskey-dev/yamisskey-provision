@@ -5,6 +5,6 @@ log_mode: file
 log_dir: /var/log/
 log_level: info
 api_url: http://127.0.0.1:8180/
-api_key: "{{ bouncer_token.stdout.split('\n')[1] | trim }}"
+api_key: "{{ bouncer_api_key }}"
 deny_action: DROP
 deny_log: true

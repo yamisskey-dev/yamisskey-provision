@@ -381,11 +381,17 @@
       register: bouncer_token
       changed_when: true
 
+    - name: Extract API key
+      set_fact:
+        bouncer_api_key: "{{ bouncer_token.stdout | regex_search('API key: (.+)$', '\\1') | first }}"
+
     - name: Configure bouncer
       template:
         src: crowdsec-firewall-bouncer.yaml.j2
         dest: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
         mode: '0600'
+        owner: root
+        group: root
       notify: Restart crowdsec-firewall-bouncer
 
     - name: Ensure services are enabled and started
