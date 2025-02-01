@@ -477,9 +477,7 @@
   become: true
 
 - name: Setup dnscrypt-proxy (System Install)
-  hosts: all
-  become: true
-  tasks:
+  block:
     - name: Install dnscrypt-proxy
       package:
         name: dnscrypt-proxy
@@ -503,6 +501,7 @@
         name: dnscrypt-proxy
         state: started
         enabled: true
+  become: true
 
 - name: Configure systemd-resolved to use dnscrypt-proxy
   block:
