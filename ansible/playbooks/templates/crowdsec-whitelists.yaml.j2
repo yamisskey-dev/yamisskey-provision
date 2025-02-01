@@ -6,21 +6,21 @@ whitelist:
     - "127.0.0.1"
     - "::1"
     - "100.64.0.0/10"  # Tailscale CIDR
-    {% for ip in tailscale_ips %}
+{% for ip in tailscale_ips %}
     - "{{ ip }}"
-    {% endfor %}
-    {% for ip in cloudflare_region1_ips_v4 %}
+{% endfor %}
+{% for ip in cloudflare_region1_ips_v4 %}
     - "{{ ip }}"
-    {% endfor %}
-    {% for ip in cloudflare_region2_ips_v4 %}
+{% endfor %}
+{% for ip in cloudflare_region2_ips_v4 %}
     - "{{ ip }}"
-    {% endfor %}
-    {% for ip in cloudflare_region1_ips_v6 %}
+{% endfor %}
+{% for ip in cloudflare_region1_ips_v6 %}
     - "{{ ip }}"
-    {% endfor %}
-    {% for ip in cloudflare_region2_ips_v6 %}
+{% endfor %}
+{% for ip in cloudflare_region2_ips_v6 %}
     - "{{ ip }}"
-    {% endfor %}
+{% endfor %}
   cidr:
     - "192.168.0.0/16"
     - "10.0.0.0/8"
