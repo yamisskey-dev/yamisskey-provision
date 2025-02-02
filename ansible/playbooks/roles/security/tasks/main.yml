@@ -225,7 +225,7 @@
     tailscale_needs_start: "{{ tailscale_status.stdout is not regex('.*100\\..*') }}"
 
 - name: Start Tailscale only if not already connected
-  shell: tailscale up --ssh --accept-dns=false --reset --accept-risk=lose-ssh
+  shell: tailscale up --advertise-tags=tag:ssh-access --ssh --accept-dns=false --reset --accept-risk=lose-ssh
   when: tailscale_needs_start | bool
   register: tailscale_start
 

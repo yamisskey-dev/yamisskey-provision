@@ -119,7 +119,7 @@ Need to manually log in to tailscale, cloudflared and warp
 #### tailscale
 ```consol
 tailscale login
-sudo tailscale up --ssh --accept-dns=false --reset --accept-risk=lose-ssh
+sudo tailscale up --advertise-tags=tag:ssh-access --ssh --accept-dns=false --reset --accept-risk=lose-ssh
 ```
 
 #### cloudflared
