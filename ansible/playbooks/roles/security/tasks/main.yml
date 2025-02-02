@@ -538,17 +538,17 @@
 - name: Verify DNS configuration
   block:
     - name: Test DNS resolution with dig
-      command: dig @127.0.2.1 cloudflare.com
+      command: dig @127.0.0.1 cloudflare.com
       register: dig_result
       changed_when: false
 
     - name: Test DNS resolution with nslookup
-      command: nslookup cloudflare.com 127.0.2.1
+      command: nslookup cloudflare.com 127.0.0.1
       register: nslookup_result
       changed_when: false
 
     - name: Test SRV record resolution with dig
-      command: dig @127.0.2.1 srv _origintunneld._tcp.argotunnel.com
+      command: dig @127.0.0.1 srv _origintunneld._tcp.argotunnel.com
       register: srv_dig_result
       changed_when: false
 

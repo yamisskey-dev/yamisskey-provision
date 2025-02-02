@@ -145,7 +145,7 @@ warp-routing:
 protocol: http2
 dns:
   upstreams:
-    - 127.0.2.1:53
+    - 127.0.0.1:53
 
 ingress:
   - hostname: yami.ski
