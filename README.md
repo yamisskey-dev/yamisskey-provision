@@ -140,8 +140,6 @@ sudo vim /etc/cloudflared/config.yml
 tunnel: <Tunnel-UUID>
 credentials-file: /home/taka/.cloudflared/<Tunnel-UUID>.json
 origincert: /home/taka/.cloudflared/cert.pem
-warp-routing:
-  enabled: true
 protocol: http2
 dns:
   upstreams:
@@ -157,12 +155,8 @@ originRequest:
   connectTimeout: 2s
   keepAliveTimeout: 15s
   http2Origin: true
-  keepaliveConnections: 150
-  http2ConnectionTimeout: 45s
   tcpKeepAlive: 15s
   noHappyEyeballs: true
-  streamType: "round_trip"
-  idleTimeout: 60s
 
 ingress:
   - hostname: yami.ski
@@ -200,7 +194,6 @@ ingress:
     originRequest:
       noTLSVerify: true
       http2Origin: true
-      proxyType: "h2c"
   - hostname: captcha.yami.ski
     service: http://localhost:7493
   - hostname: neo-quesdon.yami.ski
