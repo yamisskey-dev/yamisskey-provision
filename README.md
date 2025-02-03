@@ -146,6 +146,14 @@ protocol: http2
 dns:
   upstreams:
     - 127.0.0.1:5353
+retries: 5
+timeout: 15s
+compression: true
+noTLSVerify: false
+originRequest:
+  disableChunkedEncoding: true
+  connectTimeout: 10s
+  keepAliveTimeout: 30s
 
 ingress:
   - hostname: yami.ski
