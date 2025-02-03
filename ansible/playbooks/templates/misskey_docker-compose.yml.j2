@@ -41,7 +41,7 @@ services:
       --server-threads 16
       --maxclients 10000
       --maxmemory 22gb
-      --maxmemory-policy allkeys-lru
+      --maxmemory-policy noeviction
       --hz 200
       --tcp-backlog 1024
       --no-appendfsync-on-rewrite yes
