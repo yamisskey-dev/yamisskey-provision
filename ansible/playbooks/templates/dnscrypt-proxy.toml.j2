@@ -1,20 +1,25 @@
 listen_addresses = ['127.0.0.1:5353']
 server_names = ['cloudflare', 'cloudflare-security']
 
+fallback_resolvers = ['1.1.1.1:53', '1.0.0.1:53']
+
 require_dnssec = true
 require_nolog = true
 require_nofilter = true
 
-cache_size = 4096
-cache_min_ttl = 300
-cache_max_ttl = 3600
+cache_size = 8192
+cache_min_ttl = 600
+cache_max_ttl = 7200
 cache_neg_min_ttl = 60
 
 keepalive = 30
-timeout = 2500
+timeout = 5000
 cert_refresh_delay = 240
 
 lb_strategy = 'p2'
+
+ignore_system_dns = true
+netprobe_timeout = 60
 
 [query_log]
   file = '/var/log/dnscrypt-proxy/query.log'

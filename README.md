@@ -147,13 +147,22 @@ dns:
   upstreams:
     - 127.0.0.1:5353
 retries: 5
-timeout: 15s
+timeout: 5s
 compression: true
 noTLSVerify: false
+max_backoff: 15s
+connection_strategy: "race"
 originRequest:
   disableChunkedEncoding: true
-  connectTimeout: 10s
-  keepAliveTimeout: 30s
+  connectTimeout: 2s
+  keepAliveTimeout: 15s
+  http2Origin: true
+  keepaliveConnections: 150
+  http2ConnectionTimeout: 45s
+  tcpKeepAlive: 15s
+  noHappyEyeballs: true
+  streamType: "round_trip"
+  idleTimeout: 60s
 
 ingress:
   - hostname: yami.ski
