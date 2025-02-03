@@ -78,18 +78,9 @@ server {
 
         # Reduce buffering for WebSocket
         proxy_buffering off;
-        
+
         # Header to indicate cache status
         add_header X-Cache $upstream_cache_status;
-    }
-
-    location /vite/ {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
-        proxy_cache cache1;
-        proxy_cache_use_stale error timeout http_500 http_502 http_503 http_504;
-        proxy_cache_valid 200 1d;
-        add_header Cache-Control "public, max-age=31536000, immutable";
     }
 
     location /proxy/ {
