@@ -148,6 +148,7 @@
             target_label: instance
           - target_label: __address__
             replacement: localhost:9115  # Blackbox exporter's address
+  notify: Restart Prometheus
 
 - name: Validate Prometheus config
   command: promtool check config /etc/prometheus/prometheus.yml
