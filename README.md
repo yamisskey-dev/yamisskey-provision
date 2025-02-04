@@ -286,3 +286,8 @@ NOTIFICATION=true
 ```consol
 make backup
 ```
+
+```consol
+curl -sL https://filen.io/cli.sh | bash
+filen
+```
