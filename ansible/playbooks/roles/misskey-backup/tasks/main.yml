@@ -8,7 +8,7 @@
   loop:
     - "{{ backup_dir }}/misskey"
     - "/opt/misskey-backup"
-    - "/opt/misskey-backup/config" 
+    - "/opt/misskey-backup/config"
     - "/opt/misskey-backup/src"
 
 - name: Clone misskey-backup repository
@@ -16,12 +16,14 @@
     repo: "https://github.com/yamisskey/yamisskey-backup.git"
     dest: "/opt/misskey-backup"
     version: "main"
+    force: yes
   register: git_clone
 
 - name: Create rclone config file
   template:
     src: templates/rclone.conf.j2
     dest: /opt/misskey-backup/config/rclone.conf
+    mode: '0644'
   notify: Restart backup container
 
 - name: Ensure misskey-postgres network exists
