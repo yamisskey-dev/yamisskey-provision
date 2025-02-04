@@ -44,3 +44,32 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         replacement: localhost:9115  # localhostを使用
+
+  - job_name: 'cloudflared_tunnel'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # 適切なプローブ設定
+    static_configs:
+      - targets:
+          - http://localhost:8080  # yami.ski サービス (Cloudflared経由)
+          - http://localhost:8082  # search.yami.ski サービス (Cloudflared経由)
+          - http://localhost:8008  # matrix.yami.ski サービス (Cloudflared経由)
+          - http://localhost:8081  # chat.yami.ski サービス (Cloudflared経由)
+          - http://localhost:8000  # ctf.yami.ski サービス (Cloudflared経由)
+          - http://localhost:9000  # drive.yami.ski サービス (Cloudflared経由)
+          - http://localhost:9001  # minio.yami.ski サービス (Cloudflared経由)
+          - http://localhost:3000  # grafana.yami.ski サービス (Cloudflared経由)
+          - http://localhost:3456  # task.yami.ski サービス (Cloudflared経由)
+          - http://localhost:3333  # pad.yami.ski サービス (Cloudflared経由)
+          - http://localhost:3004  # wiki.yami.ski サービス (Cloudflared経由)
+          - http://localhost:3009  # uptime.yami.ski サービス (Cloudflared経由)
+          - http://localhost:8993  # auth.yami.ski サービス (Cloudflared経由)
+          - http://localhost:7493  # captcha.yami.ski サービス (Cloudflared経由)
+          - http://localhost:3025  # neo-quesdon.yami.ski サービス (Cloudflared経由)
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115  # blackbox exporter がホストされている場所
