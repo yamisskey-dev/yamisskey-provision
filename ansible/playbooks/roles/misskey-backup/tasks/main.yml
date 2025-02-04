@@ -1,34 +1,28 @@
-- name: Ensure backup directory exists
+- name: Create backup directory structure
   file:
-    path: /misskey-data/backups
-    state: directory
+    path: "{{ item }}"
+    state: directory 
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
     mode: '0755'
+  loop:
+    - "{{ backup_dir }}/misskey"
+    - "/opt/misskey-backup"
+    - "/opt/misskey-backup/config" 
+    - "/opt/misskey-backup/src"
 
-- name: Ensure misskey-backup directory exists
-  file:
-    path: /opt/misskey-backup
-    state: directory
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
-    mode: '0755'
+- name: Clone misskey-backup repository
+  git:
+    repo: "https://github.com/yamisskey/yamisskey-backup.git"
+    dest: "/opt/misskey-backup"
+    version: "main"
+  register: git_clone
 
-- name: Ensure config directory exists
-  file:
-    path: /opt/misskey-backup/config
-    state: directory
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
-    mode: '0755'
-
-- name: Ensure src directory exists
-  file:
-    path: /opt/misskey-backup/src
-    state: directory
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
-    mode: '0755'
+- name: Create rclone config file
+  template:
+    src: templates/rclone.conf.j2
+    dest: /opt/misskey-backup/config/rclone.conf
+  notify: Restart backup container
 
 - name: Copy Dockerfile to target
   copy:
@@ -147,14 +141,6 @@
   register: registry_push_output
   failed_when: registry_push_output.rc != 0
   when: image_exists.rc == 0
-
-- name: Ensure backup directory
-  file:
-    path: '{{ backup_dir }}/misskey'
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: '0755'
 
 - name: Create tarball of Misskey directory
   shell: sudo tar -czvf {{ backup_dir }}/misskey/misskey-backup-{{ ansible_date_time.iso8601_basic }}.tar.gz -C {{ misskey_dir }} .
