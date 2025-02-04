@@ -49,7 +49,7 @@
   register: compose_start
 
 - name: Run manual backup script
-  command: sudo docker exec backup /root/backup.sh
+  command: sudo docker exec misskey-backup /root/backup.sh
 
 - name: Load secrets from secrets.yml
   include_vars:
