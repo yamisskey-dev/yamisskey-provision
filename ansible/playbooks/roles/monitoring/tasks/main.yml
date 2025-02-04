@@ -76,6 +76,7 @@
       - "9115:9115"
     networks:
       - name: monitoring
+    network_mode: "host"  # ホストのネットワークを使用
     volumes:
       - "/etc/blackbox_exporter:/config:ro"
     command: "--config.file=/config/blackbox.yml"
