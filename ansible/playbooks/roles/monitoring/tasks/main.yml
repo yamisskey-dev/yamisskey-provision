@@ -10,6 +10,7 @@
   docker_network:
     name: monitoring
     state: present
+
 # 3. Node Exporter Setup
 - name: Check if Node Exporter service is running
   systemd:
@@ -126,30 +127,6 @@
     mode: '0644'
   register: prometheus_config
 
-- name: Add Blackbox monitoring jobs to Prometheus
-  blockinfile:
-    path: /etc/prometheus/prometheus.yml
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - BLACKBOX EXPORTER"
-    block: |
-      # Blackbox Exporter configurations
-      - job_name: 'blackbox'
-        metrics_path: /probe
-        params:
-          module: [http_2xx]
-        static_configs:
-          - targets:
-              - http://localhost:3000  # Grafana
-              - http://localhost:9090  # Prometheus
-              - http://localhost:9100  # Node Exporter
-        relabel_configs:
-          - source_labels: [__address__]
-            target_label: __param_target
-          - source_labels: [__param_target]
-            target_label: instance
-          - target_label: __address__
-            replacement: localhost:9115  # Blackbox exporter's address
-  notify: Restart Prometheus
-
 - name: Validate Prometheus config
   command: promtool check config /etc/prometheus/prometheus.yml
   changed_when: false
@@ -196,7 +173,7 @@
         status_code: 200
       loop:
         - { port: 9100, name: 'node-exporter' }
-        - { port: 8080, name: 'cadvisor' }
+        - { port: 8085, name: 'cadvisor' }
         - { port: 9115, name: 'blackbox-exporter', path: '/probe?target=localhost&module=http_2xx' }
         - { port: 3000, name: 'grafana', path: '/api/health' }
       register: service_checks

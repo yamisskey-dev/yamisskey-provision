@@ -27,3 +27,20 @@ scrape_configs:
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['localhost:8085']
+
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://localhost:3000  # Grafana
+          - http://localhost:9090  # Prometheus
+          - http://localhost:9100  # Node Exporter
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115  # Blackbox exporter's address
