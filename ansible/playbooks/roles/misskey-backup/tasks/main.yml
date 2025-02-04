@@ -27,17 +27,26 @@
     mode: '0644'
   notify: Restart backup container
 
+- name: Check if backup service is already running
+  docker_container_info:
+    name: backup
+  register: backup_container
+
 - name: Pull and build Docker images
   docker_compose:
     project_src: /opt/misskey-backup
     state: present
     pull: yes
     build: yes
+  when: not backup_container.exists or backup_container.container.State.Status != 'running'
+  register: compose_pull_build
 
 - name: Start Docker Compose services
   docker_compose:
     project_src: /opt/misskey-backup
     state: present
+  when: not backup_container.exists or backup_container.container.State.Status != 'running'
+  register: compose_start
 
 - name: Run manual backup script
   command: sudo docker exec backup /root/backup.sh
