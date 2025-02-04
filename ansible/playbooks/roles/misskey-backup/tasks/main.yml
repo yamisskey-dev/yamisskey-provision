@@ -24,13 +24,6 @@
     dest: /opt/misskey-backup/config/rclone.conf
   notify: Restart backup container
 
-- name: Create rclone config file
-  template:
-    src: templates/rclone.conf.j2
-    dest: /opt/misskey-backup/config/rclone.conf
-  notify:
-    - Restart backup container
-
 - name: Ensure misskey-postgres network exists
   docker_network:
     name: misskey-postgres
