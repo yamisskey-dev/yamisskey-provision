@@ -1,3 +1,16 @@
+# 1. Base System Setup
+- name: Install prerequisites for Grafana
+  apt:
+    name: [apt-transport-https, software-properties-common, wget]
+    state: present
+    update_cache: yes
+
+# 2. Network Setup
+- name: Create Docker network for monitoring
+  docker_network:
+    name: monitoring
+    state: present
+# 3. Node Exporter Setup
 - name: Check if Node Exporter service is running
   systemd:
     name: prometheus-node-exporter
@@ -12,23 +25,61 @@
   register: node_exporter_metrics
   ignore_errors: yes
 
-# Prometheus Setup
+# 4. Prometheus Base Setup
 - name: Ensure Prometheus is enabled and running
   systemd:
     name: prometheus
     enabled: yes
     state: started
 
-# Grafana Setup
-- name: Install prerequisites for Grafana
-  apt:
-    name:
-      - apt-transport-https
-      - software-properties-common
-      - wget
-    state: present
-    update_cache: yes
+# 5. Exporters Setup
+## 5.1 cAdvisor Setup
+- name: Deploy cAdvisor container
+  docker_container:
+    name: cadvisor
+    image: "gcr.io/cadvisor/cadvisor:v0.49.1"
+    state: started
+    restart_policy: always
+    ports:
+      - "8085:8080"
+    networks:
+      - name: monitoring
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/var/lib/docker/:/var/lib/docker:ro"
+      - "/dev/disk/:/dev/disk:ro"
 
+## 5.2 Blackbox Exporter Setup
+- name: Create Blackbox Exporter config directory
+  file:
+    path: /etc/blackbox_exporter
+    state: directory
+    mode: '0755'
+
+- name: Deploy Blackbox Exporter configuration
+  template:
+    src: blackbox.yml.j2
+    dest: /etc/blackbox_exporter/blackbox.yml
+    mode: '0644'
+  register: blackbox_config
+
+- name: Deploy Blackbox Exporter container
+  docker_container:
+    name: blackbox_exporter
+    image: quay.io/prometheus/blackbox-exporter:latest
+    state: started
+    restart_policy: always
+    ports:
+      - "9115:9115"
+    networks:
+      - name: monitoring
+    volumes:
+      - "/etc/blackbox_exporter:/config:ro"
+    command: "--config.file=/config/blackbox.yml"
+
+# 6. Grafana Setup
 - name: Ensure /etc/apt/keyrings directory exists
   file:
     path: /etc/apt/keyrings
@@ -65,7 +116,52 @@
     enabled: yes
     state: started
 
-# Nginx Configuration for Grafana
+# 7. Prometheus Final Configuration
+- name: Deploy Prometheus configuration
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  register: prometheus_config
+
+- name: Add Blackbox monitoring jobs to Prometheus
+  blockinfile:
+    path: /etc/prometheus/prometheus.yml
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - BLACKBOX EXPORTER"
+    block: |
+      # Blackbox Exporter configurations
+      - job_name: 'blackbox'
+        metrics_path: /probe
+        params:
+          module: [http_2xx]
+        static_configs:
+          - targets:
+              - http://localhost:3000  # Grafana
+              - http://localhost:9090  # Prometheus
+              - http://localhost:9100  # Node Exporter
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: localhost:9115  # Blackbox exporter's address
+
+- name: Validate Prometheus config
+  command: promtool check config /etc/prometheus/prometheus.yml
+  changed_when: false
+  register: config_check
+  failed_when: config_check.rc != 0
+
+- name: Restart Prometheus if configuration is valid
+  systemd:
+    name: prometheus
+    state: restarted
+  when: prometheus_config.changed or blackbox_config.changed
+
+# 8. Nginx Configuration
 - name: Deploy Grafana Nginx configuration
   template:
     src: nginx_grafana.conf.j2
@@ -81,45 +177,6 @@
     path: /etc/nginx/conf.d/grafana.conf
   register: grafana_nginx_conf
 
-- name: Fail if Nginx configuration does not exist for Grafana
-  fail:
-    msg: 'Nginx configuration file /etc/nginx/conf.d/grafana.conf does not exist.'
-  when: not grafana_nginx_conf.stat.exists
-
-# cAdvisor Setup
-- name: Create Docker network for monitoring
-  docker_network:
-    name: monitoring
-    state: present
-
-- name: Deploy cAdvisor container
-  docker_container:
-    name: cadvisor
-    image: "gcr.io/cadvisor/cadvisor:v0.49.1"
-    state: started
-    restart_policy: always
-    ports:
-      - "8085:8080"
-    networks:
-      - name: monitoring
-    volumes:
-      - "/:/rootfs:ro"
-      - "/var/run:/var/run:ro"
-      - "/sys:/sys:ro"
-      - "/var/lib/docker/:/var/lib/docker:ro"
-      - "/dev/disk/:/dev/disk:ro"
-
-- name: Verify cAdvisor metrics endpoint
-  uri:
-    url: http://localhost:8080/metrics
-    method: GET
-    status_code: 200
-  register: cadvisor_metrics
-  ignore_errors: yes
-  retries: 3
-  delay: 10
-
-# Final Nginx Configuration
 - name: Reload Nginx if configuration file exists
   become: yes
   become_user: root
@@ -128,21 +185,7 @@
     state: reloaded
   when: grafana_nginx_conf.stat.exists
 
-- name: Deploy Prometheus configuration
-  template:
-    src: prometheus.yml.j2
-    dest: /etc/prometheus/prometheus.yml
-    owner: prometheus
-    group: prometheus
-    mode: '0644'
-  notify: Restart Prometheus
-
-- name: Validate Prometheus config
-  command: promtool check config /etc/prometheus/prometheus.yml
-  changed_when: false
-  register: config_check
-  failed_when: config_check.rc != 0
-
+# 9. Final Health Checks
 - name: Verify all services
   block:
     - name: Check service endpoints
@@ -153,6 +196,7 @@
       loop:
         - { port: 9100, name: 'node-exporter' }
         - { port: 8080, name: 'cadvisor' }
+        - { port: 9115, name: 'blackbox-exporter', path: '/probe?target=localhost&module=http_2xx' }
         - { port: 3000, name: 'grafana', path: '/api/health' }
       register: service_checks
   rescue:
