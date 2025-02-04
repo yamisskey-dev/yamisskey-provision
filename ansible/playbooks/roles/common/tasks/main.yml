@@ -12,20 +12,6 @@
   tags:
     - packages
 
-- name: Ensure curl is installed
-  apt:
-    name: curl
-    state: present
-  tags:
-    - filen
-
-- name: Install Filen CLI
-  shell: curl -sL https://filen.io/cli.sh | bash
-  args:
-    creates: /usr/local/bin/filen  # インストール済みの場合はスキップ
-  tags:
-    - filen
-
 - name: Copy unattended-upgrades configuration file
   copy:
     src: 20auto-upgrades
