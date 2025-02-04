@@ -72,10 +72,7 @@
     image: quay.io/prometheus/blackbox-exporter:latest
     state: started
     restart_policy: always
-    ports:
-      - "9115:9115"
-    networks:
-      - name: monitoring
+    network_mode: host
     volumes:
       - "/etc/blackbox_exporter:/config:ro"
     command: "--config.file=/config/blackbox.yml"
