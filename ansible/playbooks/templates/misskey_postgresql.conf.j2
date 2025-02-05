@@ -6,27 +6,79 @@
 # Connections num: 128
 # Data Storage: ssd
 
+# 基本設定
 listen_addresses = '*'
-max_connections = 256
-shared_buffers = 10GB
-effective_cache_size = 20GB
+max_connections = 512
+shared_buffers = 12GB
+effective_cache_size = 22GB
 maintenance_work_mem = 2GB
-checkpoint_completion_target = 0.9
-wal_buffers = 16MB
-default_statistics_target = 100
-random_page_cost = 1.1
-effective_io_concurrency = 200
-work_mem = 32MB
 huge_pages = off
-min_wal_size = 2GB
-max_wal_size = 8GB
+
+# メモリと処理関連
+work_mem = 64MB
+hash_mem_multiplier = 2.0
+vacuum_cost_delay = 2
+vacuum_cost_limit = 800
+
+# パラレル処理
 max_worker_processes = 16
-max_parallel_workers_per_gather = 4
 max_parallel_workers = 16
-max_parallel_maintenance_workers = 4
+max_parallel_workers_per_gather = 8
+max_parallel_maintenance_workers = 8
+parallel_leader_participation = on
+
+# WAL設定
+checkpoint_completion_target = 0.9
+checkpoint_timeout = 15min
+wal_buffers = 32MB
+min_wal_size = 4GB
+max_wal_size = 16GB
 synchronous_commit = off
 full_page_writes = off
-autovacuum_work_mem = 2GB
+wal_compression = on
+wal_init_zero = off
+wal_recycle = on
+
+# 自動バキューム
+autovacuum_max_workers = 8
+autovacuum_naptime = 10s
+autovacuum_vacuum_threshold = 50
 autovacuum_vacuum_scale_factor = 0.1
+autovacuum_vacuum_cost_delay = 2
+autovacuum_vacuum_cost_limit = 800
+autovacuum_work_mem = 2GB
 autovacuum_analyze_scale_factor = 0.05
+
+# 問い合わせプラン関連
+random_page_cost = 1.0
+effective_io_concurrency = 200
+default_statistics_target = 500
+constraint_exclusion = partition
+
+# タイムアウト設定
+idle_in_transaction_session_timeout = '30s'
+statement_timeout = '60s'
+lock_timeout = '5s'
+idle_session_timeout = '1h'
+
+# ログと統計情報
 track_io_timing = on
+track_functions = all
+log_min_duration_statement = 1000
+log_autovacuum_min_duration = 250ms
+log_temp_files = 0
+log_checkpoints = on
+
+# バッファ設定
+temp_buffers = 64MB
+temp_file_limit = 5GB
+
+# 共有メモリとバックグラウンドライター
+bgwriter_delay = 10ms
+bgwriter_lru_maxpages = 1000
+bgwriter_lru_multiplier = 10.0
+
+# プランナーコスト定数
+cpu_tuple_cost = 0.03
+cpu_index_tuple_cost = 0.01
+cpu_operator_cost = 0.0025

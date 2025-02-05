@@ -38,21 +38,33 @@ services:
       - ./redis:/data
     command: >
       keydb-server
-      --server-threads 16
-      --maxclients 10000
-      --maxmemory 22gb
+      --server-threads 4
+      --maxclients 20000
       --maxmemory-policy noeviction
-      --hz 200
-      --tcp-backlog 1024
+      --hz 100
+      --tcp-backlog 4096
       --no-appendfsync-on-rewrite yes
       --appendonly yes
       --appendfsync everysec
-      --auto-aof-rewrite-percentage 100
-      --auto-aof-rewrite-min-size 64mb
+      --auto-aof-rewrite-percentage 50
+      --auto-aof-rewrite-min-size 256mb
+      --io-threads 4
+      --io-threads-do-reads yes
+      --activerehashing yes
+      --aof-use-rdb-preamble yes
+      --lazyfree-lazy-eviction yes
+      --lazyfree-lazy-expire yes
+      --lazyfree-lazy-server-del yes
+      --dynamic-hz yes
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     healthcheck:
-      test: "keydb-cli ping"
-      interval: 5s
-      retries: 20
+      test: ["CMD", "keydb-cli", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
 
   db:
     restart: always
@@ -65,19 +77,24 @@ services:
       - ./db:/var/lib/postgresql/data
       - ./.config/postgresql.conf:/etc/postgresql/postgresql.conf
     command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    sysctls:
+      - kernel.shmmax=34359738368
+      - kernel.shmall=8388608
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     healthcheck:
-      test: "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
-      interval: 5s
-      retries: 20
-    deploy:
-      resources:
-        limits:
-          memory: 24G
-        reservations:
-          memory: 16G
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
 
 networks:
   internal_network:
     internal: true
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 9000
   external_network:
     external: true
