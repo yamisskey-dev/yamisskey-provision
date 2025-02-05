@@ -4,13 +4,13 @@
 # Total Memory (RAM): 28 GB
 # CPUs num: 16
 # Connections num: 128
-# Data Storage: ssd
+# Data Storage: NVMe SSD
 
 # 基本設定
 listen_addresses = '*'
 max_connections = 512
-shared_buffers = 12GB
-effective_cache_size = 22GB
+shared_buffers = 8GB
+effective_cache_size = 20GB
 maintenance_work_mem = 2GB
 huge_pages = off
 
@@ -18,7 +18,7 @@ huge_pages = off
 work_mem = 64MB
 hash_mem_multiplier = 2.0
 vacuum_cost_delay = 2
-vacuum_cost_limit = 800
+vacuum_cost_limit = 1000
 
 # パラレル処理
 max_worker_processes = 16
@@ -27,39 +27,45 @@ max_parallel_workers_per_gather = 8
 max_parallel_maintenance_workers = 8
 parallel_leader_participation = on
 
-# WAL設定
-checkpoint_completion_target = 0.9
-checkpoint_timeout = 15min
-wal_buffers = 32MB
-min_wal_size = 4GB
-max_wal_size = 16GB
+# WAL設定 - チェックポイント問題対策
+checkpoint_completion_target = 0.7
+checkpoint_timeout = 10min
+checkpoint_warning = 30s
+wal_buffers = 128MB
+min_wal_size = 2GB
+max_wal_size = 8GB
 synchronous_commit = off
 full_page_writes = off
 wal_compression = on
 wal_init_zero = off
 wal_recycle = on
+wal_writer_delay = 100ms
+wal_writer_flush_after = 1MB
 
 # 自動バキューム
 autovacuum_max_workers = 8
 autovacuum_naptime = 10s
 autovacuum_vacuum_threshold = 50
-autovacuum_vacuum_scale_factor = 0.1
-autovacuum_vacuum_cost_delay = 2
-autovacuum_vacuum_cost_limit = 800
+autovacuum_vacuum_scale_factor = 0.05
+autovacuum_vacuum_cost_delay = 0
+autovacuum_vacuum_cost_limit = 2000
 autovacuum_work_mem = 2GB
-autovacuum_analyze_scale_factor = 0.05
+autovacuum_analyze_scale_factor = 0.02
 
 # 問い合わせプラン関連
 random_page_cost = 1.0
-effective_io_concurrency = 200
+effective_io_concurrency = 1000
 default_statistics_target = 500
 constraint_exclusion = partition
 
-# タイムアウト設定
+# タイムアウト設定 - リクエスト間隔問題対策
 idle_in_transaction_session_timeout = '30s'
-statement_timeout = '60s'
+statement_timeout = '30s'
 lock_timeout = '5s'
 idle_session_timeout = '1h'
+tcp_keepalives_idle = 60
+tcp_keepalives_interval = 10
+tcp_keepalives_count = 6
 
 # ログと統計情報
 track_io_timing = on
@@ -68,15 +74,21 @@ log_min_duration_statement = 1000
 log_autovacuum_min_duration = 250ms
 log_temp_files = 0
 log_checkpoints = on
+log_rotation_age = '1d'
+log_rotation_size = '100MB'
+log_lock_waits = on
+log_error_verbosity = verbose
+log_min_messages = warning
 
 # バッファ設定
 temp_buffers = 64MB
-temp_file_limit = 5GB
+temp_file_limit = 10GB
 
 # 共有メモリとバックグラウンドライター
 bgwriter_delay = 10ms
 bgwriter_lru_maxpages = 1000
-bgwriter_lru_multiplier = 10.0
+bgwriter_lru_multiplier = 4.0
+bgwriter_flush_after = 64kB
 
 # プランナーコスト定数
 cpu_tuple_cost = 0.03
