@@ -202,7 +202,7 @@ ingress:
 ```
 
 ```consol
-sudo cloudflared tunnel --config /home/taka/.cloudflared/config.yml run yamisskey
+sudo cloudflared tunnel --config /etc/cloudflared/config.yml run yamisskey
 ```
 
 ```consol
