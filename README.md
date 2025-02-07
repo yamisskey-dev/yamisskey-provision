@@ -157,6 +157,7 @@ originRequest:
   http2Origin: true
   tcpKeepAlive: 15s
   noHappyEyeballs: true
+metrics: localhost:49312
 
 ingress:
   - hostname: yami.ski
@@ -269,8 +270,8 @@ make provision
 
 During the provisioning process, the Ansible playbook (playbook.yml) will pause and prompt you to review the configuration files you edited in step 4. Ensure that the configurations are correct, then press ENTER to continue the provisioning process. Once the provisioning is complete, verify that Misskey is running correctly.
 
- ### backup
- 
+### backup
+
 Ensure that you have the necessary environment variables set up to backup. Create a .env file in the misskey-backup directory if it does not exist, and provide the required values:
 
 ```config
