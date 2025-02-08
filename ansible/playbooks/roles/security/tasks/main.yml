@@ -421,6 +421,16 @@
         mode: '0755'
       become: true
 
+    - name: Configure ClamAV daemon settings
+      template:
+        src: templates/clamd.conf.j2
+        dest: /etc/clamav/clamd.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart clamav-daemon
+      become: true
+
     - name: Ensure freshclam log file is writable
       file:
         path: /var/log/clamav/freshclam.log
@@ -447,15 +457,8 @@
       cron:
         name: 'Daily ClamAV scan'
         minute: '0'
-        hour: '19'
-        job: >-
-          /usr/bin/timeout 3h /usr/bin/nice -n 19 /usr/bin/clamscan -r /
-          --exclude-dir='^/sys'
-          --exclude-dir='^/proc'
-          --exclude-dir='^/dev'
-          --max-filesize=100M
-          --max-scansize=100M
-          --log=/var/log/clamav/clamav-$(date +\\%Y\\%m\\%d).log
+        hour: '19'    # UTC 19:00 = JST 04:00
+        job: "/usr/bin/timeout 1h45m /usr/bin/nice -n 19 /usr/bin/clamdscan -m --fdpass --config-file=/etc/clamav/clamd.conf -l /var/log/clamav/clamav-$(date +\\%Y\\%m\\%d).log /"
       become: true
 
 - name: Configure sysctl settings only if needed
