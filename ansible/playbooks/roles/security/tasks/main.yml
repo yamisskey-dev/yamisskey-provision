@@ -322,7 +322,7 @@
         apt install -y crowdsec
       register: crowdsec_install
       changed_when: "'CrowdSec installed' not in crowdsec_install.stdout"
-    
+
     - name: Install firewall bouncer
       apt:
         name: crowdsec-firewall-bouncer
@@ -443,12 +443,19 @@
         enabled: true
       become: true
 
-    - name: Schedule daily ClamAV scan
+    - name: Schedule daily ClamAV scan (JST 4:00 AM)
       cron:
         name: 'Daily ClamAV scan'
         minute: '0'
-        hour: '2'
-        job: "/usr/bin/clamscan -r / --exclude-dir='^/sys' --exclude-dir='^/proc' --exclude-dir='^/dev' --log=/var/log/clamav/clamav-$(date +\\%Y\\%m\\%d).log"
+        hour: '19'
+        job: >-
+          /usr/bin/timeout 3h /usr/bin/nice -n 19 /usr/bin/clamscan -r /
+          --exclude-dir='^/sys'
+          --exclude-dir='^/proc'
+          --exclude-dir='^/dev'
+          --max-filesize=100M
+          --max-scansize=100M
+          --log=/var/log/clamav/clamav-$(date +\\%Y\\%m\\%d).log
       become: true
 
 - name: Configure sysctl settings only if needed
