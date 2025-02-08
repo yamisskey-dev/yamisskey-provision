@@ -3,34 +3,37 @@
 LocalSocket /run/clamav/clamd.ctl
 LocalSocketMode 660
 
-# Scanning settings
-MaxThreads 4
+# Scanning settings optimized for 16-core system with NVMe
+MaxThreads 8                    # 16コアの半分を使用（システムの他の処理のために余裕を持たせる）
 MaxDirectoryRecursion 15
-MaxFileSize 100M
-MaxScanSize 100M
-MaxFiles 10000
+MaxFileSize 200M               # NVMeの高速性を考慮して増加
+MaxScanSize 200M              # 同上
+MaxFiles 50000               # 大容量ディスク向けに増加
 
 # Logging Configuration
 LogFile /var/log/clamav/clamd.log
-LogFileMaxSize 100M
+LogFileMaxSize 500M           # ログサイズを増加（28GBのRAMなら余裕がある）
 LogTime yes
 LogVerbose yes
 LogClean no
 ExtendedDetectionInfo yes
 
-# Performance tuning
-IdleTimeout 30
-StreamMaxLength 100M
-MaxEmbeddedPE 100M
-MaxHTMLNormalize 100M
+# Performance tuning for NVMe
+StreamMaxLength 200M          # NVMeの高速性を活かす
+MaxEmbeddedPE 200M
+MaxHTMLNormalize 200M
 MaxHTMLNoTags 2M
-MaxScriptNormalize 100M
-MaxZipTypeRcg 1M
+MaxScriptNormalize 200M
+MaxZipTypeRcg 2M
 MaxPartitions 128
 MaxIconsPE 200
-PCREMaxFileSize 100M
+PCREMaxFileSize 200M
 
-# Security settings
+# Queue settings for better throughput
+MaxQueue 400                  # 並列処理の強化
+IdleTimeout 60               # タイムアウトを延長
+
+# Scan settings
 ScanPE yes
 ScanELF yes
 DetectPUA yes
@@ -38,5 +41,11 @@ ExcludePUA NetTool
 ExcludePUA PWTool
 ScanArchive yes
 
-# System Resource Settings
-MaxQueue 200
+# Excluded paths to reduce scan time
+ExcludePath ^/sys/
+ExcludePath ^/proc/
+ExcludePath ^/dev/
+ExcludePath ^/var/lib/docker/    # Dockerコンテナを除外
+ExcludePath ^/var/cache/         # キャッシュディレクトリを除外
+ExcludePath ^/tmp/               # 一時ファイルを除外
+ExcludePath ^\.[^/]*/\.[^/]*     # 隠しディレクトリを除外
