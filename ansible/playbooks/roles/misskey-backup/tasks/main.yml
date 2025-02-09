@@ -1,7 +1,7 @@
 - name: Create backup directory structure
   file:
     path: "{{ item }}"
-    state: directory 
+    state: directory
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
     mode: '0755'
@@ -105,8 +105,3 @@
   register: registry_push_output
   failed_when: registry_push_output.rc != 0
   when: image_exists.rc == 0
-
-- name: Create tarball of Misskey directory
-  shell: sudo tar -czvf {{ backup_dir }}/misskey/misskey-backup-{{ ansible_date_time.iso8601_basic }}.tar.gz -C {{ misskey_dir }} .
-  register: backup_output
-  failed_when: backup_output.rc != 0
