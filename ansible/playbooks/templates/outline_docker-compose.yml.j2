@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  outline:
+    image: docker.getoutline.com/outlinewiki/outline:latest
+    env_file: ./docker.env
+    ports:
+      - '3004:3000'
+    networks:
+      - external_network
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      PGSSLMODE: disable
+
+  redis:
+    image: redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - external_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 30s
+      retries: 3
+
+  postgres:
+    image: postgres:14
+    volumes:
+      - ./database-data:/var/lib/postgresql/data
+    networks:
+      - external_network
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: outline
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d outline']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  external_network:
+    external: true
+
+volumes:
+  redis-data:
+  database-data:
