@@ -1,0 +1,63 @@
+tunnel: <Tunnel-UUID>
+credentials-file: /home/taka/.cloudflared/<Tunnel-UUID>.json
+origincert: /home/taka/.cloudflared/cert.pem
+protocol: http2
+dns:
+  upstreams:
+    - 127.0.0.1:5353
+retries: 5
+timeout: 5s
+compression: true
+noTLSVerify: false
+max_backoff: 15s
+connection_strategy: "race"
+originRequest:
+  disableChunkedEncoding: true
+  connectTimeout: 2s
+  keepAliveTimeout: 15s
+  http2Origin: true
+  tcpKeepAlive: 15s
+  noHappyEyeballs: true
+metrics: localhost:49312
+
+ingress:
+  - hostname: yami.ski
+    service: http://localhost:8080
+  - hostname: bypass.yami.ski
+    service: http://localhost:8080
+  - hostname: search.yami.ski
+    service: http://localhost:8082
+  - hostname: matrix.yami.ski
+    service: http://localhost:8008
+  - hostname: chat.yami.ski
+    service: http://localhost:8081
+  - hostname: ctf.yami.ski
+    service: http://localhost:8000
+  - hostname: drive.yami.ski
+    service: http://localhost:9000
+  - hostname: minio.yami.ski
+    service: http://localhost:9001
+  - hostname: call.yami.ski
+    service: https://localhost:8443
+    originRequest:
+      noTLSVerify: true
+  - hostname: grafana.yami.ski
+    service: http://localhost:3000
+  - hostname: task.yami.ski
+    service: http://localhost:3456
+  - hostname: pad.yami.ski
+    service: http://localhost:3333
+  - hostname: wiki.yami.ski
+    service: http://localhost:3004
+  - hostname: uptime.yami.ski
+    service: http://localhost:3009
+  - hostname: auth.yami.ski
+    service: http://localhost:8993
+    originRequest:
+      noTLSVerify: true
+      http2Origin: true
+  - hostname: captcha.yami.ski
+    service: http://localhost:7493
+  - hostname: neo-quesdon.yami.ski
+    service: http://localhost:3025
+  - service: http_status:404
