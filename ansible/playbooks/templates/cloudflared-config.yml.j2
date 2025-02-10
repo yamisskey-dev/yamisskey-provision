@@ -21,43 +21,43 @@ originRequest:
 metrics: localhost:49312
 
 ingress:
-  - hostname: yami.ski
+  - hostname: {{ domain }}
     service: http://localhost:8080
-  - hostname: bypass.yami.ski
+  - hostname: bypass.{{ domain }}
     service: http://localhost:8080
-  - hostname: search.yami.ski
+  - hostname: {{ searxng_server_name }}
     service: http://localhost:8082
-  - hostname: matrix.yami.ski
+  - hostname: {{ synapse_server_name }}
     service: http://localhost:8008
-  - hostname: chat.yami.ski
+  - hostname: {{ element_server_name }}
     service: http://localhost:8081
-  - hostname: ctf.yami.ski
+  - hostname: {{ ctfd_server_name }}
     service: http://localhost:8000
-  - hostname: drive.yami.ski
+  - hostname: {{ minio_api_server_name }}
     service: http://localhost:9000
-  - hostname: minio.yami.ski
+  - hostname: {{ minio_web_server_name }}
     service: http://localhost:9001
-  - hostname: call.yami.ski
+  - hostname: {{ jitsi_server_name }}
     service: https://localhost:8443
     originRequest:
       noTLSVerify: true
-  - hostname: grafana.yami.ski
+  - hostname: {{ grafana_server_name }}
     service: http://localhost:3000
-  - hostname: task.yami.ski
+  - hostname: {{ vikunja_server_name }}
     service: http://localhost:3456
-  - hostname: pad.yami.ski
+  - hostname: {{ cryptpad_server_name }}
     service: http://localhost:3333
-  - hostname: wiki.yami.ski
+  - hostname: {{ outline_server_name }}
     service: http://localhost:3004
-  - hostname: uptime.yami.ski
+  - hostname: {{ uptime_server_name }}
     service: http://localhost:3009
-  - hostname: auth.yami.ski
+  - hostname: {{ zitadel_server_name }}
     service: http://localhost:8993
     originRequest:
       noTLSVerify: true
       http2Origin: true
-  - hostname: captcha.yami.ski
+  - hostname: {{ mcaptcha_server_name }}
     service: http://localhost:7493
-  - hostname: neo-quesdon.yami.ski
+  - hostname: {{ neo_quesdon_server_name }}
     service: http://localhost:3025
   - service: http_status:404
