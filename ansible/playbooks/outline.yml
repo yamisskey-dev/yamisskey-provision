@@ -1,6 +1,6 @@
-- name: Growi
+- name: Outline
   hosts: all
   become: true
   become_method: sudo
   roles:
-    - growi
+    - outline

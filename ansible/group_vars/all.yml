@@ -34,9 +34,9 @@ searxng_settings_file: '{{ searxng_dir }}/searxng/settings.yml'
 cryptpad_server_name: pad.{{ domain }}
 cryptpad_dir: '/var/www/cryptpad'
 cryptpad_secrets_file: '{{ cryptpad_dir }}/secrets.yml'
-growi_server_name: wiki.{{ domain }}
-growi_dir: '/var/www/growi'
-growi_secrets_file: '{{ growi_dir }}/secrets.yml'
+outline_server_name: wiki.{{ domain }}
+outline_dir: '/var/www/outline'
+outline_secrets_file: '{{ outline_dir }}/secrets.yml'
 uptime_server_name: uptime.{{ domain }}
 uptime_dir: '/opt/uptime-kuma'
 uptime_secrets_file: '{{ uptime_dir }}/secrets.yml'
