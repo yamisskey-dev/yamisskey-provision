@@ -52,8 +52,11 @@ install:
 
 inventory:
 	@echo "Creating inventory file..."
-	@echo "[source]\nlocalhost ansible_connection=local" > ansible/inventory
-	@echo "[destination]\n$(DESTINATION_HOSTNAME) ansible_host=$(DESTINATION_IP) ansible_user=$(DESTINATION_SSH_USER) ansible_port=$(DESTINATION_SSH_PORT) ansible_become=true" >> ansible/inventory
+	@echo "[source]" > ansible/inventory
+	@echo "localhost ansible_connection=local" >> ansible/inventory
+	@echo "" >> ansible/inventory
+	@echo "[destination]" >> ansible/inventory
+	@echo "$(DESTINATION_HOSTNAME) ansible_host=$(DESTINATION_IP) ansible_user=$(DESTINATION_SSH_USER) ansible_port=$(DESTINATION_SSH_PORT) ansible_become=true" >> ansible/inventory
 	@echo "Inventory file created at ansible/inventory"
 
 clone:
