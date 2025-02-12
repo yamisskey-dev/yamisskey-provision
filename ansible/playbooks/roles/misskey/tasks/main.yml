@@ -181,9 +181,18 @@
     path: '{{ misskey_dir }}/files'
     mode: '0777'
 
+- name: Create Nginx conf.d directory
+  file:
+    path: '/etc/nginx/conf.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
 - name: Set nginx directory permissions
   file:
-    path: '{{ item }}'
+    path: "{{ item }}"
     state: directory
     owner: nginx
     group: nginx
@@ -197,7 +206,7 @@
 
 - name: Create nginx log files
   file:
-    path: '{{ item }}'
+    path: "{{ item }}"
     state: touch
     owner: nginx
     group: nginx
