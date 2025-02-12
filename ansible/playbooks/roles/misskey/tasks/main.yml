@@ -1,9 +1,34 @@
+---
+- name: Check if directory exists
+  stat:
+    path: '{{ misskey_dir }}'
+  register: dir_check
+
+- name: Clone repository if not exists
+  git:
+    repo: '{{ misskey_repo }}'
+    dest: '{{ misskey_dir }}'
+    version: 'master'
+  when: not dir_check.stat.exists
+
 - name: Ensure Misskey directory exists
   file:
     path: '{{ misskey_dir }}'
     state: directory
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
+    mode: '0755'
+
+- name: Create required directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - '{{ misskey_dir }}/.config'
+    - '{{ misskey_dir }}/files'
+    - '{{ misskey_dir }}/redis'
+    - '{{ misskey_dir }}/db'
 
 - name: Check if required files exist
   stat:
@@ -13,6 +38,19 @@
     - '{{ misskey_dir }}/.config/default.yml'
     - '{{ misskey_dir }}/.config/docker.env'
   register: required_files
+
+- name: Deploy docker-compose.yml
+  template:
+    src: templates/misskey_docker-compose.yml.j2
+    dest: '{{ misskey_dir }}/docker-compose.yml'
+    mode: '0644'
+  when: not required_files.results[0].stat.exists
+
+- name: Deploy postgresql.conf
+  template:
+    src: templates/misskey_postgresql.conf.j2
+    dest: '{{ misskey_dir }}/.config/postgresql.conf'
+    mode: '0644'
 
 - name: Fail if required files are missing
   fail:
@@ -52,33 +90,39 @@
   when: stash_output is defined and "'No stash entries found.' not in stash_output.stderr"
   ignore_errors: yes
 
-- name: Check if Misskey is already running
-  shell: docker-compose ps -q
+- name: Check if database is initialized
+  stat:
+    path: '{{ misskey_dir }}/db/PG_VERSION'
+  register: db_initialized
+
+- name: Stop existing containers before first initialization
+  shell: docker-compose down
   args:
     chdir: '{{ misskey_dir }}'
-  register: misskey_running
-  failed_when: false
+  when: not db_initialized.stat.exists
 
-- name: Check if Docker image exists
-  shell: docker images -q yamisskey-web:latest
-  register: docker_image
-  failed_when: false
+- name: Build Misskey for first initialization
+  shell: docker-compose build
+  args:
+    chdir: '{{ misskey_dir }}'
+  when: not db_initialized.stat.exists
+  register: first_build_output
+  failed_when: first_build_output.rc != 0
+
+- name: Initialize database (first time only)
+  shell: docker-compose run --rm web pnpm run init
+  args:
+    chdir: '{{ misskey_dir }}'
+  when: not db_initialized.stat.exists
+  register: init_output
+  failed_when: init_output.rc != 0
 
 - name: Determine if updates are needed
   set_fact:
-    updates_needed: "{{ git_pull_output.stdout != 'Already up to date.' or git_submodule_update_output.stdout != '' or docker_image.stdout == '' }}"
+    updates_needed: "{{ git_pull_output.stdout != 'Already up to date.' or git_submodule_update_output.stdout != '' }}"
 
 - name: Build Misskey image if updates are needed
-  shell: |
-    TIMESTAMP_TAG="{{ ansible_date_time.iso8601_basic }}"
-    IMAGE_NAME="misskey-web"
-
-    # Build with timestamp tag
-    COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build --no-cache --build-arg TAG=${IMAGE_NAME}:${TIMESTAMP_TAG}
-
-    # Tag both with timestamp and latest
-    docker tag misskey_web:latest ${IMAGE_NAME}:${TIMESTAMP_TAG}
-    docker tag misskey_web:latest ${IMAGE_NAME}:latest
+  shell: docker-compose build
   args:
     chdir: '{{ misskey_dir }}'
   when: updates_needed
@@ -95,47 +139,25 @@
     msg: "Build of Misskey failed with error: {{ build_output.stderr | default('Unknown error') }}"
   when: updates_needed and build_output.rc != 0
 
-# This task is removed to avoid unintentional database initialization
-# - name: Initialize Misskey database if not already running
-#   shell: echo y | docker-compose run --rm web pnpm run init
-#   args:
-#     chdir: '{{ misskey_dir }}'
-#     executable: /bin/bash
-#   when: misskey_running.stdout == "" and updates_needed
-#   register: init_output
-#   failed_when: init_output.rc != 0
-#   ignore_errors: yes
-
-# - name: Fail if database initialization failed
-#   fail:
-#     msg: "Initialization of Misskey database failed with error: {{ init_output.stderr | default('Unknown error') }}"
-#   when: misskey_running.stdout == "" and init_output.rc != 0
-
 - name: Stop Misskey services
   shell: docker-compose stop
   args:
     chdir: '{{ misskey_dir }}'
+  when: updates_needed or not db_initialized.stat.exists
 
 - name: Start Misskey
   shell: docker-compose up -d
   args:
     chdir: '{{ misskey_dir }}'
-    executable: /bin/bash
   register: start_output
   failed_when: start_output.rc != 0
 
-- name: Restart Docker after starting Misskey
-  systemd:
-    name: docker
-    state: restarted
-  become: true
-
-- name: Change permissions of files directory to upload files
+- name: Change permissions of files directory
   file:
     path: '{{ misskey_dir }}/files'
     mode: '0777'
 
-- name: Deploy Nginx configuration for clear net
+- name: Deploy Nginx configuration
   template:
     src: templates/nginx_misskey.conf.j2
     dest: /etc/nginx/conf.d/misskey.conf
@@ -154,11 +176,11 @@
     msg: 'Nginx configuration file /etc/nginx/conf.d/misskey.conf does not exist.'
   when: not nginx_conf.stat.exists
 
-- name: Reload Nginx if configuration files exist
+- name: Reload Nginx if configuration exists
   systemd:
     name: nginx
     state: reloaded
-  when: nginx_conf.stat.exists or nginx_onion_conf.stat.exists or cloudflare_conf.stat.exists
+  when: nginx_conf.stat.exists
 
 - name: Ensure backup directory exists
   file:
