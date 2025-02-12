@@ -1,4 +1,4 @@
-# Provisioning servers with Make and Ansible
+# yamisskey-provision
 
 This guide will walk you through the process of setting up Misskey etc using the provided Make and Ansible.
 
