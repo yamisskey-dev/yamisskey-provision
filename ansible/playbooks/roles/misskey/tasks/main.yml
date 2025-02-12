@@ -105,6 +105,15 @@
   when: stash_output is defined and "'No stash entries found.' not in stash_output.stderr"
   ignore_errors: yes
 
+- name: Check if external network exists
+  shell: "docker network ls | grep external_network || true"
+  register: network_check
+  changed_when: false
+
+- name: Create external network if not exists
+  shell: "docker network create external_network"
+  when: network_check.stdout == ""
+
 - name: Check if database is initialized
   stat:
     path: '{{ misskey_dir }}/db/PG_VERSION'
