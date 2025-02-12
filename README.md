@@ -6,7 +6,7 @@ This guide will walk you through the process of setting up Misskey etc using the
 
 ### login
 
-Prepare to log in to VPS as a general user with SSH private key:
+Prepare to log in to balthasar as a general user with SSH private key:
 
 ```consol
 adduser your_username
@@ -28,9 +28,9 @@ PermitRootLogin  no
 systemctl restart sshd
 su your_username
 mkdir ~/.ssh
-vi ~/.ssh/id_ed25519_vps.pub
+vi ~/.ssh/id_ed25519_balthasar.pub
 touch ~/.ssh/authrized_keys
-cat ~/.ssh/id_ed25519_vps.pub >>  ~/.ssh/authorized_keys
+cat ~/.ssh/id_ed25519_balthasar.pub >>  ~/.ssh/authorized_keys
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/*
 ```
@@ -42,17 +42,17 @@ Clone the yamisskey-provision repository from GitLab to your local machine:
 `~/.ssh/config`
 
 ```config
-Host hostname
+Host balthasar
     User your_username
     port 22
     Hostname 00.000.000.000
-    IdentityFile ~/.ssh/id_ed25519_vps
+    IdentityFile ~/.ssh/id_ed25519_balthasar
     TCPKeepAlive yes
     IdentitiesOnly yes
 ```
 
 ```consol
-ssh vps.com
+ssh balthasar
 git clone https://github.com/yamisskey/yamisskey-provision.git
 cd yamisskey-provision
 ```
@@ -72,7 +72,6 @@ Navigate to the `misskey` directory inside the misskey directory and copy the co
 
 ```consol
 cd ~/misskey
-cp docker-compose_example.yml docker-compose.yml
 cd .config
 cp docker_example.yml default.yml
 cp docker_example.env docker.env
