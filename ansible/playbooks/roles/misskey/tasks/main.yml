@@ -21,7 +21,7 @@
 
 - name: Create required directories
   file:
-    path: "{{ item }}"
+    path: '{{ item }}'
     state: directory
     mode: '0755'
   loop:
@@ -46,7 +46,6 @@
     mode: '0644'
   when: not required_files.results[0].stat.exists
 
-# ファイルの存在を再チェック
 - name: Recheck if required files exist
   stat:
     path: '{{ item }}'
@@ -112,13 +111,13 @@
   register: db_initialized
 
 - name: Stop existing containers before first initialization
-  shell: docker-compose down
+  shell: '{{ docker_compose_cmd }} down'
   args:
     chdir: '{{ misskey_dir }}'
   when: not db_initialized.stat.exists
 
 - name: Build Misskey for first initialization
-  shell: docker-compose build
+  shell: '{{ docker_compose_cmd }} build'
   args:
     chdir: '{{ misskey_dir }}'
   when: not db_initialized.stat.exists
@@ -126,7 +125,7 @@
   failed_when: first_build_output.rc != 0
 
 - name: Initialize database (first time only)
-  shell: docker-compose run --rm web pnpm run init
+  shell: '{{ docker_compose_cmd }} run --rm web pnpm run init'
   args:
     chdir: '{{ misskey_dir }}'
   when: not db_initialized.stat.exists
@@ -138,7 +137,7 @@
     updates_needed: "{{ git_pull_output.stdout != 'Already up to date.' or git_submodule_update_output.stdout != '' }}"
 
 - name: Build Misskey image if updates are needed
-  shell: docker-compose build
+  shell: '{{ docker_compose_cmd }} build'
   args:
     chdir: '{{ misskey_dir }}'
   when: updates_needed
@@ -156,13 +155,13 @@
   when: updates_needed and build_output.rc != 0
 
 - name: Stop Misskey services
-  shell: docker-compose stop
+  shell: '{{ docker_compose_cmd }} stop'
   args:
     chdir: '{{ misskey_dir }}'
   when: updates_needed or not db_initialized.stat.exists
 
 - name: Start Misskey
-  shell: docker-compose up -d
+  shell: '{{ docker_compose_cmd }} up -d'
   args:
     chdir: '{{ misskey_dir }}'
   register: start_output
@@ -233,9 +232,9 @@
 
 - name: Set VAPID keys variables
   set_fact:
-    vapid_keys_data: "{{ vapid_keys_content.content | b64decode | from_yaml }}"
-    vapid_public_key: "{{ vapid_keys_data.publicKey }}"
-    vapid_private_key: "{{ vapid_keys_data.privateKey }}"
+    vapid_keys_data: '{{ vapid_keys_content.content | b64decode | from_yaml }}'
+    vapid_public_key: '{{ vapid_keys_data.publicKey }}'
+    vapid_private_key: '{{ vapid_keys_data.privateKey }}'
 
 - name: Print VAPID keys
   debug:

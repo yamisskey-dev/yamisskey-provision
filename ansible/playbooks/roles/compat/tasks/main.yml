@@ -1,0 +1,8 @@
+---
+- name: Set Docker Compose command based on distribution
+  set_fact:
+    docker_compose_cmd: "{% if ansible_distribution == 'Ubuntu' %}docker-compose{% else %}docker compose{% endif %}"
+
+- name: Debug Docker Compose command
+  debug:
+    msg: "Using Docker Compose command: {{ docker_compose_cmd }}"
