@@ -46,6 +46,22 @@
     mode: '0644'
   when: not required_files.results[0].stat.exists
 
+# ファイルの存在を再チェック
+- name: Recheck if required files exist
+  stat:
+    path: '{{ item }}'
+  loop:
+    - '{{ misskey_dir }}/docker-compose.yml'
+    - '{{ misskey_dir }}/.config/default.yml'
+    - '{{ misskey_dir }}/.config/docker.env'
+  register: final_check
+
+- name: Fail if required files are still missing
+  fail:
+    msg: 'Required file {{ item.item }} not found'
+  when: not item.stat.exists
+  loop: '{{ final_check.results }}'
+
 - name: Deploy postgresql.conf
   template:
     src: templates/misskey_postgresql.conf.j2
