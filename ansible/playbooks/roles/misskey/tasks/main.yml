@@ -106,12 +106,12 @@
   ignore_errors: yes
 
 - name: Check if external network exists
-  shell: "docker network ls | grep external_network || true"
+  shell: 'docker network ls | grep external_network || true'
   register: network_check
   changed_when: false
 
 - name: Create external network if not exists
-  shell: "docker network create external_network"
+  shell: 'docker network create external_network'
   when: network_check.stdout == ""
 
 - name: Check if database is initialized
@@ -180,6 +180,32 @@
   file:
     path: '{{ misskey_dir }}/files'
     mode: '0777'
+
+- name: Set nginx directory permissions
+  file:
+    path: '{{ item }}'
+    state: directory
+    owner: nginx
+    group: nginx
+    mode: '0755'
+  loop:
+    - '/var/log/nginx'
+    - '/var/lib/nginx'
+    - '/var/lib/nginx/tmp'
+    - '/var/lib/nginx/tmp/client'
+  become: true
+
+- name: Create nginx log files
+  file:
+    path: '{{ item }}'
+    state: touch
+    owner: nginx
+    group: nginx
+    mode: '0644'
+  loop:
+    - '/var/log/nginx/access_log'
+    - '/var/log/nginx/error_log'
+  become: true
 
 - name: Deploy Nginx configuration
   template:
