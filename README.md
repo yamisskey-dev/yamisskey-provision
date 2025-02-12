@@ -135,6 +135,17 @@ sudo mkdir -p /etc/cloudflared
 sudo vim /etc/cloudflared/config.yml
 ```
 
+```
+---
+logfile: /var/log/cloudflared.log
+proxy-dns: true
+proxy-dns-address: 127.0.0.1
+proxy-dns-port: 5300
+proxy-dns-upstream:
+    - https://1.1.1.1/dns-query
+    - https://1.0.0.1/dns-query
+```
+
 ```consol
 sudo cloudflared tunnel --config /etc/cloudflared/config.yml run yamisskey
 ```
@@ -159,11 +170,15 @@ sudo cloudflared service install your_connector_token_value
 
 subscribe warp licence key on mobile device
 ```consol
+sudo systemctl enable warp-svc.service
+sudo systemctl start warp-svc.service
 warp-cli registration new
 warp-cli registration license <your-warp-licence-key-subscribed-on-mobile-device>
 warp-cli registration show
 warp-cli connect
 curl https://www.cloudflare.com/cdn-cgi/trace/
+warp-cli mode warp+doh
+warp-cli settings
 ```
 verify that warp=on.
 
