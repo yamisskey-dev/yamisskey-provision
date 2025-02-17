@@ -8,8 +8,15 @@
   git:
     repo: '{{ misskey_repo }}'
     dest: '{{ misskey_dir }}'
-    version: 'master'
+    version: '{{ misskey_branch }}'
   when: not dir_check.stat.exists
+
+- name: Ensure correct branch and pull latest changes
+  shell: |
+    git checkout {{ misskey_branch }}
+    git pull origin {{ misskey_branch }}
+  args:
+    chdir: '{{ misskey_dir }}'
 
 - name: Ensure Misskey directory exists
   file:

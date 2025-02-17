@@ -1,4 +1,4 @@
-.PHONY: all install inventory clone migrate provision backup update help 
+.PHONY: all install inventory clone migrate provision backup update help
 
 DESTINATION_SSH_USER=taka
 DESTINATION_HOSTNAME=balthasar
@@ -8,7 +8,9 @@ OS=$(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 CODENAME=$(shell lsb_release -cs)
 USER=$(shell whoami)
 TIMESTAMP=$(shell date +%Y%m%dT%H%M%S`date +%N | cut -c 1-6`)
+MISSKEY_REPO=https://github.com/yamisskey/yamisskey.git
 MISSKEY_DIR=/var/www/misskey
+MISSKEY_BRANCH=master
 CONFIG_FILES=$(MISSKEY_DIR)/.config/default.yml $(MISSKEY_DIR)/.config/docker.env
 AI_DIR=$(HOME)/ai
 BACKUP_SCRIPT_DIR=/opt/misskey-backup
@@ -64,8 +66,8 @@ clone:
 	@sudo mkdir -p $(MISSKEY_DIR)
 	@sudo chown $(USER):$(USER) $(MISSKEY_DIR)
 	@if [ ! -d "$(MISSKEY_DIR)/.git" ]; then \
-		git clone https://github.com/yamisskey/yamisskey.git $(MISSKEY_DIR); \
-		cd $(MISSKEY_DIR) && git checkout master; \
+		git clone $(MISSKEY_REPO) $(MISSKEY_DIR); \
+		cd $(MISSKEY_DIR) && git checkout $(MISSKEY_BRANCH); \
 	fi
 	@sudo mkdir -p $(ASSETS_DIR)
 	@sudo chown $(USER):$(USER) $(ASSETS_DIR)
@@ -119,10 +121,10 @@ backup:
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/misskey-backup.yml --ask-become-pass
 
 update:
-	@echo "Updating Misskey..."
+	@echo "Updating Misskey (Branch: $(MISSKEY_BRANCH))..."
 	@cd $(MISSKEY_DIR) && sudo docker-compose down
 	@cd $(MISSKEY_DIR) && sudo git stash || true
-	@cd $(MISSKEY_DIR) && sudo git checkout master && sudo git pull origin master
+	@cd $(MISSKEY_DIR) && sudo git checkout $(MISSKEY_BRANCH) && sudo git pull origin $(MISSKEY_BRANCH)
 	@cd $(MISSKEY_DIR) && sudo git submodule update --init
 	@cd $(MISSKEY_DIR) && sudo git stash pop || true
 	@cd $(MISSKEY_DIR) && sudo COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build --no-cache --build-arg TAG=misskey_web:$(TIMESTAMP)
