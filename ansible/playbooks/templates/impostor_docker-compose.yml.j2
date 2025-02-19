@@ -1,13 +1,12 @@
 version: '3.4'
-
 services:
   impostor:
     image: aeonlucid/impostor:nightly
     container_name: impostor
     restart: unless-stopped
     ports:
-      - "127.0.0.1:22023:22023/tcp"
-      - "127.0.0.1:22023:22023/udp"
+      - "22023:22023/tcp"
+      - "22023:22023/udp"
     volumes:
       - {{ impostor_dir }}/data/config.json:/app/config.json
       - {{ impostor_dir }}/data/plugins:/app/plugins

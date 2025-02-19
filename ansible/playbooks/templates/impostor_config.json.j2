@@ -1,32 +1,32 @@
 {
-  "server": {
-    "publicIp": "{{ impostor_server_name }}",
-    "publicPort": {{ impostor_playit_port }},
-    "listenIp": "0.0.0.0",
-    "listenPort": 22023,
-    "httpServer": {
-      "enabled": true,
-      "listenIp": "0.0.0.0",
-      "listenPort": 22023
-    }
+  "Server": {
+    "PublicIp": "{{ impostor_server_name }}",
+    "PublicPort": {{ impostor_playit_port }},
+    "ListenIp": "0.0.0.0",
+    "ListenPort": 22023
   },
-  "anticheat": {
-    "enabled": true,
-    "banIpFromGame": true,
-    "enableGameFlowChecks": true,
-    "enableMustBeHostChecks": true
+  "HttpServer": {
+    "Enabled": true,
+    "ListenIp": "0.0.0.0",
+    "ListenPort": 22023
   },
-  "compatibility": {
-    "allowFutureGameVersions": false,
-    "allowVersionMixing": false
+  "AntiCheat": {
+    "Enabled": true,
+    "BanIpFromGame": true,
+    "EnableGameFlowChecks": true,
+    "EnableMustBeHostChecks": true
   },
-  "plugins": {
-    "loadDirectory": "plugins",
-    "libraryDirectory": "libraries"
+  "Compatibility": {
+    "AllowFutureGameVersions": false,
+    "AllowVersionMixing": false
   },
-  "serilog": {
-    "minimumLevel": "Information",
-    "writeTo": [
+  "Plugins": {
+    "LoadDirectory": "plugins",
+    "LibraryDirectory": "libraries"
+  },
+  "Serilog": {
+    "MinimumLevel": "Debug",
+    "WriteTo": [
       {
         "Name": "File",
         "Args": {
