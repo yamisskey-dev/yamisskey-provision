@@ -35,14 +35,14 @@ services:
     security_opt:
       - no-new-privileges:true
     restart: always
-    image: eqalpha/keydb:alpine
+    image: valkey/valkey:7.2-alpine
     networks:
       - internal_network
     volumes:
       - ./redis:/data
     command: >
-      keydb-server
-      --server-threads 4
+      valkey-server
+      --io-threads 4
       --maxclients 20000
       --maxmemory-policy noeviction
       --hz 100
@@ -52,20 +52,13 @@ services:
       --appendfsync everysec
       --auto-aof-rewrite-percentage 50
       --auto-aof-rewrite-min-size 256mb
-      --io-threads 4
-      --io-threads-do-reads yes
       --activerehashing yes
-      --aof-use-rdb-preamble yes
-      --lazyfree-lazy-eviction yes
-      --lazyfree-lazy-expire yes
-      --lazyfree-lazy-server-del yes
-      --dynamic-hz yes
     ulimits:
       nofile:
         soft: 65536
         hard: 65536
     healthcheck:
-      test: ["CMD", "keydb-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 20s
       timeout: 5s
       retries: 3
