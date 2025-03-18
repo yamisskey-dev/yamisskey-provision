@@ -1,20 +1,78 @@
-version: '3.4'
+version: "3.9"
+
 services:
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: nginx-watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 --cleanup
+
+  proxy:
+    image: nginxproxy/nginx-proxy:latest
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - conf:/etc/nginx/conf.d
+      - dhparam:/etc/nginx/dhparam
+    labels:
+      - com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true
+    environment:
+      - ENABLE_IPV6=false
+      - HSTS=on
+    networks:
+      - egress
+      
+  letsencrypt:
+    image: nginxproxy/acme-companion:latest
+    container_name: nginx-letsencrypt
+    restart: always
+    depends_on:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - acme:/etc/acme.sh
+      - certs:/etc/nginx/certs
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - conf:/etc/nginx/conf.d
+      - dhparam:/etc/nginx/dhparam
+    environment:
+      - DEFAULT_EMAIL=admin@{{ domain }}
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+
   impostor:
     image: aeonlucid/impostor:nightly
     container_name: impostor
-    restart: unless-stopped
+    restart: always
     ports:
-      - "22023:22023/tcp"
-      - "22023:22023/udp"
+      - "22023:22023/udp"  # UDPゲームトラフィック用（直接公開）
+      - "22023:22023/tcp"  # TCP直接公開（Windowsクライアント用）
     volumes:
-      - {{ impostor_dir }}/data/config.json:/app/config.json
-      - {{ impostor_dir }}/data/plugins:/app/plugins
-      - {{ impostor_dir }}/data/libraries:/app/libraries
-      - {{ impostor_dir }}/logs:/app/logs
+      - ./config.json:/app/config.json
+    environment:
+      - VIRTUAL_HOST={{ impostor_server_name }}
+      - VIRTUAL_PORT=22023
+      - LETSENCRYPT_HOST={{ impostor_server_name }}
     networks:
-      - impostor-net
+      - egress
+
+volumes:
+  vhost:
+  html:
+  acme:
+  conf:
+  certs:
+  dhparam:
 
 networks:
-  impostor-net:
+  egress:
     driver: bridge
