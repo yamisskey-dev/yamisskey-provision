@@ -2,12 +2,14 @@ version: '3'
 
 services:
   outline:
-    image: docker.getoutline.com/outlinewiki/outline:latest
+    image: docker.getoutline.com/outlinewiki/outline:0.82.0-0
     env_file: ./docker.env
     ports:
       - '3004:3000'
     networks:
       - external_network
+        #    volumes:
+        #      - storage-data:/var/lib/outline/data
     depends_on:
       - postgres
       - redis
@@ -47,5 +49,6 @@ networks:
     external: true
 
 volumes:
+  #storage-data:
   redis-data:
   database-data:
