@@ -131,19 +131,9 @@ cloudflared tunnel login
 ```consol
 cloudflared tunnel create yamisskey
 cloudflared tunnel list
+cloudflared tunnel route dns yamisskey yami.ski
 sudo mkdir -p /etc/cloudflared
 sudo vim /etc/cloudflared/config.yml
-```
-
-```
----
-logfile: /var/log/cloudflared.log
-proxy-dns: true
-proxy-dns-address: 127.0.0.1
-proxy-dns-port: 5300
-proxy-dns-upstream:
-    - https://1.1.1.1/dns-query
-    - https://1.0.0.1/dns-query
 ```
 
 ```consol
