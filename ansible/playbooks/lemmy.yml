@@ -1,6 +1,7 @@
 ---
 - name: Deploy Lemmy
   hosts: source
-  become: false
+  become: true
+  become_method: sudo
   roles:
     - lemmy
