@@ -1,0 +1,30 @@
+{
+  database: {
+    host: postgres
+    user: lemmy
+    password: "{{ postgres_password }}"
+    database: lemmy
+    pool_size: 5
+  }
+  hostname: "{{ lemmy_server_name }}"
+  bind: "0.0.0.0"
+  port: 8536
+  pictrs: {
+    url: "http://pictrs:8080/"
+    api_key: "{{ postgres_password }}"
+  }
+  email: {
+    smtp_server: "postfix:25"
+    smtp_from_address: "noreply@{{ lemmy_server_name }}"
+    tls_type: "none"
+  }
+  setup: {
+    admin_username: "admin"
+    admin_password: "{{ postgres_password | truncate(20, true, '') }}"
+    admin_email: "admin@{{ domain }}"
+    site_name: "Lemmy on {{ domain }}"
+  }
+  federation: {
+    enabled: true
+  }
+}

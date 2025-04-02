@@ -1,0 +1,6 @@
+---
+- name: Deploy Lemmy
+  hosts: source
+  become: false
+  roles:
+    - lemmy

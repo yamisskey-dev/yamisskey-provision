@@ -62,3 +62,6 @@ neo_quesdon_server_name: neo-quesdon.{{ domain }}
 stalwart_dir: '/var/www/stalwart'
 stalwart_secrets_file: '{{ stalwart_dir }}/secrets.yml'
 stalwart_server_name: mail.{{ domain }}
+lemmy_server_name: lemmy.{{ domain }}
+lemmy_dir: '/var/www/lemmy'
+lemmy_secrets_file: '{{ lemmy_dir }}/secrets.yml'

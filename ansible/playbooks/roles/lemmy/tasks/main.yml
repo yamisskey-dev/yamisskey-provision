@@ -1,0 +1,115 @@
+---
+# ディレクトリ作成
+- name: Create Lemmy directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  loop:
+    - "{{ lemmy_dir }}"
+    - "{{ lemmy_dir }}/volumes"
+    - "{{ lemmy_dir }}/volumes/pictrs"
+    - "{{ lemmy_dir }}/volumes/postgres"
+
+# シークレットファイルの存在確認
+- name: Check if secrets file exists
+  stat:
+    path: "{{ lemmy_secrets_file }}"
+  register: lemmy_secrets_file_stat
+
+# パスワード生成（存在しない場合）
+- name: Generate PostgreSQL password if not exists
+  shell: 'cat /dev/urandom | tr -dc "a-zA-Z0-9" | fold -w 32 | head -n 1'
+  register: postgres_password_output
+  changed_when: false
+  when: not lemmy_secrets_file_stat.stat.exists
+
+# 初回実行時のみ秘密情報をYAMLファイルに保存
+- name: Save secrets to yaml file
+  copy:
+    dest: "{{ lemmy_secrets_file }}"
+    content: |
+      postgres_password: "{{ postgres_password_output.stdout }}"
+    mode: '0600'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: not lemmy_secrets_file_stat.stat.exists
+
+# シークレットのロード
+- name: Include secrets
+  include_vars:
+    file: "{{ lemmy_secrets_file }}"
+
+# Lemmy設定ファイルの展開
+- name: Deploy Lemmy config.hjson
+  template:
+    src: config.hjson.j2
+    dest: "{{ lemmy_dir }}/lemmy.hjson"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# PostgreSQL設定ファイルの展開
+- name: Deploy PostgreSQL configuration
+  template:
+    src: postgresql.conf.j2
+    dest: "{{ lemmy_dir }}/customPostgresql.conf"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# Nginx内部設定ファイルの展開
+- name: Deploy Nginx internal configuration
+  template:
+    src: nginx_internal.conf.j2
+    dest: "{{ lemmy_dir }}/nginx_internal.conf"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# proxy_paramsファイルの展開
+- name: Deploy proxy_params file
+  template:
+    src: proxy_params.j2
+    dest: "{{ lemmy_dir }}/proxy_params"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# Docker Compose設定ファイルの展開
+- name: Deploy docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ lemmy_dir }}/docker-compose.yml"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# pictrsフォルダのパーミッション設定
+- name: Set pictrs folder permissions
+  file:
+    path: "{{ lemmy_dir }}/volumes/pictrs"
+    owner: 991
+    group: 991
+    mode: '0755'
+    recurse: yes
+  become: true
+
+# Nginxの設定
+- name: Deploy Nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/conf.d/lemmy.conf
+    mode: '0644'
+  become: true
+  notify: Reload Nginx
+
+# コンテナの起動
+- name: Start Lemmy Docker containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ lemmy_dir }}"
+    state: present
+    pull: always
+    remove_orphans: true
