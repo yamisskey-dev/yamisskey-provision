@@ -77,6 +77,7 @@
       - "{{ cryptpad_server_name }}"
       - "{{ growi_server_name }}"
       - "{{ zitadel_server_name }}"
+      - "{{ lemmy_server_name }}"
   command: >
     certbot certonly --dns-cloudflare --dns-cloudflare-credentials /etc/cloudflare/cloudflare.ini
     --dns-cloudflare-propagation-seconds 60 --server https://acme-v02.api.letsencrypt.org/directory

@@ -60,4 +60,6 @@ ingress:
     service: http://localhost:7493
   - hostname: {{ neo_quesdon_server_name }}
     service: http://localhost:3025
+  - hostname: {{ lemmy_server_name }}
+    service: http://localhost:1236
   - service: http_status:404
