@@ -21,7 +21,7 @@ services:
       - lemmy-ui
 
   lemmy:
-    image: dessalines/lemmy:latest
+    image: dessalines/lemmy:0.19.10
     hostname: lemmy
     restart: always
     logging: *default-logging
@@ -34,7 +34,7 @@ services:
       - pictrs
 
   lemmy-ui:
-    image: dessalines/lemmy-ui:latest
+    image: dessalines/lemmy-ui:0.19.10
     environment:
       - LEMMY_UI_LEMMY_INTERNAL_HOST=lemmy:8536
       - LEMMY_UI_LEMMY_EXTERNAL_HOST={{ lemmy_server_name }}
@@ -45,7 +45,7 @@ services:
     logging: *default-logging
 
   pictrs:
-    image: asonix/pictrs:latest
+    image: asonix/pictrs:0.5.16
     hostname: pictrs
     environment:
       - PICTRS__SERVER__API_KEY={{ postgres_password }}

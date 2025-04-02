@@ -119,6 +119,7 @@ provision:
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/impostor.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/minecraft.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/neo-quesdon.yml --ask-become-pass
+	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/lemmy.yml --ask-become-pass
 
 backup:
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/misskey-backup.yml --ask-become-pass
