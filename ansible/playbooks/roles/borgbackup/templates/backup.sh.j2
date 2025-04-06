@@ -62,22 +62,18 @@ for repo_data in "${REPOSITORIES[@]}"; do
   IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
   IFS=',' read -ra backup_paths <<< "$paths_raw"
   
-  # 除外パターン
-  exclude_args=""
-  if [[ -n "$excludes_raw" ]]; then
-    IFS=',' read -ra exclude_patterns <<< "$excludes_raw"
-    for pattern in "${exclude_patterns[@]}"; do
-      exclude_args+=" --exclude '$pattern'"
-    done
-  fi
-  
   # パスフレーズ設定
   eval export BORG_PASSPHRASE=\$BORG_PASSPHRASE_${repo_name^^}
-  
+
   log "リポジトリ $repo_name へのバックアップを開始します"
-  
+
   # バックアップ作成
-  backup_cmd="borg create --stats --compression zstd,3 $exclude_args \"$repo_url::$repo_name-{now:%Y-%m-%d_%H:%M}\""
+  backup_cmd="borg create --stats --compression zstd,3"
+
+  # コマンド構築（リポジトリURLとアーカイブ名を正しく構成）
+  backup_cmd+=" \"$repo_url::$repo_name-{now:%Y-%m-%d_%H:%M}\""
+
+  # バックアップ対象パスを追加
   for path in "${backup_paths[@]}"; do
     backup_cmd+=" \"$path\""
   done

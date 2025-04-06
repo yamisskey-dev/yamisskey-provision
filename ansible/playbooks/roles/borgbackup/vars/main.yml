@@ -25,7 +25,7 @@ borg_keep_monthly: 6
 # リポジトリ設定
 borg_repositories:
   - name: "{{ actual_hostname }}"
-    url: "{{ raspberry_pi_user }}@{{ raspberry_pi_host }}:{{ raspberry_pi_backup_dir }}/{{ actual_hostname }}"
+    url: "{{ raspberry_pi_user }}@{{ raspberry_pi_actual_ip }}:{{ raspberry_pi_backup_dir }}/{{ actual_hostname }}"
     paths:
       - "/var/lib/docker/volumes"  # Docker volumesは必要
       - "/etc"                      # システム設定
