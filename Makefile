@@ -123,6 +123,7 @@ provision:
 
 backup:
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/misskey-backup.yml --ask-become-pass
+	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/borgbackup.yml --ask-become-pass
 
 update:
 	@echo "Updating Misskey (Branch: $(MISSKEY_BRANCH))..."

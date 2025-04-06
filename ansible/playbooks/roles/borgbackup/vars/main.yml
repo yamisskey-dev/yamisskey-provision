@@ -1,0 +1,35 @@
+---
+# Borgバックアップの基本設定
+borg_backup_dir: "/opt/borg-backup"
+backup_dir: "/opt/backups"
+borg_backup_hour: "2"
+borg_backup_minute: "0"
+borg_backup_log_file: "/var/log/borg-backup.log"
+borg_secrets_file: "{{ borg_backup_dir }}/secrets.yml"
+misskey_dir: "/var/www/misskey"
+
+# ラズベリーパイ設定
+raspberry_pi_user: "{{ ansible_user }}"
+raspberry_pi_host: "raspberrypi"  # 実際のホスト名またはIPアドレスに置き換え
+raspberry_pi_backup_dir: "/mnt/backup/{{ inventory_hostname }}"
+
+# バックアップ保持ポリシー
+borg_keep_daily: 7
+borg_keep_weekly: 4
+borg_keep_monthly: 6
+
+# リポジトリ設定
+borg_repositories:
+  - name: "{{ inventory_hostname }}"
+    url: "{{ raspberry_pi_user }}@{{ raspberry_pi_host }}:{{ raspberry_pi_backup_dir }}/{{ inventory_hostname }}"
+    paths:
+      - "/var/lib/docker/volumes"  # Docker volumesは必要
+      - "/etc"                      # システム設定
+      - "{{ misskey_dir }}/.config"  # Misskey設定
+    excludes:
+      - "*.tmp"
+      - "*.log"
+      - "*/tmp/*"
+      - "*/cache/*"
+      - "*/node_modules/*"
+      - "*/db/*"                    # DBディレクトリを除外（別途バックアップ）

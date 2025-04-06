@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# バックアップ保持ポリシー
+KEEP_DAILY={{ borg_keep_daily }}
+KEEP_WEEKLY={{ borg_keep_weekly }}
+KEEP_MONTHLY={{ borg_keep_monthly }}
+
+# リポジトリ設定（形式: repo_name:repo_url:path1,path2:exclude1,exclude2）
+REPOSITORIES=(
+{% for repo in borg_repositories %}
+  "{{ repo.name }}:{{ repo.url }}:{{ repo.paths | join(',') }}:{{ repo.excludes | default([]) | join(',') }}"
+{% endfor %}
+)
+
+# パスフレーズ設定
+{% for repo in borg_repositories %}
+{% if borg_secrets_file_stat.stat.exists %}
+export BORG_PASSPHRASE_{{ repo.name | upper }}="{{ borg_secrets.borg_passphrases[repo.name] }}"
+{% else %}
+export BORG_PASSPHRASE_{{ repo.name | upper }}="{{ generated_passphrases[repo.name] }}"
+{% endif %}
+{% endfor %}

@@ -1,0 +1,6 @@
+- name: Configure Borg Backup
+  hosts: all
+  become: true
+  become_method: sudo
+  roles:
+    - borgbackup
