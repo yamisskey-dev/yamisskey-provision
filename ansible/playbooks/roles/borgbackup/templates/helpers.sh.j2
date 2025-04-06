@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# ログ関数
+# ログ関数（stderr に出力）
 log() { 
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE" >&2
 }
 
 # エラーハンドラ
@@ -14,22 +14,25 @@ error_handler() {
       -d "{\"content\":\"⚠️ **Borgバックアップエラー** ($(hostname)): $1\"}" \
       "$DISCORD_WEBHOOK_URL"
   fi
-  # トラップを解除してから終了
-  trap - EXIT
-  rm -f "$LOCK_FILE"
+  # 強制的に終了（トラップを解除して終了）
+  rm -f "$LOCK_FILE" 2>/dev/null
+  trap '' EXIT INT TERM
   exit 1
 }
 
 # バックアップ完了通知
 backup_completion() {
-  local message="すべてのバックアップが正常に完了しました"
-  log "===== $message: $(date) ====="
-  
-  # Discord通知
-  if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
-    curl -s -H "Content-Type: application/json" \
-      -d "{\"content\":\"✅ **Borgバックアップ成功** ($(hostname)): $message\"}" \
-      "$DISCORD_WEBHOOK_URL"
+  # 成功フラグが設定されている場合のみ通知
+  if [ "${BACKUP_SUCCESS:-0}" = "1" ]; then
+    local message="すべてのバックアップが正常に完了しました"
+    log "===== $message: $(date) ====="
+    
+    # Discord通知
+    if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+      curl -s -H "Content-Type: application/json" \
+        -d "{\"content\":\"✅ **Borgバックアップ成功** ($(hostname)): $message\"}" \
+        "$DISCORD_WEBHOOK_URL"
+    fi
   fi
 }
 
@@ -38,7 +41,7 @@ create_lock() {
   if [ -e "$LOCK_FILE" ]; then
     PID=$(cat "$LOCK_FILE")
     if ps -p "$PID" > /dev/null; then
-      echo "別のバックアッププロセスが実行中です (PID: $PID)"
+      echo "別のバックアッププロセスが実行中です (PID: $PID)" >&2
       exit 1
     else
       rm -f "$LOCK_FILE"
@@ -50,14 +53,18 @@ create_lock() {
 # Tailscaleからラズパイのアドレス取得
 get_raspberry_pi_ip() {
   local host=$1
+  # ログメッセージをファイルのみに出力し、標準出力を汚さない
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tailscaleから $host のIPアドレスを取得中..." >> "$LOG_FILE"
+  
   local ip=$(tailscale status | grep -w "$host" | awk '{print $1}')
   
   if [ -z "$ip" ]; then
-    log "Tailscaleからの$hostの情報取得に失敗しました。ホスト名で試行します..."
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tailscaleからの$hostの情報取得に失敗しました。ホスト名で試行します..." >> "$LOG_FILE"
     ip="$host"
   else
-    log "Tailscaleから $host のIPを取得しました: $ip"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tailscaleから $host のIPを取得しました: $ip" >> "$LOG_FILE"
   fi
   
+  # 標準出力にはIPアドレスのみを返す
   echo "$ip"
 }

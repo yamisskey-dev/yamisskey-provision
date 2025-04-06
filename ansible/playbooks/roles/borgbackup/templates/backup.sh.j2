@@ -6,6 +6,7 @@ CONFIG_FILE="{{ borg_backup_dir }}/config/config.sh"
 LOCK_FILE="/tmp/borg-backup.lock"
 LOG_FILE="{{ borg_backup_log_file }}"
 HELPERS_FILE="{{ borg_backup_dir }}/helpers.sh"
+BACKUP_SUCCESS=0
 
 # ヘルパー関数の読み込み
 [ -f "$HELPERS_FILE" ] && source "$HELPERS_FILE" || { echo "ヘルパーファイルがありません: $HELPERS_FILE"; exit 1; }
@@ -37,6 +38,19 @@ fi
 log "ラズベリーパイの接続を確認中... ($RPI_IP)"
 if ! ping -c 1 "$RPI_IP" &>/dev/null; then
   error_handler "ラズベリーパイ($RPI_IP)に接続できません"
+fi
+
+# SSH接続テスト
+log "SSH接続を確認中..."
+if ! ssh -o BatchMode=yes -o ConnectTimeout=5 "{{ raspberry_pi_user }}@$RPI_IP" "echo SSH接続成功" &>/dev/null; then
+  error_handler "SSH接続に失敗しました。キーが正しく設定されているか確認してください。"
+fi
+
+# バックアップディレクトリ確認
+log "バックアップディレクトリを確認中..."
+if ! ssh -o BatchMode=yes "{{ raspberry_pi_user }}@$RPI_IP" "test -d {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}" &>/dev/null; then
+  log "バックアップディレクトリが存在しません。作成します..."
+  ssh -o BatchMode=yes "{{ raspberry_pi_user }}@$RPI_IP" "mkdir -p {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}" || error_handler "バックアップディレクトリの作成に失敗しました"
 fi
 
 # バックアップ開始
@@ -87,5 +101,8 @@ for repo_data in "${REPOSITORIES[@]}"; do
   
   log "リポジトリ $repo_name のバックアップが完了しました"
 done
+
+# 全て正常に完了したフラグを設定
+BACKUP_SUCCESS=1
 
 log "すべてのバックアップ処理が完了しました"
