@@ -7,7 +7,7 @@ borg_backup_minute: "30"  # 30分
 borg_backup_log_file: "/var/log/borg-backup.log"
 borg_secrets_file: "{{ borg_backup_dir }}/secrets.yml"
 misskey_dir: "/var/www/misskey"
-discord_webhook_url: "{{ lookup('password', 'inventory/host_vars/{{ inventory_hostname }}/passwords/discord_webhook_url.txt', create=false) }}"
+discord_webhook_url: ""  # 手動で設定する必要あり
 
 # 実際のホスト名を使用
 actual_hostname: "{{ ansible_hostname }}"  # 実際のホスト名を取得

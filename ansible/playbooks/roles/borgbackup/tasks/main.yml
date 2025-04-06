@@ -54,10 +54,10 @@
         dest: "{{ borg_secrets_file }}"
         content: |
           borg_passphrases:
-            {% for repo in borg_repositories %}
+          {% for repo in borg_repositories %}
             {{ repo.name }}: "{{ generated_passphrases[repo.name] }}"
-            {% endfor %}
-          discord_webhook_url: "{{ discord_webhook_url }}"
+          {% endfor %}
+          discord_webhook_url: ""  # 手動で設定するためデフォルトは空文字列
         mode: '0600'
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
