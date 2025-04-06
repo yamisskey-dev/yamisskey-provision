@@ -49,22 +49,3 @@ create_lock() {
   fi
   echo $$ > "$LOCK_FILE"
 }
-
-# Tailscaleからラズパイのアドレス取得
-get_raspberry_pi_ip() {
-  local host=$1
-  # ログメッセージをファイルのみに出力し、標準出力を汚さない
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tailscaleから $host のIPアドレスを取得中..." >> "$LOG_FILE"
-  
-  local ip=$(tailscale status | grep -w "$host" | awk '{print $1}')
-  
-  if [ -z "$ip" ]; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tailscaleからの$hostの情報取得に失敗しました。ホスト名で試行します..." >> "$LOG_FILE"
-    ip="$host"
-  else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tailscaleから $host のIPを取得しました: $ip" >> "$LOG_FILE"
-  fi
-  
-  # 標準出力にはIPアドレスのみを返す
-  echo "$ip"
-}

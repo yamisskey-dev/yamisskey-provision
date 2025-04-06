@@ -8,7 +8,8 @@ KEEP_MONTHLY={{ borg_keep_monthly }}
 # Discord通知用Webhook URL
 DISCORD_WEBHOOK_URL="{{ discord_webhook_url }}"
 
-# リポジトリ設定（形式: repo_name:repo_url:path1,path2:exclude1,exclude2）
+# リポジトリ設定（形式: repo_name|repo_url|path1,path2|exclude1,exclude2）
+# 実行時にTailscaleのIPアドレスに置き換えられます
 REPOSITORIES=(
 {% for repo in borg_repositories %}
   "{{ repo.name }}|{{ repo.url }}|{{ repo.paths | join(',') }}|{{ repo.excludes | default([]) | join(',') }}"
