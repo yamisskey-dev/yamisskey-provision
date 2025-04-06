@@ -110,6 +110,22 @@
     state: link
     force: yes
 
+# ラズベリーパイの接続確認
+- name: Check Tailscale status
+  shell: tailscale status | grep -w "{{ raspberry_pi_host }}" || true
+  register: tailscale_status
+  changed_when: false
+  ignore_errors: true
+
+- name: Display Raspberry Pi connection info
+  debug:
+    msg: "ラズベリーパイ情報: {{ tailscale_status.stdout }}"
+
+- name: Warn if Raspberry Pi is not found in Tailscale
+  debug:
+    msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}) がTailscaleネットワークに見つかりません。バックアップが失敗する可能性があります。"
+  when: tailscale_status.stdout == ""
+
 # ラズベリーパイがバックアップ用に準備されているか確認
 - name: Check if Raspberry Pi is reachable
   command: ping -c 1 {{ raspberry_pi_host }}
@@ -123,9 +139,36 @@
     msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}) に接続できません。バックアップが失敗する可能性があります。"
   when: ping_result.rc != 0
 
-# リモート側のディレクトリが存在するか確認
+# ラズベリーパイの接続確認（IPアドレスを直接使用）
+- name: Extract Raspberry Pi IP from Tailscale
+  shell: tailscale status | grep -w "{{ raspberry_pi_host }}" | awk '{print $1}'
+  register: raspberry_pi_ip
+  changed_when: false
+  ignore_errors: true
+
+- name: Set Raspberry Pi IP variable
+  set_fact:
+    raspberry_pi_actual_ip: "{{ raspberry_pi_ip.stdout if raspberry_pi_ip.stdout else raspberry_pi_host }}"
+
+- name: Display Raspberry Pi connection info with IP
+  debug:
+    msg: "ラズベリーパイ情報: {{ raspberry_pi_host }} (IP: {{ raspberry_pi_actual_ip }})"
+
+- name: Check if Raspberry Pi is reachable by IP
+  command: ping -c 1 {{ raspberry_pi_actual_ip }}
+  register: ping_result
+  failed_when: false
+  changed_when: false
+  ignore_errors: true
+
+- name: Warn if Raspberry Pi is not reachable
+  debug:
+    msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}/{{ raspberry_pi_actual_ip }}) に接続できません。バックアップが失敗する可能性があります。"
+  when: ping_result.rc != 0
+
+# リモート側のディレクトリが存在するか確認（IPアドレスで）
 - name: Check if backup directory exists on Raspberry Pi
-  command: ssh {{ raspberry_pi_user }}@{{ raspberry_pi_host }} "mkdir -p {{ raspberry_pi_backup_dir }}/{{ inventory_hostname }}"
+  command: ssh {{ raspberry_pi_user }}@{{ raspberry_pi_actual_ip }} "mkdir -p {{ raspberry_pi_backup_dir }}/{{ inventory_hostname }}"
   register: mkdir_result
   failed_when: false
   changed_when: mkdir_result.rc == 0

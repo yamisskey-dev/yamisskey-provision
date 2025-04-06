@@ -10,7 +10,7 @@ misskey_dir: "/var/www/misskey"
 
 # ラズベリーパイ設定
 raspberry_pi_user: "{{ ansible_user }}"
-raspberry_pi_host: "raspberrypi"  # 実際のホスト名またはIPアドレスに置き換え
+raspberry_pi_host: "raspberrypi"  # .tailnet.ts.netを削除
 raspberry_pi_backup_dir: "/mnt/backup/{{ inventory_hostname }}"
 
 # バックアップ保持ポリシー

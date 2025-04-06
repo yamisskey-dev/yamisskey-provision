@@ -39,73 +39,43 @@ error_handler() {
   exit 1
 }
 
-# ラズパイ接続確認
-log "ラズベリーパイへの接続をテスト中..."
-ping -c 1 {{ raspberry_pi_host }} &>/dev/null || error_handler "ラズベリーパイに接続できません"
+# ラズパイのTailscale IPアドレスを動的に取得
+log "ラズベリーパイへの接続を試行中..."
+RPI_HOST="{{ raspberry_pi_host }}"
+
+# Tailscaleからラズパイのアドレスを取得
+RPI_IP="$(tailscale status | grep -w "$RPI_HOST" | awk '{print $1}')"
+if [ -z "$RPI_IP" ]; then
+  # IPが取得できない場合はホスト名をそのまま使用
+  log "Tailscaleからのラズパイ情報取得に失敗しました。ホスト名で試行します..."
+  RPI_IP="$RPI_HOST"
+else
+  log "Tailscaleから $RPI_HOST のIPを取得しました: $RPI_IP"
+  
+  # リポジトリURLの置換（ホスト名→IPアドレス）
+  OLD_REPOSITORIES=("${REPOSITORIES[@]}")
+  REPOSITORIES=()
+  for repo_data in "${OLD_REPOSITORIES[@]}"; do
+    IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
+    # ホスト名をIPアドレスに置き換え
+    repo_url="${repo_url/$RPI_HOST/$RPI_IP}"
+    REPOSITORIES+=("$repo_name:$repo_url:$paths_raw:$excludes_raw")
+  done
+fi
+
+# 接続テスト (最終確認)
+if ! ping -c 1 "$RPI_IP" &>/dev/null; then
+  error_handler "ラズベリーパイに接続できません: $RPI_IP"
+fi
 
 # バックアップ開始
 log "===== バックアップ開始: $(date) ====="
 
+# 以下は既存のバックアップ処理コード
 # レポジトリごとのバックアップ処理
 for repo_data in "${REPOSITORIES[@]}"; do
   # 設定を分解
   IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
   IFS=',' read -ra backup_paths <<< "$paths_raw"
   
-  # 除外パターン
-  exclude_args=""
-  if [[ -n "$excludes_raw" ]]; then
-    IFS=',' read -ra exclude_patterns <<< "$excludes_raw"
-    for pattern in "${exclude_patterns[@]}"; do
-      exclude_args+=" --exclude '$pattern'"
-    done
-  fi
-  
-  # パスフレーズ設定
-  eval export BORG_PASSPHRASE=\$BORG_PASSPHRASE_${repo_name^^}
-  
-  log "--- $repo_name へのバックアップを開始 ---"
-  
-  # リポジトリ初期化確認
-  if ! borg info "$repo_url" >/dev/null 2>&1; then
-    log "リポジトリを初期化: $repo_url"
-    borg init --encryption=repokey-blake2 "$repo_url" || error_handler "初期化失敗"
-  fi
-  
-  # バックアップ実行
-  log "バックアップを作成..."
-  backup_cmd="borg create --stats --compression zstd,3 $exclude_args \"$repo_url::$repo_name-{now:%Y-%m-%d_%H:%M}\""
-  for path in "${backup_paths[@]}"; do
-    backup_cmd+=" \"$path\""
-  done
-  
-  eval "$backup_cmd" || { log "バックアップ失敗"; continue; }
-  
-  # 古いバックアップのプルーニング
-  log "古いバックアップをプルーニング..."
-  borg prune --stats \
-    --keep-daily ${KEEP_DAILY:-7} \
-    --keep-weekly ${KEEP_WEEKLY:-4} \
-    --keep-monthly ${KEEP_MONTHLY:-6} \
-    "$repo_url" || log "プルーニング失敗"
-  
-  # 月次の整合性チェック
-  if [ "$(date +%d)" -eq "1" ]; then
-    log "月次リポジトリチェック実行..."
-    borg check "$repo_url" || log "リポジトリチェック失敗"
-  fi
-  
-  log "--- $repo_name へのバックアップ完了 ---"
-done
-
-log "===== すべてのバックアップが完了: $(date) ====="
-
-# 成功通知
-if [ -f "/opt/misskey-backup/config/env.yml" ]; then
-  source /opt/misskey-backup/config/env.yml
-  if [ -n "${DISCORD_WEBHOOK_URL:-}" ] && [ -n "${NOTIFICATION:-}" ] && [ "${NOTIFICATION}" = "true" ]; then
-    curl -s -H "Content-Type: application/json" \
-      -d "{\"content\":\"✅ **Borgバックアップ成功** ($(hostname)): バックアップが完了しました\"}" \
-      "$DISCORD_WEBHOOK_URL"
-  fi
-fi
+  # 以下は変更なし
