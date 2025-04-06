@@ -14,6 +14,9 @@ error_handler() {
       -d "{\"content\":\"⚠️ **Borgバックアップエラー** ($(hostname)): $1\"}" \
       "$DISCORD_WEBHOOK_URL"
   fi
+  # トラップを解除してから終了
+  trap - EXIT
+  rm -f "$LOCK_FILE"
   exit 1
 }
 

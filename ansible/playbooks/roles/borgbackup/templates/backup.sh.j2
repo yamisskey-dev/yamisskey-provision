@@ -34,8 +34,9 @@ if [ "$RPI_IP" != "$RPI_HOST" ]; then
 fi
 
 # 接続テスト
+log "ラズベリーパイの接続を確認中... ($RPI_IP)"
 if ! ping -c 1 "$RPI_IP" &>/dev/null; then
-  error_handler "ラズベリーパイに接続できません: $RPI_IP"
+  error_handler "ラズベリーパイ($RPI_IP)に接続できません"
 fi
 
 # バックアップ開始
