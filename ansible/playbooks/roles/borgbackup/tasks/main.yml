@@ -160,6 +160,8 @@
 - name: Create backup directory structure on Raspberry Pi
   shell: |
     mkdir -p {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}
+    chown -R {{ raspberry_pi_user }}:{{ raspberry_pi_user }} {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}
+    chmod -R 755 {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}
     touch {{ raspberry_pi_backup_dir }}/.initialized_{{ actual_hostname }}
     echo "Directory created/verified for {{ actual_hostname }} at $(date)" > {{ raspberry_pi_backup_dir }}/.initialized_{{ actual_hostname }}
   args:
@@ -177,6 +179,7 @@
 
 - name: Initialize Borg repositories if they don't exist
   shell: |
+    ssh {{ raspberry_pi_user }}@{{ raspberry_pi_actual_ip }} "sudo chown -R {{ raspberry_pi_user }}:{{ raspberry_pi_user }} {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}"
     {% if borg_secrets_file_stat.stat.exists %}
     export BORG_PASSPHRASE="{{ borg_secrets.borg_passphrases[item.0.name] }}"
     {% else %}
