@@ -28,9 +28,9 @@ if [ "$RPI_IP" != "$RPI_HOST" ]; then
   OLD_REPOSITORIES=("${REPOSITORIES[@]}")
   REPOSITORIES=()
   for repo_data in "${OLD_REPOSITORIES[@]}"; do
-    IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
+    IFS='|' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
     repo_url="${repo_url/$RPI_HOST/$RPI_IP}"
-    REPOSITORIES+=("$repo_name:$repo_url:$paths_raw:$excludes_raw")
+    REPOSITORIES+=("$repo_name|$repo_url|$paths_raw|$excludes_raw")
   done
 fi
 
@@ -59,7 +59,7 @@ log "===== バックアップ開始: $(date) ====="
 # レポジトリごとのバックアップ処理
 for repo_data in "${REPOSITORIES[@]}"; do
   # 設定を分解
-  IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
+  IFS='|' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
   IFS=',' read -ra backup_paths <<< "$paths_raw"
   
   # パスフレーズ設定
