@@ -2,16 +2,20 @@
 # Borgバックアップの基本設定
 borg_backup_dir: "/opt/borg-backup"
 backup_dir: "/opt/backups"
-borg_backup_hour: "2"
-borg_backup_minute: "0"
+borg_backup_hour: "3"  # 深夜3時
+borg_backup_minute: "30"  # 30分
 borg_backup_log_file: "/var/log/borg-backup.log"
 borg_secrets_file: "{{ borg_backup_dir }}/secrets.yml"
 misskey_dir: "/var/www/misskey"
+discord_webhook_url: "{{ lookup('password', 'inventory/host_vars/{{ inventory_hostname }}/passwords/discord_webhook_url.txt', create=false) }}"
+
+# 実際のホスト名を使用
+actual_hostname: "{{ ansible_hostname }}"  # 実際のホスト名を取得
 
 # ラズベリーパイ設定
 raspberry_pi_user: "{{ ansible_user }}"
-raspberry_pi_host: "raspberrypi"  # .tailnet.ts.netを削除
-raspberry_pi_backup_dir: "/mnt/backup/{{ inventory_hostname }}"
+raspberry_pi_host: "raspberrypi"
+raspberry_pi_backup_dir: "/mnt/backup"  # 個別のホスト名フォルダは既に存在する
 
 # バックアップ保持ポリシー
 borg_keep_daily: 7
@@ -20,8 +24,8 @@ borg_keep_monthly: 6
 
 # リポジトリ設定
 borg_repositories:
-  - name: "{{ inventory_hostname }}"
-    url: "{{ raspberry_pi_user }}@{{ raspberry_pi_host }}:{{ raspberry_pi_backup_dir }}/{{ inventory_hostname }}"
+  - name: "{{ actual_hostname }}"
+    url: "{{ raspberry_pi_user }}@{{ raspberry_pi_host }}:{{ raspberry_pi_backup_dir }}/{{ actual_hostname }}"
     paths:
       - "/var/lib/docker/volumes"  # Docker volumesは必要
       - "/etc"                      # システム設定

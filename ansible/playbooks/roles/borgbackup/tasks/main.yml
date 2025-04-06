@@ -41,6 +41,7 @@
             {% for repo in borg_repositories %}
             {{ repo.name }}: "{{ generated_passphrases[repo.name] }}"
             {% endfor %}
+          discord_webhook_url: "{{ discord_webhook_url }}"
         mode: '0600'
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
@@ -69,7 +70,89 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
 
-# 6. 初期レポジトリセットアップ
+# helpers.shをデプロイするタスクを追加
+- name: Deploy Borg helpers script
+  template:
+    src: helpers.sh.j2
+    dest: "{{ borg_backup_dir }}/helpers.sh"
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+# 6. ラズベリーパイの接続確認（IP取得優先）
+- name: Extract Raspberry Pi IP from Tailscale
+  shell: tailscale status | grep -w "{{ raspberry_pi_host }}" | awk '{print $1}'
+  register: raspberry_pi_ip
+  changed_when: false
+  ignore_errors: true
+  become: false
+
+- name: Set Raspberry Pi IP variable with fallback
+  set_fact:
+    raspberry_pi_actual_ip: "{{ raspberry_pi_ip.stdout if raspberry_pi_ip.stdout else raspberry_pi_host }}"
+
+- name: Display current host and target information
+  debug:
+    msg: "ホスト: {{ actual_hostname }} → バックアップ先: {{ raspberry_pi_host }} (IP: {{ raspberry_pi_actual_ip }})"
+
+- name: Verify backup path on Raspberry Pi
+  shell: ssh -o BatchMode=yes {{ raspberry_pi_user }}@{{ raspberry_pi_actual_ip }} "ls -la {{ raspberry_pi_backup_dir }} || mkdir -p {{ raspberry_pi_backup_dir }}"
+  register: path_check
+  changed_when: false
+  ignore_errors: true
+  become: false
+
+- name: Check if Raspberry Pi is reachable by IP
+  command: ping -c 1 {{ raspberry_pi_actual_ip }}
+  register: ping_result
+  failed_when: false
+  changed_when: false
+  ignore_errors: true
+
+- name: Warn if Raspberry Pi is not reachable
+  debug:
+    msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}/{{ raspberry_pi_actual_ip }}) に接続できません。バックアップが失敗する可能性があります。"
+  when: ping_result.rc != 0
+
+# 7. SSH設定（ディレクトリ作成を先に）
+- name: Ensure SSH known_hosts directory exists
+  file:
+    path: ~/.ssh
+    state: directory
+    mode: '0700'
+  become: false
+
+- name: Check SSH key exists
+  stat:
+    path: ~/.ssh/id_ed25519
+  register: ssh_key_check
+  become: false
+
+- name: Generate SSH key if needed
+  shell: ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+  when: not ssh_key_check.stat.exists
+  become: false
+
+- name: Add SSH host key to known_hosts
+  shell: ssh-keyscan -H {{ raspberry_pi_actual_ip }} >> ~/.ssh/known_hosts
+  args:
+    creates: "~/.ssh/known_hosts_{{ raspberry_pi_actual_ip }}"
+  ignore_errors: true
+  become: false
+
+# 8. リモート側のディレクトリ確認と作成
+- name: Create backup directory structure on Raspberry Pi
+  shell: |
+    mkdir -p {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}
+    touch {{ raspberry_pi_backup_dir }}/.initialized_{{ actual_hostname }}
+    echo "Directory created/verified for {{ actual_hostname }} at $(date)" > {{ raspberry_pi_backup_dir }}/.initialized_{{ actual_hostname }}
+  args:
+    creates: "{{ raspberry_pi_backup_dir }}/.initialized_{{ actual_hostname }}"
+  register: mkdir_result
+  changed_when: mkdir_result.rc == 0
+  failed_when: mkdir_result.rc != 0 and "already exists" not in mkdir_result.stderr
+
+# 9. 初期レポジトリセットアップ
 - name: Check if Borg repositories already exist
   stat:
     path: "{{ borg_backup_dir }}/cache/{{ item.name }}.initialized"
@@ -93,7 +176,7 @@
   when: not item.1.stat.exists
   no_log: true
 
-# 7. Cronジョブの設定
+# 10. Cronジョブの設定
 - name: Set up cron job for automated backups
   cron:
     name: "Run Borg backup"
@@ -102,73 +185,10 @@
     job: "{{ borg_backup_dir }}/borg-backup.sh > {{ borg_backup_dir }}/logs/backup_$(date +\\%Y\\%m\\%d).log 2>&1"
     user: "{{ ansible_user }}"
 
-# 8. シンボリックリンク作成（便利なアクセス用）
+# 11. シンボリックリンク作成
 - name: Create symlink for easy access
   file:
     src: "{{ borg_backup_dir }}/borg-backup.sh"
     dest: "/usr/local/bin/borg-backup"
     state: link
     force: yes
-
-# ラズベリーパイの接続確認
-- name: Check Tailscale status
-  shell: tailscale status | grep -w "{{ raspberry_pi_host }}" || true
-  register: tailscale_status
-  changed_when: false
-  ignore_errors: true
-
-- name: Display Raspberry Pi connection info
-  debug:
-    msg: "ラズベリーパイ情報: {{ tailscale_status.stdout }}"
-
-- name: Warn if Raspberry Pi is not found in Tailscale
-  debug:
-    msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}) がTailscaleネットワークに見つかりません。バックアップが失敗する可能性があります。"
-  when: tailscale_status.stdout == ""
-
-# ラズベリーパイがバックアップ用に準備されているか確認
-- name: Check if Raspberry Pi is reachable
-  command: ping -c 1 {{ raspberry_pi_host }}
-  register: ping_result
-  failed_when: ping_result.rc != 0
-  changed_when: false
-  ignore_errors: true
-
-- name: Warn if Raspberry Pi is not reachable
-  debug:
-    msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}) に接続できません。バックアップが失敗する可能性があります。"
-  when: ping_result.rc != 0
-
-# ラズベリーパイの接続確認（IPアドレスを直接使用）
-- name: Extract Raspberry Pi IP from Tailscale
-  shell: tailscale status | grep -w "{{ raspberry_pi_host }}" | awk '{print $1}'
-  register: raspberry_pi_ip
-  changed_when: false
-  ignore_errors: true
-
-- name: Set Raspberry Pi IP variable
-  set_fact:
-    raspberry_pi_actual_ip: "{{ raspberry_pi_ip.stdout if raspberry_pi_ip.stdout else raspberry_pi_host }}"
-
-- name: Display Raspberry Pi connection info with IP
-  debug:
-    msg: "ラズベリーパイ情報: {{ raspberry_pi_host }} (IP: {{ raspberry_pi_actual_ip }})"
-
-- name: Check if Raspberry Pi is reachable by IP
-  command: ping -c 1 {{ raspberry_pi_actual_ip }}
-  register: ping_result
-  failed_when: false
-  changed_when: false
-  ignore_errors: true
-
-- name: Warn if Raspberry Pi is not reachable
-  debug:
-    msg: "警告: ラズベリーパイ ({{ raspberry_pi_host }}/{{ raspberry_pi_actual_ip }}) に接続できません。バックアップが失敗する可能性があります。"
-  when: ping_result.rc != 0
-
-# リモート側のディレクトリが存在するか確認（IPアドレスで）
-- name: Check if backup directory exists on Raspberry Pi
-  command: ssh {{ raspberry_pi_user }}@{{ raspberry_pi_actual_ip }} "mkdir -p {{ raspberry_pi_backup_dir }}/{{ inventory_hostname }}"
-  register: mkdir_result
-  failed_when: false
-  changed_when: mkdir_result.rc == 0

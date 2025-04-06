@@ -5,65 +5,35 @@ set -e
 CONFIG_FILE="{{ borg_backup_dir }}/config/config.sh"
 LOCK_FILE="/tmp/borg-backup.lock"
 LOG_FILE="{{ borg_backup_log_file }}"
+HELPERS_FILE="{{ borg_backup_dir }}/helpers.sh"
+
+# ヘルパー関数の読み込み
+[ -f "$HELPERS_FILE" ] && source "$HELPERS_FILE" || { echo "ヘルパーファイルがありません: $HELPERS_FILE"; exit 1; }
 
 # ロック処理
-if [ -e "$LOCK_FILE" ]; then
-  PID=$(cat "$LOCK_FILE")
-  if ps -p "$PID" > /dev/null; then
-    echo "別のバックアッププロセスが実行中です (PID: $PID)"
-    exit 1
-  else
-    rm -f "$LOCK_FILE"
-  fi
-fi
-echo $$ > "$LOCK_FILE"
-trap 'rm -f "$LOCK_FILE"' EXIT
+create_lock
+trap 'rm -f "$LOCK_FILE"; backup_completion' EXIT
 
 # 設定ファイル読み込み
 [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE" || { echo "設定ファイルがありません: $CONFIG_FILE"; exit 1; }
 
-# ログ関数
-log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
-
-# エラーハンドラ
-error_handler() {
-  log "エラー: $1"
-  # Discord通知（設定ファイルがある場合）
-  if [ -f "/opt/misskey-backup/config/env.yml" ]; then
-    source /opt/misskey-backup/config/env.yml
-    [ -n "${DISCORD_WEBHOOK_URL:-}" ] && \
-      curl -s -H "Content-Type: application/json" \
-      -d "{\"content\":\"⚠️ **Borgバックアップエラー** ($(hostname)): $1\"}" \
-      "$DISCORD_WEBHOOK_URL"
-  fi
-  exit 1
-}
-
-# ラズパイのTailscale IPアドレスを動的に取得
+# ラズパイのIP取得とリポジトリURL更新
 log "ラズベリーパイへの接続を試行中..."
 RPI_HOST="{{ raspberry_pi_host }}"
+RPI_IP=$(get_raspberry_pi_ip "$RPI_HOST")
 
-# Tailscaleからラズパイのアドレスを取得
-RPI_IP="$(tailscale status | grep -w "$RPI_HOST" | awk '{print $1}')"
-if [ -z "$RPI_IP" ]; then
-  # IPが取得できない場合はホスト名をそのまま使用
-  log "Tailscaleからのラズパイ情報取得に失敗しました。ホスト名で試行します..."
-  RPI_IP="$RPI_HOST"
-else
-  log "Tailscaleから $RPI_HOST のIPを取得しました: $RPI_IP"
-  
-  # リポジトリURLの置換（ホスト名→IPアドレス）
+# リポジトリURLの置換（ホスト名→IPアドレス）
+if [ "$RPI_IP" != "$RPI_HOST" ]; then
   OLD_REPOSITORIES=("${REPOSITORIES[@]}")
   REPOSITORIES=()
   for repo_data in "${OLD_REPOSITORIES[@]}"; do
     IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
-    # ホスト名をIPアドレスに置き換え
     repo_url="${repo_url/$RPI_HOST/$RPI_IP}"
     REPOSITORIES+=("$repo_name:$repo_url:$paths_raw:$excludes_raw")
   done
 fi
 
-# 接続テスト (最終確認)
+# 接続テスト
 if ! ping -c 1 "$RPI_IP" &>/dev/null; then
   error_handler "ラズベリーパイに接続できません: $RPI_IP"
 fi
@@ -71,11 +41,50 @@ fi
 # バックアップ開始
 log "===== バックアップ開始: $(date) ====="
 
-# 以下は既存のバックアップ処理コード
 # レポジトリごとのバックアップ処理
 for repo_data in "${REPOSITORIES[@]}"; do
   # 設定を分解
   IFS=':' read -r repo_name repo_url paths_raw excludes_raw <<< "$repo_data"
   IFS=',' read -ra backup_paths <<< "$paths_raw"
   
-  # 以下は変更なし
+  # 除外パターン
+  exclude_args=""
+  if [[ -n "$excludes_raw" ]]; then
+    IFS=',' read -ra exclude_patterns <<< "$excludes_raw"
+    for pattern in "${exclude_patterns[@]}"; do
+      exclude_args+=" --exclude '$pattern'"
+    done
+  fi
+  
+  # パスフレーズ設定
+  eval export BORG_PASSPHRASE=\$BORG_PASSPHRASE_${repo_name^^}
+  
+  log "リポジトリ $repo_name へのバックアップを開始します"
+  
+  # バックアップ作成
+  backup_cmd="borg create --stats --compression zstd,3 $exclude_args \"$repo_url::$repo_name-{now:%Y-%m-%d_%H:%M}\""
+  for path in "${backup_paths[@]}"; do
+    backup_cmd+=" \"$path\""
+  done
+  
+  log "コマンド実行: $backup_cmd"
+  eval "$backup_cmd" || error_handler "バックアップの作成に失敗しました: $repo_name"
+  
+  # 古いバックアップのプルーニング
+  log "古いバックアップをプルーニング中..."
+  borg prune --stats \
+    --keep-daily ${KEEP_DAILY:-7} \
+    --keep-weekly ${KEEP_WEEKLY:-4} \
+    --keep-monthly ${KEEP_MONTHLY:-6} \
+    "$repo_url" || log "プルーニングに失敗しました"
+    
+  # 月に1回だけリポジトリの整合性チェック
+  if [ "$(date +%d)" = "01" ] || [ "$FORCE_CHECK" = "true" ]; then
+    log "リポジトリチェックを実行中..."
+    borg check "$repo_url" || log "リポジトリチェックに失敗しました"
+  fi
+  
+  log "リポジトリ $repo_name のバックアップが完了しました"
+done
+
+log "すべてのバックアップ処理が完了しました"

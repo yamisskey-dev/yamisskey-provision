@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# ログ関数
+log() { 
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# エラーハンドラ
+error_handler() {
+  log "エラー: $1"
+  # Discord通知
+  if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+    curl -s -H "Content-Type: application/json" \
+      -d "{\"content\":\"⚠️ **Borgバックアップエラー** ($(hostname)): $1\"}" \
+      "$DISCORD_WEBHOOK_URL"
+  fi
+  exit 1
+}
+
+# バックアップ完了通知
+backup_completion() {
+  local message="すべてのバックアップが正常に完了しました"
+  log "===== $message: $(date) ====="
+  
+  # Discord通知
+  if [ -n "${DISCORD_WEBHOOK_URL:-}" ]; then
+    curl -s -H "Content-Type: application/json" \
+      -d "{\"content\":\"✅ **Borgバックアップ成功** ($(hostname)): $message\"}" \
+      "$DISCORD_WEBHOOK_URL"
+  fi
+}
+
+# ロック機能
+create_lock() {
+  if [ -e "$LOCK_FILE" ]; then
+    PID=$(cat "$LOCK_FILE")
+    if ps -p "$PID" > /dev/null; then
+      echo "別のバックアッププロセスが実行中です (PID: $PID)"
+      exit 1
+    else
+      rm -f "$LOCK_FILE"
+    fi
+  fi
+  echo $$ > "$LOCK_FILE"
+}
+
+# Tailscaleからラズパイのアドレス取得
+get_raspberry_pi_ip() {
+  local host=$1
+  local ip=$(tailscale status | grep -w "$host" | awk '{print $1}')
+  
+  if [ -z "$ip" ]; then
+    log "Tailscaleからの$hostの情報取得に失敗しました。ホスト名で試行します..."
+    ip="$host"
+  else
+    log "Tailscaleから $host のIPを取得しました: $ip"
+  fi
+  
+  echo "$ip"
+}

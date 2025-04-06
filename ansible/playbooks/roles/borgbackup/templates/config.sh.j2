@@ -5,6 +5,9 @@ KEEP_DAILY={{ borg_keep_daily }}
 KEEP_WEEKLY={{ borg_keep_weekly }}
 KEEP_MONTHLY={{ borg_keep_monthly }}
 
+# Discord通知用Webhook URL
+DISCORD_WEBHOOK_URL="{{ discord_webhook_url }}"
+
 # リポジトリ設定（形式: repo_name:repo_url:path1,path2:exclude1,exclude2）
 REPOSITORIES=(
 {% for repo in borg_repositories %}
