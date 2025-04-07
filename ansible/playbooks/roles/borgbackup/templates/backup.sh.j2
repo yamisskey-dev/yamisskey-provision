@@ -53,21 +53,30 @@ for repo_data in "${REPOSITORIES[@]}"; do
 
   log "リポジトリ $repo_name へのバックアップを開始します"
 
-  # バックアップ作成
-  backup_cmd="borg create --stats --compression zstd,3"
+  # リポジトリ初期化の確認
+  log "リポジトリの初期化を確認中... ($repo_url)"
+  export BORG_RSH="tailscale ssh"
+  if ! borg info "${repo_url}" &>/dev/null; then
+    log "リポジトリが初期化されていません。初期化します..."
+    borg init --encryption=repokey-blake2 "${repo_url}" || error_handler "リポジトリの初期化に失敗しました: $repo_name"
+  fi
+
+  # rshオプションでTailscale SSHを使うよう指定
+  export BORG_RSH="tailscale ssh"
 
   # コマンド構築（リポジトリURLとアーカイブ名を正しく構成）
-  backup_cmd+=" \"$repo_url::$repo_name-{now:%Y-%m-%d_%H:%M}\""
+  backup_cmd="borg create --stats --compression zstd,3"
+  backup_cmd+=" \"${repo_url}::$repo_name-{now:%Y-%m-%d_%H:%M}\""
 
   # バックアップ対象パスを追加
   for path in "${backup_paths[@]}"; do
     backup_cmd+=" \"$path\""
   done
-  
+
   log "コマンド実行: $backup_cmd"
   eval "$backup_cmd" || error_handler "バックアップの作成に失敗しました: $repo_name"
-  
-  # 古いバックアップのプルーニング
+
+  # borg pruneとborg checkコマンドにも適用
   log "古いバックアップをプルーニング中..."
   borg prune --stats \
     --keep-daily ${KEEP_DAILY:-7} \
@@ -78,6 +87,7 @@ for repo_data in "${REPOSITORIES[@]}"; do
   # 月に1回だけリポジトリの整合性チェック
   if [ "$(date +%d)" = "01" ] || [ "$FORCE_CHECK" = "true" ]; then
     log "リポジトリチェックを実行中..."
+    BORG_REMOTE_PATH="tailscale ssh {{ raspberry_pi_user }}@$RPI_HOST borg serve --append-only" \
     borg check "$repo_url" || log "リポジトリチェックに失敗しました"
   fi
   
