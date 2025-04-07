@@ -108,11 +108,27 @@
     msg: "Tailscale SSH is {{ 'enabled' if 'ssh' in tailscale_status.stdout else 'not enabled' }}. Please run 'sudo tailscale up --ssh' if needed."
 
 # 10. リモート側のディレクトリ作成（tailscale sshを使用）
-- name: Create backup directory structure on Raspberry Pi
+- name: Ensure backup parent directory exists on Raspberry Pi
+  shell: |
+    tailscale ssh {{ raspberry_pi_user }}@{{ raspberry_pi_host }} "sudo mkdir -p {{ raspberry_pi_backup_dir }} && \
+    sudo chown {{ raspberry_pi_user }}:{{ raspberry_pi_user }} {{ raspberry_pi_backup_dir }}"
+  args:
+    creates: "{{ borg_backup_dir }}/cache/.parent_dir_initialized"
+  ignore_errors: true
+  register: parent_dir_create
+  changed_when: parent_dir_create.rc == 0
+  become: false
+  
+- name: Touch parent directory initialized flag
+  file:
+    path: "{{ borg_backup_dir }}/cache/.parent_dir_initialized"
+    state: touch
+    mode: '0644'
+  when: parent_dir_create.rc == 0
+  
+- name: Create host-specific backup directory on Raspberry Pi
   shell: |
     tailscale ssh {{ raspberry_pi_user }}@{{ raspberry_pi_host }} "mkdir -p {{ raspberry_pi_backup_dir }}/{{ actual_hostname }} && \
-    chown -R {{ raspberry_pi_user }}:{{ raspberry_pi_user }} {{ raspberry_pi_backup_dir }}/{{ actual_hostname }} && \
-    chmod -R 755 {{ raspberry_pi_backup_dir }}/{{ actual_hostname }} && \
     touch {{ raspberry_pi_backup_dir }}/.initialized_{{ actual_hostname }}"
   args:
     creates: "{{ borg_backup_dir }}/cache/.initialized_{{ raspberry_pi_host }}_{{ actual_hostname }}"

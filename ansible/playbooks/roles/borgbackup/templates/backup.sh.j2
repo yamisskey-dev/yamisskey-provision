@@ -34,7 +34,9 @@ fi
 log "バックアップディレクトリを確認中..."
 if ! tailscale ssh "{{ raspberry_pi_user }}@$RPI_HOST" "test -d {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}" &>/dev/null; then
   log "バックアップディレクトリが存在しません。作成します..."
-  tailscale ssh "{{ raspberry_pi_user }}@$RPI_HOST" "mkdir -p {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}" || error_handler "バックアップディレクトリの作成に失敗しました"
+  tailscale ssh "{{ raspberry_pi_user }}@$RPI_HOST" "sudo mkdir -p {{ raspberry_pi_backup_dir }} && \
+    sudo chown {{ raspberry_pi_user }}:{{ raspberry_pi_user }} {{ raspberry_pi_backup_dir }} && \
+    mkdir -p {{ raspberry_pi_backup_dir }}/{{ actual_hostname }}" || error_handler "バックアップディレクトリの作成に失敗しました"
 fi
 
 # バックアップ開始
