@@ -38,7 +38,7 @@ ingress:
   - hostname: {{ minio_web_server_name }}
     service: http://localhost:9001
   - hostname: {{ jitsi_server_name }}
-    service: https://localhost:8443
+    service: http://localhost:8003
     originRequest:
       noTLSVerify: true
       tlsTimeout: 10s
