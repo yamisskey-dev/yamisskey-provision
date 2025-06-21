@@ -41,6 +41,15 @@ ingress:
     service: https://localhost:8443
     originRequest:
       noTLSVerify: true
+      tlsTimeout: 10s
+      httpHostHeader: {{ jitsi_server_name }}
+      http2Origin: true
+      disableChunkedEncoding: false
+      connectTimeout: 30s
+      keepAliveTimeout: 90s
+      keepAliveConnections: 100
+      tcpKeepAlive: 30s
+      noHappyEyeballs: false
   - hostname: {{ grafana_server_name }}
     service: http://localhost:3000
   - hostname: {{ vikunja_server_name }}
