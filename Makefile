@@ -9,7 +9,8 @@ CODENAME=$(shell lsb_release -cs)
 USER=$(shell whoami)
 TIMESTAMP=$(shell date +%Y%m%dT%H%M%S`date +%N | cut -c 1-6`)
 GITHUB_ORG=yamisskey-dev
-MISSKEY_REPO=https://github.com/$(GITHUB_ORG)/yamisskey.git
+GITHUB_ORG_URL=https://github.com/$(GITHUB_ORG)
+MISSKEY_REPO=$(GITHUB_ORG_URL)/yamisskey.git
 MISSKEY_DIR=/var/www/misskey
 MISSKEY_BRANCH=master
 CONFIG_FILES=$(MISSKEY_DIR)/.config/default.yml $(MISSKEY_DIR)/.config/docker.env
@@ -76,23 +77,23 @@ clone:
 	@sudo mkdir -p $(ASSETS_DIR)
 	@sudo chown $(USER):$(USER) $(ASSETS_DIR)
 	@if [ ! -d "$(ASSETS_DIR)/.git" ]; then \
-		git clone https://github.com/$(GITHUB_ORG)/yamisskey-assets.git $(ASSETS_DIR); \
+		git clone $(GITHUB_ORG_URL)/yamisskey-assets.git $(ASSETS_DIR); \
 	fi
 	@mkdir -p $(AI_DIR)
 	@if [ ! -d "$(AI_DIR)/.git" ]; then \
-		git clone https://github.com/$(GITHUB_ORG)/yui.git $(AI_DIR); \
+		git clone $(GITHUB_ORG_URL)/yui.git $(AI_DIR); \
 	fi
 	@mkdir -p $(BACKUP_SCRIPT_DIR)
 	@if [ ! -d "$(BACKUP_SCRIPT_DIR)/.git" ]; then \
-		git clone https://github.com/$(GITHUB_ORG)/yamisskey-backup.git $(BACKUP_SCRIPT_DIR); \
+		git clone $(GITHUB_ORG_URL)/yamisskey-backup.git $(BACKUP_SCRIPT_DIR); \
 	fi
 	@mkdir -p $(ANONOTE_DIR)
 	@if [ ! -d "$(ANONOTE_DIR)/.git" ]; then \
-		git clone https://github.com/$(GITHUB_ORG)/yamisskey-anonote.git $(ANONOTE_DIR); \
+		git clone $(GITHUB_ORG_URL)/yamisskey-anonote.git $(ANONOTE_DIR); \
 	fi
 	@mkdir -p $(CTFD_DIR)
 	@if [ ! -d "$(CTFD_DIR)/.git" ]; then \
-		git clone https://github.com/$(GITHUB_ORG)/ctf.yami.ski.git $(CTFD_DIR); \
+		git clone $(GITHUB_ORG_URL)/ctf.yami.ski.git $(CTFD_DIR); \
 	fi
 
 migrate:
