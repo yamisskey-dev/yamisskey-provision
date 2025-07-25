@@ -3,7 +3,7 @@
 # プロジェクトのクローン
 - name: Clone neo-quesdon repository
   git:
-    repo: "https://github.com/yamisskey/neo-quesdon.git"
+    repo: "https://github.com/yamisskey-dev/neo-quesdon.git"
     dest: "{{ neo_quesdon_dir }}"
     version: "{{ neo_quesdon_version | default('develop') }}"
 

@@ -5,7 +5,7 @@ set_dir: '/home/{{ ansible_user }}/yamisskey-provision'
 mkp224o_output_dir: '/home/{{ ansible_user }}/mkp224o-output'
 domain_prefix: yamiski
 domain: yami.ski
-github_org: yamisskey
+github_org: yamisskey-dev
 misskey_repo: 'https://github.com/{{ github_org }}/yamisskey.git'
 misskey_branch: master
 misskey_dir: '/var/www/misskey'

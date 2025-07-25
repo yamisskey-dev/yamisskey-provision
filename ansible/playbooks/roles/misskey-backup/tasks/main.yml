@@ -14,7 +14,7 @@
 
 - name: Clone misskey-backup repository
   git:
-    repo: "https://github.com/yamisskey/yamisskey-backup.git"
+    repo: "https://github.com/yamisskey-dev/yamisskey-backup.git"
     dest: "/opt/misskey-backup"
     version: "main"
     force: yes

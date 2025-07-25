@@ -53,7 +53,7 @@ Host balthasar
 
 ```consol
 ssh balthasar
-git clone https://github.com/yamisskey/yamisskey-provision.git
+git clone https://github.com/yamisskey-dev/yamisskey-provision.git
 cd yamisskey-provision
 ```
 
@@ -195,7 +195,7 @@ sudo systemctl restart warp-svc.service
 
 ### ai
 
-You need to manually prepare the configuration file `config.json` in ai repository to run. please see [this document](https://github.com/yamisskey/yui?tab=readme-ov-file#docker%E3%81%A7%E5%8B%95%E3%81%8B%E3%81%99).
+You need to manually prepare the configuration file `config.json` in ai repository to run. please see [this document](https://github.com/yamisskey-dev/yui?tab=readme-ov-file#docker%E3%81%A7%E5%8B%95%E3%81%8B%E3%81%99).
 
 ### provision
 
