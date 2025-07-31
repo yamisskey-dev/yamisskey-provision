@@ -45,7 +45,7 @@ SecRule REQUEST_URI "@rx ^/api/drive/files/create$" \
     nolog"
 
 # PostHog analytics cookie exclusion - prevent false positive SQL injection detection
-SecRule REQUEST_COOKIES:"/ph_phc_.*_posthog/" "@unconditionalMatch" \
+SecRule REQUEST_COOKIES_NAMES "@rx ph_phc_.*_posthog" \
     "id:900005,\
     phase:1,\
     pass,\
