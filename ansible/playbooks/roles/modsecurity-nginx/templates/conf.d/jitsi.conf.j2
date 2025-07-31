@@ -79,5 +79,29 @@ server {
         proxy_connect_timeout 30s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+
+        # Very light caching for web interface
+        proxy_cache static_cache;
+        proxy_cache_methods GET HEAD;
+        proxy_cache_valid 200 1m;
+        proxy_cache_valid 404 30s;
+        proxy_cache_use_stale error timeout updating;
+        proxy_cache_key "$scheme$request_method$host$request_uri";
+
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    # Static assets for Jitsi
+    location ~* \.(css|js|woff|woff2|ttf|eot|svg|ico|png|jpg|gif|mp3|wav)$ {
+        proxy_pass http://jitsi_backend;
+
+        proxy_cache static_cache;
+        proxy_cache_valid 200 1d;
+        proxy_cache_valid 404 1h;
+        proxy_cache_use_stale error timeout updating;
+
+        expires 1d;
+        add_header Cache-Control "public";
+        add_header X-Cache-Status $upstream_cache_status;
     }
 }

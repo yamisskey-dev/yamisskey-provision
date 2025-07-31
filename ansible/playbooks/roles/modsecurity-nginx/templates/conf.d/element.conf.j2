@@ -60,6 +60,30 @@ server {
         proxy_connect_timeout 30s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+
+        # Cache for static web content
+        proxy_cache static_cache;
+        proxy_cache_methods GET HEAD;
+        proxy_cache_valid 200 1h;
+        proxy_cache_valid 404 5m;
+        proxy_cache_use_stale error timeout updating;
+        proxy_cache_key "$scheme$request_method$host$request_uri";
+
+        add_header X-Cache-Status $upstream_cache_status;
+    }
+
+    # Static assets for Element
+    location ~* \.(css|js|woff|woff2|ttf|eot|svg|ico|png|jpg|gif|map)$ {
+        proxy_pass http://element_backend;
+
+        proxy_cache static_cache;
+        proxy_cache_valid 200 7d;
+        proxy_cache_valid 404 1h;
+        proxy_cache_use_stale error timeout updating;
+
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+        add_header X-Cache-Status $upstream_cache_status;
     }
     
     # Access and error logs

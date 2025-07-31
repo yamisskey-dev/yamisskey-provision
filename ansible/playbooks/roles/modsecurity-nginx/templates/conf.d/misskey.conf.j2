@@ -53,22 +53,23 @@ server {
         proxy_http_version 1.1;
         proxy_redirect off;
         
-        # Cache settings
-        proxy_cache cache1;
+        # API cache for GET requests
+        proxy_cache api_cache;
+        proxy_cache_methods GET HEAD;
         proxy_cache_revalidate on;
-        proxy_cache_min_uses 2;
+        proxy_cache_min_uses 1;
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
         proxy_cache_background_update on;
         proxy_cache_lock on;
-        proxy_cache_valid 200 302 10m;
-        proxy_cache_valid 404 1m;
-        proxy_cache_key "$host$request_uri$scheme";
+        proxy_cache_valid 200 5m;
+        proxy_cache_valid 404 30s;
+        proxy_cache_key "$scheme$request_method$host$request_uri";
         
         # Reduce buffering for WebSocket
         proxy_buffering off;
         
         # Header to indicate cache status
-        add_header X-Cache $upstream_cache_status;
+        add_header X-Cache-Status $upstream_cache_status;
     }
     
     # MinIO proxy endpoints
@@ -96,7 +97,7 @@ server {
         add_header Access-Control-Allow-Headers 'Origin, Content-Type, Accept' always;
     }
 
-    # Static file proxy for images and fonts
+    # Static file proxy for images and fonts from MinIO
     location ~* \.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff|woff|woff2|ttf|eot|otf)$ {
         proxy_pass https://{{ minio_api_server_name }};
         proxy_set_header Host {{ minio_api_server_name }};
@@ -104,13 +105,42 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
 
+        # Media cache for static assets
+        proxy_cache media_cache;
+        proxy_cache_valid 200 7d;
+        proxy_cache_valid 404 1h;
+        proxy_cache_use_stale error timeout updating;
+        proxy_cache_key "$scheme$request_method$host$request_uri";
+
+        add_header X-Cache-Status $upstream_cache_status;
         add_header Access-Control-Allow-Origin * always;
         add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
         add_header Access-Control-Allow-Headers 'Origin, Content-Type, Accept' always;
+
+        expires 7d;
+        add_header Cache-Control "public, immutable";
     }
     
     # Client body size for uploads
     client_max_body_size 80m;
+
+    # Static assets (CSS, JS, etc.) from Misskey backend
+    location ~* \.(css|js|map|json)$ {
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        # Static content cache
+        proxy_cache static_cache;
+        proxy_cache_valid 200 1d;
+        proxy_cache_valid 404 1h;
+        proxy_cache_use_stale error timeout updating;
+        proxy_cache_key "$scheme$request_method$host$request_uri";
+
+        add_header X-Cache-Status $upstream_cache_status;
+        expires 1d;
+        add_header Cache-Control "public";
+    }
     
     # Gzip compression
     gzip on;

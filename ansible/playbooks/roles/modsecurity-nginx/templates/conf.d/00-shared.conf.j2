@@ -10,6 +10,11 @@ map $http_upgrade $connection_upgrade {
 # Proxy cache for static content
 proxy_cache_path /tmp/nginx_cache levels=1:2 keys_zone=cache1:32m max_size=2g inactive=1440m use_temp_path=off;
 
+# Additional cache zones for different content types
+proxy_cache_path /tmp/nginx_static_cache levels=1:2 keys_zone=static_cache:16m max_size=1g inactive=7d use_temp_path=off;
+proxy_cache_path /tmp/nginx_api_cache levels=1:2 keys_zone=api_cache:8m max_size=500m inactive=30m use_temp_path=off;
+proxy_cache_path /tmp/nginx_media_cache levels=1:2 keys_zone=media_cache:64m max_size=4g inactive=30d use_temp_path=off;
+
 # Rate limiting zones (defined globally)
 limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/s;
 limit_req_zone $binary_remote_addr zone=general_limit:10m rate=500r/s;
@@ -30,6 +35,17 @@ error_page 502 503 504 @maintenance_redirect;
 # Note: These are reference settings, individual configs override as needed
 proxy_http_version 1.1;
 proxy_set_header Connection "";
+
+# Common cache settings (reference)
+# proxy_cache_revalidate on;
+# proxy_cache_min_uses 2;
+# proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+# proxy_cache_background_update on;
+# proxy_cache_lock on;
+# proxy_cache_key "$scheme$request_method$host$request_uri";
+
+# Cache control headers for static content
+# add_header X-Cache-Status $upstream_cache_status;
 
 # Common security headers (reference)
 # add_header X-Frame-Options "SAMEORIGIN" always;
