@@ -1,0 +1,53 @@
+---
+- name: Create ModSecurity NGINX directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "/etc/modsecurity-nginx"
+    - "/var/log/nginx"
+    - "/etc/modsecurity-nginx/rules"
+
+- name: Create custom rules before CRS
+  template:
+    src: REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.j2
+    dest: "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
+    mode: '0644'
+  notify: restart modsecurity nginx
+
+- name: Create custom rules after CRS
+  template:
+    src: RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.j2
+    dest: "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+    mode: '0644'
+  notify: restart modsecurity nginx
+
+- name: Create Docker Compose file for ModSecurity NGINX
+  template:
+    src: docker-compose.yml.j2
+    dest: "/etc/modsecurity-nginx/docker-compose.yml"
+    mode: '0644'
+  notify: restart modsecurity nginx
+
+- name: Pull ModSecurity NGINX Docker image
+  docker_image:
+    name: "{{ modsecurity_nginx_image }}:{{ modsecurity_nginx_tag }}"
+    source: pull
+    force_source: yes
+
+- name: Start ModSecurity NGINX container
+  docker_compose:
+    project_src: "/etc/modsecurity-nginx"
+    state: present
+    services:
+      - modsecurity-nginx
+
+- name: Ensure ModSecurity NGINX is running
+  docker_container_info:
+    name: "{{ modsecurity_nginx_name }}"
+  register: container_info
+
+- name: Display container status
+  debug:
+    msg: "ModSecurity NGINX container is {{ container_info.container.State.Status }}"

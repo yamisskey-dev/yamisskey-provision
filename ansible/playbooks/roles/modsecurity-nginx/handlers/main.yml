@@ -1,0 +1,7 @@
+---
+- name: restart modsecurity nginx
+  docker_compose:
+    project_src: "/etc/modsecurity-nginx"
+    restarted: yes
+    services:
+      - modsecurity-nginx

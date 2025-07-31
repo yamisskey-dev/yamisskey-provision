@@ -104,6 +104,7 @@ provision:
 	@echo "Running provision playbooks..."
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/common.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/security.yml --ask-become-pass
+	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/modsecurity-nginx.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/monitoring.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/minio.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/misskey.yml --ask-become-pass

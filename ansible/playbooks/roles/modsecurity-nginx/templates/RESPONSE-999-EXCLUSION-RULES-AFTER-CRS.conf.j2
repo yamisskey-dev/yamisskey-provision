@@ -1,0 +1,49 @@
+# Custom ModSecurity rules executed after CRS
+# These rules allow for additional security measures specific to your application
+
+{% if modsecurity_custom_rules_after %}
+# Custom rules after CRS
+{% for rule in modsecurity_custom_rules_after %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+
+# Additional security rules for Misskey
+# Block known bad user agents
+SecRule REQUEST_HEADERS:User-Agent "@rx (?i)(sqlmap|nikto|acunetix|nessus|openvas)" \
+    "id:999001,\
+    phase:1,\
+    block,\
+    msg:'Malicious User Agent Detected',\
+    logdata:'Matched Data: %{MATCHED_VAR} found within %{MATCHED_VAR_NAME}',\
+    tag:'attack-generic',\
+    severity:'CRITICAL',\
+    setvar:'tx.anomaly_score_pl1=+%{tx.critical_anomaly_score}'"
+
+# Rate limiting for API endpoints
+SecRule REQUEST_URI "@rx ^/api/" \
+    "id:999002,\
+    phase:1,\
+    pass,\
+    msg:'API Rate Limiting',\
+    setvar:'ip.api_requests=+1',\
+    expirevar:'ip.api_requests=60'"
+
+SecRule IP:API_REQUESTS "@gt 100" \
+    "id:999003,\
+    phase:1,\
+    deny,\
+    status:429,\
+    msg:'API Rate Limit Exceeded',\
+    logdata:'API requests: %{ip.api_requests}',\
+    tag:'dos-attack'"
+
+# Block suspicious file uploads
+SecRule FILES_NAMES "@rx \.(php|jsp|asp|cgi|pl|py|rb|sh|bat|cmd)$" \
+    "id:999004,\
+    phase:2,\
+    block,\
+    msg:'Dangerous File Upload Detected',\
+    logdata:'File name: %{MATCHED_VAR}',\
+    tag:'attack-file-upload',\
+    severity:'CRITICAL'"

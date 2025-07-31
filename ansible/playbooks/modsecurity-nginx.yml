@@ -1,0 +1,20 @@
+---
+- name: Deploy ModSecurity CRS NGINX
+  hosts: all
+  become: yes
+  vars:
+    modsecurity_nginx_name: "modsecurity-nginx"
+    modsecurity_nginx_image: "owasp/modsecurity-crs:nginx"
+    modsecurity_nginx_port: "8080"
+    modsecurity_nginx_ssl_port: "8443"
+    modsecurity_backend: "http://127.0.0.1:80"
+    modsecurity_server_name: "{{ domain | default('localhost') }}"
+    modsecurity_paranoia_level: 2
+    modsecurity_anomaly_inbound: 5
+    modsecurity_anomaly_outbound: 4
+    modsecurity_blocking_paranoia: 2
+    modsecurity_detection_paranoia: 2
+    modsecurity_log_level: "warn"
+    
+  roles:
+    - modsecurity-nginx

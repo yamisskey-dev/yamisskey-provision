@@ -65,3 +65,10 @@ stalwart_server_name: mail.{{ domain }}
 lemmy_server_name: lemmy.{{ domain }}
 lemmy_dir: '/var/www/lemmy'
 lemmy_secrets_file: '{{ lemmy_dir }}/secrets.yml'
+modsecurity_server_name: "{{ domain }}"
+modsecurity_backend: "http://127.0.0.1:3000"
+modsecurity_blocking_paranoia: 2
+modsecurity_detection_paranoia: 2
+modsecurity_anomaly_inbound: 5
+modsecurity_anomaly_outbound: 4
+modsecurity_always_tls_redirect: "on"

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  modsecurity-nginx:
+    image: {{ modsecurity_nginx_image }}:{{ modsecurity_nginx_tag }}
+    container_name: {{ modsecurity_nginx_name }}
+    restart: {{ modsecurity_nginx_restart_policy }}
+    ports:
+      - "{{ modsecurity_nginx_host_port }}:{{ modsecurity_nginx_port }}"
+      - "{{ modsecurity_nginx_host_ssl_port }}:{{ modsecurity_nginx_ssl_port }}"
+    environment:
+      # Server configuration
+      - SERVER_NAME={{ modsecurity_server_name }}
+      - BACKEND={{ modsecurity_backend }}
+      - PORT={{ modsecurity_nginx_port }}
+      - SSL_PORT={{ modsecurity_nginx_ssl_port }}
+      
+      # ModSecurity configuration
+      - MODSEC_RULE_ENGINE={{ modsecurity_rule_engine }}
+      - MODSEC_REQ_BODY_ACCESS={{ modsecurity_req_body_access }}
+      - MODSEC_RESP_BODY_ACCESS={{ modsecurity_resp_body_access }}
+      - MODSEC_AUDIT_ENGINE={{ modsecurity_audit_engine }}
+      - MODSEC_AUDIT_LOG_FORMAT={{ modsecurity_audit_log_format }}
+      
+      # CRS configuration
+      - BLOCKING_PARANOIA={{ modsecurity_blocking_paranoia }}
+      - DETECTION_PARANOIA={{ modsecurity_detection_paranoia }}
+      - ANOMALY_INBOUND={{ modsecurity_anomaly_inbound }}
+      - ANOMALY_OUTBOUND={{ modsecurity_anomaly_outbound }}
+      - ALLOWED_METHODS={{ modsecurity_allowed_methods }}
+      - ALLOWED_REQUEST_CONTENT_TYPE={{ modsecurity_allowed_request_content_type }}
+      - ALLOWED_HTTP_VERSIONS={{ modsecurity_allowed_http_versions }}
+      
+      # SSL/TLS configuration
+      - SSL_PROTOCOLS={{ modsecurity_ssl_protocols }}
+      - NGINX_ALWAYS_TLS_REDIRECT={{ modsecurity_always_tls_redirect }}
+      
+      # Logging configuration
+      - LOGLEVEL={{ modsecurity_log_level }}
+      - ACCESSLOG={{ modsecurity_access_log }}
+      - ERRORLOG={{ modsecurity_error_log }}
+      
+    volumes:
+{% for volume in modsecurity_docker_volumes %}
+      - "{{ volume }}"
+{% endfor %}
+      - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
+      - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ modsecurity_nginx_port }}/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    networks:
+      - modsecurity-network
+
+networks:
+  modsecurity-network:
+    driver: bridge
