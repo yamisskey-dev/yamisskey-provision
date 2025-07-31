@@ -54,3 +54,21 @@ SecRule REQUEST_COOKIES_NAMES "@rx ph_phc_.*_posthog" \
     ctl:ruleRemoveTargetById=942200;REQUEST_COOKIES,\
     ctl:ruleRemoveTargetById=942340;REQUEST_COOKIES,\
     ctl:ruleRemoveTargetById=942370;REQUEST_COOKIES"
+
+# Allow ActivityPub content type for federation
+SecRule REQUEST_URI "@rx ^/inbox$" \
+    "id:900006,\
+    phase:1,\
+    pass,\
+    t:none,\
+    nolog,\
+    ctl:ruleRemoveById=920420"
+
+# Allow external URLs in ActivityPub content (prevent RFI false positives)
+SecRule REQUEST_URI "@rx ^/inbox$" \
+    "id:900007,\
+    phase:1,\
+    pass,\
+    t:none,\
+    nolog,\
+    ctl:ruleRemoveById=931130"
