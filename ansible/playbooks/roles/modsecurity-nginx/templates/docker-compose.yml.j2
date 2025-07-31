@@ -37,19 +37,15 @@ services:
       - SSL=off
       - NGINX_ALWAYS_TLS_REDIRECT=off
       
-      # Custom ModSecurity rules location
-      - MODSEC_RULE_DIR=/etc/modsecurity/custom-rules
-      
     volumes:
 {% for volume in modsecurity_docker_volumes %}
       - "{{ volume }}"
 {% endfor %}
-      # Individual service configurations only
+      # Individual service nginx configurations
       - "/etc/modsecurity-nginx/conf.d:/etc/nginx/conf.d"
-      # ModSecurity custom exclusion rules (read-only)
-      - "/etc/modsecurity-nginx/rules:/etc/modsecurity/custom-rules:ro"
-      # ModSecurity custom configuration
-      - "/etc/modsecurity-nginx/modsecurity-custom.conf:/etc/modsecurity.d/modsecurity-custom.conf:ro"
+      # ModSecurity exclusion rules (using official CRS path)
+      - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
+      - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
     
     user: "0:0"  # Run as root to avoid permission issues
     

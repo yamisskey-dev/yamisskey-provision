@@ -33,13 +33,6 @@
     mode: '0644'
   notify: restart modsecurity nginx
 
-- name: Create ModSecurity custom configuration
-  template:
-    src: modsecurity-custom.conf.j2
-    dest: "/etc/modsecurity-nginx/modsecurity-custom.conf"
-    mode: '0644'
-  notify: restart modsecurity nginx
-
 - name: Create conf.d directory for individual service configs
   file:
     path: "/etc/modsecurity-nginx/conf.d"
