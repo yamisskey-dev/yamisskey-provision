@@ -4,6 +4,11 @@ services:
     container_name: {{ modsecurity_nginx_name }}
     restart: {{ modsecurity_nginx_restart_policy }}
     network_mode: host  # Required to access localhost services
+    
+    # Override entrypoint to skip problematic init scripts
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "nginx -g 'daemon off;'"]
+    
     environment:
       # Server configuration - unified proxy for all services
       - SERVER_NAME=_
