@@ -45,6 +45,8 @@ services:
       - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
       - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
     
+    user: "0:0"  # Run as root to avoid permission issues
+    
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{{ modsecurity_nginx_port }}/healthz"]
       interval: 30s

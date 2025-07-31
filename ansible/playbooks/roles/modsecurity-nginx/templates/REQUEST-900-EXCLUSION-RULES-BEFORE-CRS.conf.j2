@@ -42,5 +42,4 @@ SecRule REQUEST_URI "@rx ^/api/drive/files/create$" \
     phase:1,\
     pass,\
     t:none,\
-    nolog,\
-    ctl:requestBodyProcessor=MULTIPART"
+    nolog"
