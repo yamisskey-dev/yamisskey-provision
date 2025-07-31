@@ -4,7 +4,8 @@
   become: yes
   vars:
     modsecurity_nginx_name: "modsecurity-nginx"
-    modsecurity_nginx_image: "owasp/modsecurity-crs:nginx"
+    modsecurity_nginx_image: "owasp/modsecurity-crs"
+    modsecurity_nginx_tag: "nginx"
     modsecurity_nginx_port: "8080"
     modsecurity_nginx_ssl_port: "8443"
     modsecurity_backend: "http://127.0.0.1:80"

@@ -3,8 +3,8 @@
 
 # Container configuration
 modsecurity_nginx_name: "modsecurity-nginx"
-modsecurity_nginx_image: "owasp/modsecurity-crs:nginx"
-modsecurity_nginx_tag: "latest"
+modsecurity_nginx_image: "owasp/modsecurity-crs"
+modsecurity_nginx_tag: "nginx"
 modsecurity_nginx_restart_policy: "unless-stopped"
 
 # Network configuration
