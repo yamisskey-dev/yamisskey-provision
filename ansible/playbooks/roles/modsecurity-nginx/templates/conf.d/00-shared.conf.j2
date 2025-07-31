@@ -23,14 +23,6 @@ limit_req_zone $binary_remote_addr zone=mcaptcha_limit:10m rate=30r/s;
 limit_req_zone $binary_remote_addr zone=searxng_limit:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=misskey_limit:10m rate=1000r/s;
 
-# Rate limiting zones (defined globally)
-limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/s;
-limit_req_zone $binary_remote_addr zone=general_limit:10m rate=500r/s;
-limit_req_zone $binary_remote_addr zone=media_limit:10m rate=200r/s;
-limit_req_zone $binary_remote_addr zone=mcaptcha_limit:10m rate=30r/s;
-limit_req_zone $binary_remote_addr zone=searxng_limit:10m rate=10r/s;
-limit_req_zone $binary_remote_addr zone=misskey_limit:10m rate=1000r/s;
-
 # Health check server for ModSecurity-Nginx
 server {
     listen 8080 default_server;
