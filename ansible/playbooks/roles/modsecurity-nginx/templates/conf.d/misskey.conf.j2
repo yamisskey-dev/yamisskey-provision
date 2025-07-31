@@ -72,15 +72,33 @@ server {
         add_header X-Cache-Status $upstream_cache_status;
     }
     
-    # Static file proxy for images and fonts from MinIO
-    location ~* \.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff|woff|woff2|ttf|eot|otf)$ {
+    # Static assets from Misskey application (fonts, icons, etc.)
+    location ~* ^/(static-assets|vite)/.*\.(css|js|woff|woff2|ttf|eot|svg|ico|png|jpg|gif|map|json)$ {
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+
+        # Static content cache
+        proxy_cache static_cache;
+        proxy_cache_valid 200 1d;
+        proxy_cache_valid 404 1h;
+        proxy_cache_use_stale error timeout updating;
+        proxy_cache_key "$scheme$request_method$host$request_uri";
+
+        add_header X-Cache-Status $upstream_cache_status;
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # User uploaded images from MinIO
+    location ~* /{{ minio_bucket_name }}/.*\.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff)$ {
         proxy_pass https://{{ minio_api_server_name }};
         proxy_set_header Host {{ minio_api_server_name }};
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
 
-        # Media cache for static assets
+        # Media cache for user images
         proxy_cache media_cache;
         proxy_cache_valid 200 7d;
         proxy_cache_valid 404 1h;
@@ -98,24 +116,6 @@ server {
     
     # Client body size for uploads
     client_max_body_size 80m;
-
-    # Static assets (CSS, JS, etc.) from Misskey backend
-    location ~* \.(css|js|map|json)$ {
-        proxy_pass http://misskey_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-
-        # Static content cache
-        proxy_cache static_cache;
-        proxy_cache_valid 200 1d;
-        proxy_cache_valid 404 1h;
-        proxy_cache_use_stale error timeout updating;
-        proxy_cache_key "$scheme$request_method$host$request_uri";
-
-        add_header X-Cache-Status $upstream_cache_status;
-        expires 1d;
-        add_header Cache-Control "public";
-    }
     
     # Gzip compression
     gzip on;
