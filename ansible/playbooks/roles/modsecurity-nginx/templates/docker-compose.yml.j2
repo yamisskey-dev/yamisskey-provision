@@ -5,13 +5,11 @@ services:
     restart: {{ modsecurity_nginx_restart_policy }}
     ports:
       - "{{ modsecurity_nginx_host_port }}:{{ modsecurity_nginx_port }}"
-      - "{{ modsecurity_nginx_host_ssl_port }}:{{ modsecurity_nginx_ssl_port }}"
     environment:
       # Server configuration
       - SERVER_NAME={{ modsecurity_server_name }}
       - BACKEND={{ modsecurity_backend }}
       - PORT={{ modsecurity_nginx_port }}
-      - SSL_PORT={{ modsecurity_nginx_ssl_port }}
       
       # ModSecurity configuration
       - MODSEC_RULE_ENGINE={{ modsecurity_rule_engine }}
@@ -29,10 +27,6 @@ services:
       - ALLOWED_REQUEST_CONTENT_TYPE={{ modsecurity_allowed_request_content_type }}
       - ALLOWED_HTTP_VERSIONS={{ modsecurity_allowed_http_versions }}
       
-      # SSL/TLS configuration
-      - SSL_PROTOCOLS={{ modsecurity_ssl_protocols }}
-      - NGINX_ALWAYS_TLS_REDIRECT={{ modsecurity_always_tls_redirect }}
-      
       # Logging configuration
       - LOGLEVEL={{ modsecurity_log_level }}
       - ACCESSLOG={{ modsecurity_access_log }}
@@ -44,7 +38,6 @@ services:
 {% endfor %}
       - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
       - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
-      - "/etc/modsecurity-nginx/ssl/dhparam-2048.pem:/etc/ssl/certs/dhparam-2048.pem:ro"
     
     user: "0:0"  # Run as root to avoid permission issues
     
