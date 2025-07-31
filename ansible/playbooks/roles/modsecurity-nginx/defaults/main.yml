@@ -14,8 +14,10 @@ modsecurity_nginx_host_port: "8081"
 modsecurity_nginx_host_ssl_port: "443"
 
 # Backend configuration
-modsecurity_backend: "http://misskey-web-1:3001"
-modsecurity_server_name: "localhost"
+modsecurity_backend_host: "misskey-web-1"
+modsecurity_backend_port: "3001"
+modsecurity_backend: "http://{{ modsecurity_backend_host }}:{{ modsecurity_backend_port }}"
+modsecurity_server_name: "{{ domain | default('localhost') }}"
 
 # ModSecurity configuration
 modsecurity_rule_engine: "On"
