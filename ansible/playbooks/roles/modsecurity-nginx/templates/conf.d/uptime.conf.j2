@@ -9,7 +9,7 @@ upstream uptime_backend {
 
 # Server block for Uptime Kuma
 server {
-    listen 80;
+    listen 8080;
     server_name {{ uptime_server_name }};
     
     # Error page handling - redirect to maintenance page when backend is down

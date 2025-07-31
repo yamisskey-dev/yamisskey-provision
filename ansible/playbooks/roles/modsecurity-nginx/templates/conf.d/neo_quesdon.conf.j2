@@ -9,7 +9,7 @@ upstream neo_quesdon_backend {
 
 # Server block for Neo-Quesdon
 server {
-    listen 80;
+    listen 8080;
     server_name {{ neo_quesdon_server_name }};
     
     # Error page handling - redirect to maintenance page when backend is down

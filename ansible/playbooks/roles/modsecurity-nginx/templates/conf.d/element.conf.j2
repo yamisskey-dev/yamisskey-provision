@@ -9,7 +9,7 @@ upstream element_backend {
 
 # Server block for Element Web
 server {
-    listen 80;
+    listen 8080;
     server_name {{ element_server_name }};
 
     # Error page handling - redirect to maintenance page when backend is down

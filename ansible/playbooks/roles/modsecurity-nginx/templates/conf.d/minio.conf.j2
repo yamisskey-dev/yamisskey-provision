@@ -1,4 +1,10 @@
-# ModSecurity-Nginx configuration for MinIO API and Web UI
+# ModSecurity-# Server block for MinIO API
+server {
+    listen 8080;
+    serve# Server block for MinIO Web UI
+server {
+    listen 8080;
+    server_name {{ minio_web_server_name }};me {{ minio_api_server_name }};x configuration for MinIO API and Web UI
 # This file is included in the main ModSecurity-Nginx container
 
 # Upstream definitions

@@ -9,7 +9,7 @@ upstream searxng_backend {
 
 # Server block for SearXNG
 server {
-    listen 80;
+    listen 8080;
     server_name {{ searxng_server_name }};
 
     # Error page handling - redirect to maintenance page when backend is down
