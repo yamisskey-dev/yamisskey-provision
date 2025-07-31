@@ -44,6 +44,7 @@ services:
 {% endfor %}
       - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
       - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
+      - "/etc/modsecurity-nginx/ssl/dhparam-2048.pem:/etc/ssl/certs/dhparam-2048.pem:ro"
     
     user: "0:0"  # Run as root to avoid permission issues
     

@@ -10,6 +10,7 @@
     - "/etc/modsecurity-nginx"
     - "/var/log/nginx"
     - "/etc/modsecurity-nginx/rules"
+    - "/etc/modsecurity-nginx/ssl"
 
 - name: Set proper permissions for log directory
   file:
@@ -18,6 +19,23 @@
     owner: root
     group: root
     state: directory
+
+- name: Check if dhparam file exists
+  stat:
+    path: "/etc/modsecurity-nginx/ssl/dhparam-2048.pem"
+  register: dhparam_file
+
+- name: Generate dhparam file for SSL/TLS
+  command: openssl dhparam -out /etc/modsecurity-nginx/ssl/dhparam-2048.pem 2048
+  when: not dhparam_file.stat.exists
+  notify: restart modsecurity nginx
+
+- name: Set correct permissions for dhparam file
+  file:
+    path: "/etc/modsecurity-nginx/ssl/dhparam-2048.pem"
+    mode: '0644'
+    owner: root
+    group: root
 
 - name: Create custom rules before CRS
   template:
