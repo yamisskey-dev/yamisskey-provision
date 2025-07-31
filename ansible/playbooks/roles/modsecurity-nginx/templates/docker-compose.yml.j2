@@ -32,6 +32,10 @@ services:
       - ACCESSLOG={{ modsecurity_access_log }}
       - ERRORLOG={{ modsecurity_error_log }}
       
+      # Disable SSL/TLS completely
+      - SSL=off
+      - NGINX_ALWAYS_TLS_REDIRECT=off
+      
     volumes:
 {% for volume in modsecurity_docker_volumes %}
       - "{{ volume }}"

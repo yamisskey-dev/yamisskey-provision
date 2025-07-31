@@ -10,11 +10,11 @@ modsecurity_nginx_restart_policy: "unless-stopped"
 # Network configuration
 modsecurity_nginx_port: "8080"
 modsecurity_nginx_ssl_port: "8443"
-modsecurity_nginx_host_port: "80"
+modsecurity_nginx_host_port: "8081"
 modsecurity_nginx_host_ssl_port: "443"
 
 # Backend configuration
-modsecurity_backend: "http://127.0.0.1:3000"
+modsecurity_backend: "http://host.docker.internal:8080"
 modsecurity_server_name: "localhost"
 
 # ModSecurity configuration
@@ -49,4 +49,3 @@ modsecurity_custom_rules_after: []
 # Docker volumes
 modsecurity_docker_volumes:
   - "/var/log/nginx:/var/log/nginx"
-  - "/etc/ssl/certs:/etc/ssl/certs:ro"
