@@ -24,8 +24,7 @@ server {
     add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
     add_header 'Access-Control-Allow-Credentials' 'false' always;
     
-    # Rate limiting for CAPTCHA requests
-    limit_req_zone $binary_remote_addr zone=mcaptcha_limit:10m rate=30r/s;
+    # Rate limiting for CAPTCHA requests (zone defined in 00-shared.conf)
     limit_req zone=mcaptcha_limit burst=50 nodelay;
     
     # Proxy settings
