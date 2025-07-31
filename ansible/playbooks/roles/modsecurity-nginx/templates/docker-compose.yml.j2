@@ -9,6 +9,9 @@ services:
       - SERVER_NAME=_
       - PORT={{ modsecurity_nginx_port }}
       
+      # Disable default configuration generation
+      - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.disabled
+      
       # ModSecurity configuration
       - MODSEC_RULE_ENGINE={{ modsecurity_rule_engine }}
       - MODSEC_REQ_BODY_ACCESS={{ modsecurity_req_body_access }}
@@ -40,8 +43,8 @@ services:
 {% endfor %}
       - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
       - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
-      # Individual service configurations
-      - "/etc/modsecurity-nginx/conf.d:/etc/nginx/conf.d:ro"
+      # Individual service configurations (writable to allow container to create default files)
+      - "/etc/modsecurity-nginx/conf.d:/etc/nginx/conf.d"
     
     user: "0:0"  # Run as root to avoid permission issues
     
