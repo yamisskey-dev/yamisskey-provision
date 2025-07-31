@@ -32,6 +32,8 @@ all: install inventory clone provision backup update
 install:
 	@echo "Installing Ansible..."
 	@sudo apt-get update && sudo apt-get install -y ansible || (echo "Install failed" && exit 1)
+	@echo "Installing Ansible collections..."
+	@ansible-galaxy collection install -r ansible/requirements.yml
 	@echo "Installing necessary packages..."
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/common.yml --ask-become-pass
 	@echo "Installing Tailscale..."

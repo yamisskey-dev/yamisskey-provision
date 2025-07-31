@@ -31,20 +31,18 @@
   notify: restart modsecurity nginx
 
 - name: Pull ModSecurity NGINX Docker image
-  docker_image:
+  community.docker.docker_image:
     name: "{{ modsecurity_nginx_image }}:{{ modsecurity_nginx_tag }}"
     source: pull
     force_source: yes
 
 - name: Start ModSecurity NGINX container
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "/etc/modsecurity-nginx"
     state: present
-    services:
-      - modsecurity-nginx
 
 - name: Ensure ModSecurity NGINX is running
-  docker_container_info:
+  community.docker.docker_container_info:
     name: "{{ modsecurity_nginx_name }}"
   register: container_info
 
