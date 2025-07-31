@@ -2,4 +2,5 @@
 - name: restart modsecurity nginx
   community.docker.docker_compose_v2:
     project_src: "/etc/modsecurity-nginx"
-    restarted: yes
+    state: present
+    recreate: always
