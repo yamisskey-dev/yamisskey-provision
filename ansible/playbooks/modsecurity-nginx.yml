@@ -8,7 +8,7 @@
     modsecurity_nginx_tag: "nginx"
     modsecurity_nginx_port: "8080"
     modsecurity_nginx_ssl_port: "8443"
-    modsecurity_backend: "http://127.0.0.1:80"
+    modsecurity_backend: "http://misskey-web-1:3001"
     modsecurity_server_name: "{{ domain | default('localhost') }}"
     modsecurity_paranoia_level: 2
     modsecurity_anomaly_inbound: 5
