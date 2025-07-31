@@ -1,0 +1,10 @@
+# Custom ModSecurity configuration
+# This file includes custom exclusion rules
+
+# Include custom rules before CRS
+Include /etc/modsecurity/custom-rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+
+# The CRS rules are loaded automatically by the container
+
+# Include custom rules after CRS  
+Include /etc/modsecurity/custom-rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
