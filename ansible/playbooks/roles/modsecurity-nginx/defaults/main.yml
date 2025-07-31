@@ -31,16 +31,7 @@ modsecurity_detection_paranoia: 2
 modsecurity_anomaly_inbound: 5
 modsecurity_anomaly_outbound: 4
 modsecurity_allowed_methods: "GET HEAD POST OPTIONS PUT PATCH DELETE"
-modsecurity_allowed_request_content_type: |
-  application/x-www-form-urlencoded|
-  multipart/form-data|
-  multipart/related|
-  text/xml|
-  application/xml|
-  application/soap+xml|
-  application/json|
-  application/cloudevents+json|
-  application/cloudevents-batch+json
+modsecurity_allowed_request_content_type: "application/x-www-form-urlencoded|multipart/form-data|multipart/related|text/xml|application/xml|application/soap+xml|application/json|application/cloudevents+json|application/cloudevents-batch+json"
 modsecurity_allowed_http_versions: "HTTP/1.0 HTTP/1.1 HTTP/2 HTTP/2.0"
 
 # SSL/TLS configuration
