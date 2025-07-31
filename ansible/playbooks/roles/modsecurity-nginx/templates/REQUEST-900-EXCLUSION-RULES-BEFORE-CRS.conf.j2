@@ -18,6 +18,55 @@ SecRule REQUEST_URI "@beginsWith /api/" \
     nolog,\
     ctl:ruleRemoveById=920320"
 
+# Service-specific exclusions based on Host header
+
+# Misskey-specific exclusions
+SecRule REQUEST_HEADERS:Host "@streq {{ domain }}" \
+    "id:900010,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:text"
+
+# Matrix Synapse exclusions
+SecRule REQUEST_HEADERS:Host "@streq {{ synapse_server_name }}" \
+    "id:900011,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:content"
+
+# Element Web exclusions
+SecRule REQUEST_HEADERS:Host "@streq {{ element_server_name }}" \
+    "id:900012,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:content"
+
+# CTFd exclusions (file uploads, HTML content)
+SecRule REQUEST_HEADERS:Host "@streq {{ ctfd_server_name }}" \
+    "id:900013,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:content,ctl:ruleRemoveTargetById=932170;ARGS:content"
+
+# Jitsi Meet exclusions
+SecRule REQUEST_HEADERS:Host "@streq {{ jitsi_server_name }}" \
+    "id:900014,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:config"
+
+# CryptPad exclusions (collaborative editing)
+SecRule REQUEST_HEADERS:Host "@streq {{ cryptpad_server_name }}" \
+    "id:900015,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:content,ctl:ruleRemoveTargetById=932170;ARGS:content"
+
+# Outline exclusions (markdown content)
+SecRule REQUEST_HEADERS:Host "@streq {{ outline_server_name }}" \
+    "id:900016,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:text,ctl:ruleRemoveTargetById=932170;ARGS:text"
+
+# Lemmy exclusions (markdown posts, federation)
+SecRule REQUEST_HEADERS:Host "@streq {{ lemmy_server_name }}" \
+    "id:900017,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:body,ctl:ruleRemoveTargetById=932170;ARGS:body"
+
+# Vikunja exclusions (task descriptions)
+SecRule REQUEST_HEADERS:Host "@streq {{ vikunja_server_name }}" \
+    "id:900018,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:description"
+
+# MinIO exclusions (file operations)
+SecRule REQUEST_HEADERS:Host "@streq {{ minio_api_server_name }}" \
+    "id:900019,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS"
+
+SecRule REQUEST_HEADERS:Host "@streq {{ minio_web_server_name }}" \
+    "id:900020,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS"
+
+# SearXNG exclusions (search queries)
+SecRule REQUEST_HEADERS:Host "@streq {{ searxng_server_name }}" \
+    "id:900021,phase:1,pass,nolog,ctl:ruleRemoveTargetById=932160;ARGS:q"
+
 # Exclude WebSocket upgrade requests
 SecRule REQUEST_HEADERS:Upgrade "@rx websocket" \
     "id:900002,\

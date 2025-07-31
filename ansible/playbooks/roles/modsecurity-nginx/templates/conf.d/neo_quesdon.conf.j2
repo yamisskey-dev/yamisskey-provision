@@ -1,0 +1,71 @@
+# ModSecurity-Nginx configuration for Neo-Quesdon
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definition
+upstream neo_quesdon_backend {
+    server localhost:3025;
+    keepalive 8;
+}
+
+# Server block for Neo-Quesdon
+server {
+    listen 80;
+    server_name {{ neo_quesdon_server_name }};
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # CORS headers for API access
+    add_header 'Access-Control-Allow-Origin' '*' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+    add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # API endpoints
+    location /api/ {
+        proxy_pass http://neo_quesdon_backend;
+        proxy_http_version 1.1;
+        
+        # API timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # No caching for dynamic content
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    
+    # Static assets
+    location /static/ {
+        proxy_pass http://neo_quesdon_backend;
+        proxy_http_version 1.1;
+        
+        # Cache static assets
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Main Neo-Quesdon application
+    location / {
+        proxy_pass http://neo_quesdon_backend;
+        proxy_http_version 1.1;
+        
+        # Standard timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Buffering
+        proxy_buffering on;
+        proxy_buffer_size 64k;
+        proxy_buffers 4 64k;
+    }
+}

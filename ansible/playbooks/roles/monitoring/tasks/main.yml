@@ -137,28 +137,31 @@
   when: prometheus_config.changed or blackbox_config.changed
 
 # 8. Nginx Configuration
-- name: Deploy Grafana Nginx configuration
-  template:
-    src: nginx_grafana.conf.j2
-    dest: /etc/nginx/conf.d/grafana.conf
-    owner: root
-    group: root
-    mode: '0644'
-  notify:
-    - Reload Nginx
-
-- name: Check if Nginx configuration exists for Grafana
-  stat:
-    path: /etc/nginx/conf.d/grafana.conf
-  register: grafana_nginx_conf
-
-- name: Reload Nginx if configuration file exists
-  become: yes
-  become_user: root
-  systemd:
-    name: nginx
-    state: reloaded
-  when: grafana_nginx_conf.stat.exists
+# NOTE: nginx configuration now handled by ModSecurity-Nginx container
+# Legacy nginx tasks commented out to avoid conflicts
+# 
+# - name: Deploy Grafana Nginx configuration
+#   template:
+#     src: nginx_grafana.conf.j2
+#     dest: /etc/nginx/conf.d/grafana.conf
+#     owner: root
+#     group: root
+#     mode: '0644'
+#   notify:
+#     - Reload Nginx
+# 
+# - name: Check if Nginx configuration exists for Grafana
+#   stat:
+#     path: /etc/nginx/conf.d/grafana.conf
+#   register: grafana_nginx_conf
+# 
+# - name: Reload Nginx if configuration file exists
+#   become: yes
+#   become_user: root
+#   systemd:
+#     name: nginx
+#     state: reloaded
+#   when: grafana_nginx_conf.stat.exists
 
 # 9. Final Health Checks
 - name: Verify all services

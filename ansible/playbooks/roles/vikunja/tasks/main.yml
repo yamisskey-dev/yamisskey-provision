@@ -53,11 +53,13 @@
     src: vikunja_docker-compose.yml.j2
     dest: '/var/www/vikunja/docker-compose.yml'
 
-# Nginx設定ファイルをテンプレートから生成
-- name: Generate nginx.conf from template
-  template:
-    src: nginx_vikunja.conf.j2
-    dest: '/etc/nginx/conf.d/vikunja.conf'
+# NOTE: nginx configuration now handled by ModSecurity-Nginx container
+# Legacy nginx tasks commented out to avoid conflicts
+# 
+# - name: Generate nginx.conf from template
+#   template:
+#     src: nginx_vikunja.conf.j2
+#     dest: '/etc/nginx/conf.d/vikunja.conf'
 
 # Docker Composeでサービスを起動
 - name: Start Vikunja services

@@ -3,12 +3,10 @@ services:
     image: {{ modsecurity_nginx_image }}:{{ modsecurity_nginx_tag }}
     container_name: {{ modsecurity_nginx_name }}
     restart: {{ modsecurity_nginx_restart_policy }}
-    ports:
-      - "{{ modsecurity_nginx_host_port }}:{{ modsecurity_nginx_port }}"
+    network_mode: host  # Required to access localhost services
     environment:
-      # Server configuration
-      - SERVER_NAME={{ modsecurity_server_name }}
-      - BACKEND={{ modsecurity_backend }}
+      # Server configuration - unified proxy for all services
+      - SERVER_NAME=_
       - PORT={{ modsecurity_nginx_port }}
       
       # ModSecurity configuration
@@ -32,7 +30,7 @@ services:
       - ACCESSLOG={{ modsecurity_access_log }}
       - ERRORLOG={{ modsecurity_error_log }}
       
-      # Disable SSL/TLS completely
+      # Disable SSL/TLS completely (Cloudflare handles SSL)
       - SSL=off
       - NGINX_ALWAYS_TLS_REDIRECT=off
       
@@ -42,6 +40,8 @@ services:
 {% endfor %}
       - "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf:ro"
       - "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf:ro"
+      # Individual service configurations
+      - "/etc/modsecurity-nginx/conf.d:/etc/nginx/conf.d:ro"
     
     user: "0:0"  # Run as root to avoid permission issues
     
@@ -51,11 +51,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    
-    networks:
-      - external_network
-
-networks:
-  external_network:
-    name: external_network
-    external: true

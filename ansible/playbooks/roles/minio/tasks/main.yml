@@ -82,21 +82,24 @@
     - name: Configure CORS for bucket
       command: /usr/local/bin/mc policy set-json "{{ minio_alias }}/{{ minio_bucket_name }}" '{{ lookup("template", "templates/minio_cors_policy.json.j2") | to_json }}'
 
-- name: Configure and restart Nginx
-  block:
-    - name: Configure Nginx for MinIO
-      template:
-        src: templates/nginx_minio.conf.j2
-        dest: /etc/nginx/conf.d/minio.conf
-        owner: root
-        group: root
-        mode: '0644'
-
-    - name: Validate Nginx configuration
-      command: nginx -t
-      changed_when: false
-
-    - name: Restart Nginx
-      service:
-        name: nginx
-        state: restarted
+# NOTE: nginx configuration now handled by ModSecurity-Nginx container
+# Legacy nginx tasks commented out to avoid conflicts
+# 
+# - name: Configure and restart Nginx
+#   block:
+#     - name: Configure Nginx for MinIO
+#       template:
+#         src: templates/nginx_minio.conf.j2
+#         dest: /etc/nginx/conf.d/minio.conf
+#         owner: root
+#         group: root
+#         mode: '0644'
+# 
+#     - name: Validate Nginx configuration
+#       command: nginx -t
+#       changed_when: false
+# 
+#     - name: Restart Nginx
+#       service:
+#         name: nginx
+#         state: restarted

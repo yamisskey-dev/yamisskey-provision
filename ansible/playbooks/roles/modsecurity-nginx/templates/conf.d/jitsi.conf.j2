@@ -1,0 +1,75 @@
+# ModSecurity-Nginx configuration for Jitsi Meet
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definition
+upstream jitsi_backend {
+    server localhost:8003;
+    keepalive 8;
+}
+
+# Server block for Jitsi Meet
+server {
+    listen 80;
+    server_name {{ jitsi_server_name }};
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # WebSocket endpoints for Jitsi
+    location ~ ^/colibri-ws/ {
+        proxy_pass http://jitsi_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        tcp_nodelay on;
+        
+        # WebSocket timeouts
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+    
+    # XMPP WebSocket
+    location ~ ^/xmpp-websocket {
+        proxy_pass http://jitsi_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        tcp_nodelay on;
+        
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+    
+    # BOSH endpoint for mobile clients
+    location /http-bind {
+        proxy_pass http://jitsi_backend/http-bind;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+    }
+    
+    # Main Jitsi Meet web interface
+    location / {
+        proxy_pass http://jitsi_backend;
+        proxy_http_version 1.1;
+        
+        # Buffering for better performance
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+        
+        # Timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}

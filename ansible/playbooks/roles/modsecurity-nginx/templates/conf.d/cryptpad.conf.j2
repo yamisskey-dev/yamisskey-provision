@@ -1,0 +1,78 @@
+# ModSecurity-Nginx configuration for CryptPad
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definitions
+upstream cryptpad_backend {
+    server localhost:3333;
+    keepalive 8;
+}
+
+upstream cryptpad_websocket_backend {
+    server localhost:3003;
+    keepalive 8;
+}
+
+# Server block for CryptPad
+server {
+    listen 80;
+    server_name {{ cryptpad_server_name }};
+    
+    # Large file uploads for documents
+    client_max_body_size 100M;
+    
+    # Security headers (CryptPad specific)
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "same-origin" always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # WebSocket support
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    
+    # WebSocket endpoint for real-time collaboration
+    location /cryptpad_websocket {
+        proxy_pass http://cryptpad_websocket_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Long timeouts for collaborative sessions
+        proxy_read_timeout 1800s;
+        proxy_send_timeout 1800s;
+        proxy_connect_timeout 1800s;
+    }
+    
+    # Service worker (required for offline functionality)
+    location /serviceworker.js {
+        proxy_pass http://cryptpad_backend;
+        proxy_http_version 1.1;
+        
+        # No caching for service worker
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        expires 0;
+    }
+    
+    # Main CryptPad application
+    location / {
+        proxy_pass http://cryptpad_backend;
+        proxy_http_version 1.1;
+        
+        # Long timeouts for document operations
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 1800s;
+        proxy_read_timeout 1800s;
+        
+        # Buffering
+        proxy_buffering on;
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+    }
+}

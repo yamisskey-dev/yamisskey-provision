@@ -1,0 +1,70 @@
+# ModSecurity-Nginx configuration for Uptime Kuma
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definition
+upstream uptime_backend {
+    server localhost:3009;
+    keepalive 8;
+}
+
+# Server block for Uptime Kuma
+server {
+    listen 80;
+    server_name {{ uptime_server_name }};
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # WebSocket support for real-time monitoring updates
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    
+    # Socket.IO endpoint
+    location /socket.io/ {
+        proxy_pass http://uptime_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Keep connections alive for real-time updates
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+    }
+    
+    # API endpoints
+    location /api/ {
+        proxy_pass http://uptime_backend;
+        proxy_http_version 1.1;
+        
+        # Monitoring API timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+    
+    # Main Uptime Kuma application
+    location / {
+        proxy_pass http://uptime_backend;
+        proxy_http_version 1.1;
+        
+        # Standard timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Buffering
+        proxy_buffering on;
+        proxy_buffer_size 64k;
+        proxy_buffers 4 64k;
+    }
+}

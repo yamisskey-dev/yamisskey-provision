@@ -21,54 +21,41 @@ originRequest:
 metrics: localhost:49312
 
 ingress:
+  # All services through ModSecurity-Nginx (except bypasses and special cases)
   - hostname: {{ domain }}
     service: http://localhost:8080
   - hostname: bypass.{{ domain }}
-    service: http://localhost:8080
+    service: http://localhost:3001  # Direct to Misskey (bypass ModSecurity)
   - hostname: {{ searxng_server_name }}
-    service: http://localhost:8082
+    service: http://localhost:8080
   - hostname: {{ synapse_server_name }}
-    service: http://localhost:8008
+    service: http://localhost:8080
   - hostname: {{ element_server_name }}
-    service: http://localhost:8081
+    service: http://localhost:8080
   - hostname: {{ ctfd_server_name }}
-    service: http://localhost:8000
+    service: http://localhost:8080
   - hostname: {{ minio_api_server_name }}
-    service: http://localhost:9000
+    service: http://localhost:8080
   - hostname: {{ minio_web_server_name }}
-    service: http://localhost:9001
+    service: http://localhost:8080
   - hostname: {{ jitsi_server_name }}
-    service: http://localhost:8003
-    originRequest:
-      noTLSVerify: true
-      tlsTimeout: 10s
-      httpHostHeader: {{ jitsi_server_name }}
-      http2Origin: true
-      disableChunkedEncoding: false
-      connectTimeout: 30s
-      keepAliveTimeout: 90s
-      keepAliveConnections: 100
-      tcpKeepAlive: 30s
-      noHappyEyeballs: false
+    service: http://localhost:8080
   - hostname: {{ grafana_server_name }}
-    service: http://localhost:3000
+    service: http://localhost:8080
   - hostname: {{ vikunja_server_name }}
-    service: http://localhost:3456
+    service: http://localhost:8080
   - hostname: {{ cryptpad_server_name }}
-    service: http://localhost:3333
+    service: http://localhost:8080
   - hostname: {{ outline_server_name }}
-    service: http://localhost:3004
+    service: http://localhost:8080
   - hostname: {{ uptime_server_name }}
-    service: http://localhost:3009
+    service: http://localhost:8080
   - hostname: {{ zitadel_server_name }}
-    service: http://localhost:8993
-    originRequest:
-      noTLSVerify: true
-      http2Origin: true
+    service: http://localhost:8080
   - hostname: {{ mcaptcha_server_name }}
-    service: http://localhost:7493
+    service: http://localhost:8080
   - hostname: {{ neo_quesdon_server_name }}
-    service: http://localhost:3025
+    service: http://localhost:8080
   - hostname: {{ lemmy_server_name }}
-    service: http://localhost:1236
+    service: http://localhost:8080
   - service: http_status:404

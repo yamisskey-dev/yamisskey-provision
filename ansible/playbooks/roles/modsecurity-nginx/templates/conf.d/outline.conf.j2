@@ -1,0 +1,73 @@
+# ModSecurity-Nginx configuration for Outline Wiki
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definition
+upstream outline_backend {
+    server localhost:3004;
+    keepalive 8;
+}
+
+# Server block for Outline
+server {
+    listen 80;
+    server_name {{ outline_server_name }};
+    
+    # Large file uploads for documents and images
+    client_max_body_size 50M;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # WebSocket support for real-time collaboration
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    
+    # API endpoints
+    location /api/ {
+        proxy_pass http://outline_backend;
+        proxy_http_version 1.1;
+        
+        # API timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # No caching for API
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    
+    # Static assets
+    location /static/ {
+        proxy_pass http://outline_backend;
+        proxy_http_version 1.1;
+        
+        # Cache static assets
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Main Outline application
+    location / {
+        proxy_pass http://outline_backend;
+        proxy_http_version 1.1;
+        
+        # Standard timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Buffering
+        proxy_buffering on;
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+    }
+}

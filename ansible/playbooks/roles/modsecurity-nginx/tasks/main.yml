@@ -33,6 +33,39 @@
     mode: '0644'
   notify: restart modsecurity nginx
 
+- name: Create conf.d directory for individual service configs
+  file:
+    path: "/etc/modsecurity-nginx/conf.d"
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create individual service nginx configurations
+  template:
+    src: "conf.d/{{ item }}.conf.j2"
+    dest: "/etc/modsecurity-nginx/conf.d/{{ item }}.conf"
+    mode: '0644'
+  loop:
+    - 00-shared      # Common settings (loaded first)
+    - misskey        # Main Misskey service
+    - synapse        # Matrix Synapse
+    - element        # Element Web client
+    - jitsi          # Jitsi Meet
+    - ctfd           # CTFd platform
+    - grafana        # Grafana monitoring
+    - minio          # MinIO object storage
+    - vikunja        # Vikunja task management
+    - cryptpad       # CryptPad collaborative editor
+    - zitadel        # Zitadel identity provider
+    - searxng        # SearXNG search engine
+    - outline        # Outline wiki
+    - uptime         # Uptime Kuma monitoring
+    - mcaptcha       # mCaptcha service
+    - neo_quesdon    # Neo-Quesdon Q&A
+    - lemmy          # Lemmy link aggregator
+  notify: restart modsecurity nginx
+
 - name: Create Docker Compose file for ModSecurity NGINX
   template:
     src: docker-compose.yml.j2

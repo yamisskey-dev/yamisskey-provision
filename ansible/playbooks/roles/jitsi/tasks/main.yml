@@ -128,15 +128,18 @@
     name: nginx
     state: reloaded
 
-- name: Deploy Nginx configuration for Jitsi Meet
-  template:
-    src: nginx_jitsi.conf.j2
-    dest: '/etc/nginx/conf.d/jitsi.conf'
-
-- name: Reload Nginx to apply new configuration
-  service:
-    name: nginx
-    state: reloaded
+# NOTE: nginx configuration now handled by ModSecurity-Nginx container
+# Legacy nginx tasks commented out to avoid conflicts
+# 
+# - name: Deploy Nginx configuration for Jitsi Meet
+#   template:
+#     src: nginx_jitsi.conf.j2
+#     dest: '/etc/nginx/conf.d/jitsi.conf'
+# 
+# - name: Reload Nginx to apply new configuration
+#   service:
+#     name: nginx
+#     state: reloaded
 
 - name: Start Jitsi Meet with Docker Compose
   command: docker-compose up -d

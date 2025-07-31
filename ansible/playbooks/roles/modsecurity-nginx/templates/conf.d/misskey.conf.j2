@@ -1,0 +1,186 @@
+# ModSecurity-Nginx configuration for Misskey
+# This file is included in the main ModSecurity-Nginx container
+
+# Shared configurations
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+proxy_cache_path /tmp/nginx_cache levels=1:2 keys_zone=cache1:32m max_size=2g inactive=1440m use_temp_path=off;
+
+# Rate limiting for Misskey
+limit_req_zone $binary_remote_addr zone=misskey_limit:10m rate=1000r/s;
+
+# Upstream definition
+upstream misskey_backend {
+    server misskey-web-1:3001;
+    keepalive 32;
+}
+
+# Server block for Misskey
+server {
+    listen 80;
+    server_name {{ domain }};
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Rate limiting
+    limit_req zone=misskey_limit burst=100 nodelay;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;  # Always HTTPS from Cloudflare
+    
+    # WebSocket support
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    
+    # Timeouts
+    proxy_connect_timeout 30s;
+    proxy_send_timeout 60s;
+    proxy_read_timeout 60s;
+    
+    # Main location
+    location / {
+        # Rate limiting
+        limit_req zone=misskey_limit burst=1000 nodelay;
+        
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_redirect off;
+        
+        # Cache settings
+        proxy_cache cache1;
+        proxy_cache_revalidate on;
+        proxy_cache_min_uses 2;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        proxy_cache_valid 200 302 10m;
+        proxy_cache_valid 404 1m;
+        proxy_cache_key "$host$request_uri$scheme";
+        
+        # Reduce buffering for WebSocket
+        proxy_buffering off;
+        
+        # Header to indicate cache status
+        add_header X-Cache $upstream_cache_status;
+    }
+    
+    # MinIO proxy endpoints
+    location /proxy/ {
+        proxy_pass https://{{ minio_api_server_name }};
+        proxy_set_header Host {{ minio_api_server_name }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
+        add_header Access-Control-Allow-Headers 'Origin, Content-Type, Accept' always;
+    }
+
+    location /{{ minio_bucket_name }}/ {
+        proxy_pass https://{{ minio_api_server_name }};
+        proxy_set_header Host {{ minio_api_server_name }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
+        add_header Access-Control-Allow-Headers 'Origin, Content-Type, Accept' always;
+    }
+
+    # Static file proxy for images and fonts
+    location ~* \.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff|woff|woff2|ttf|eot|otf)$ {
+        proxy_pass https://{{ minio_api_server_name }};
+        proxy_set_header Host {{ minio_api_server_name }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
+        add_header Access-Control-Allow-Headers 'Origin, Content-Type, Accept' always;
+    }
+    
+    # Client body size for uploads
+    client_max_body_size 80m;
+    
+    # Gzip compression
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    gzip_proxied any;
+    gzip_vary on;
+    gzip_min_length 256;
+    location / {
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        
+        # Caching for static assets
+        proxy_cache cache1;
+        proxy_cache_key $scheme$request_method$host$request_uri;
+        proxy_cache_valid 200 1h;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        
+        # Buffering
+        proxy_buffering on;
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+    }
+    
+    # API endpoints (no caching)
+    location ~* ^/api/ {
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_cache off;
+        
+        # Larger timeouts for API
+        proxy_read_timeout 180s;
+        proxy_send_timeout 180s;
+    }
+    
+    # Streaming endpoints
+    location ~* ^/streaming {
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_cache off;
+        proxy_buffering off;
+        
+        # WebSocket specific
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Keep connections alive
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+    
+    # Media uploads
+    location ~* ^/api/drive/files/create {
+        client_max_body_size 500M;
+        proxy_pass http://misskey_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_cache off;
+        
+        # Longer timeouts for uploads
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+        client_body_timeout 600s;
+    }
+    
+    # Disable access log to reduce I/O load
+    access_log off;
+    error_log /dev/null crit;
+}

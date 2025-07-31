@@ -1,0 +1,77 @@
+# ModSecurity-Nginx configuration for Matrix Synapse
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definition
+upstream synapse_backend {
+    server localhost:8008;
+    keepalive 16;
+}
+
+# Server block for Matrix Synapse
+server {
+    listen 80;
+    server_name {{ synapse_server_name }};
+    
+    # Security headers
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # CORS headers for Matrix federation
+    add_header 'Access-Control-Allow-Origin' '*' always;
+    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+    add_header 'Access-Control-Allow-Headers' 'Authorization, Origin, X-Requested-With, Content-Type, Accept' always;
+    add_header 'Access-Control-Allow-Credentials' 'true' always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # WebSocket support
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    
+    # Well-known endpoints for Matrix federation
+    location /.well-known/matrix/server {
+        alias /var/www/synapse/.well-known/matrix/server;
+        default_type application/json;
+        add_header Access-Control-Allow-Origin *;
+    }
+    
+    location /.well-known/matrix/client {
+        alias /var/www/synapse/.well-known/matrix/client;
+        default_type application/json;
+        add_header Access-Control-Allow-Origin *;
+    }
+    
+    # Main Matrix endpoints
+    location ~* ^/_matrix/ {
+        proxy_pass http://synapse_backend;
+        proxy_http_version 1.1;
+        
+        # Long timeouts for Matrix sync
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+        
+        # Matrix-specific headers
+        proxy_set_header X-Forwarded-Protocol $scheme;
+        proxy_set_header X-Forwarded-SSL on;
+    }
+    
+    # Synapse admin API
+    location ~* ^/_synapse/ {
+        proxy_pass http://synapse_backend;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+    }
+    
+    # Default location
+    location / {
+        proxy_pass http://synapse_backend;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+    }
+}

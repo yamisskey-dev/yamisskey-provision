@@ -1,0 +1,86 @@
+# ModSecurity-Nginx configuration for MinIO API and Web UI
+# This file is included in the main ModSecurity-Nginx container
+
+# Upstream definitions
+upstream minio_api_backend {
+    server localhost:9000;
+    keepalive 8;
+}
+
+upstream minio_web_backend {
+    server localhost:9001;
+    keepalive 8;
+}
+
+# Server block for MinIO API
+server {
+    listen 80;
+    server_name {{ minio_api_server_name }};
+    
+    # Large file uploads
+    client_max_body_size 1G;
+    client_body_timeout 300s;
+    
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # Main MinIO API
+    location / {
+        proxy_pass http://minio_api_backend;
+        proxy_http_version 1.1;
+        
+        # Long timeouts for large file operations
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 600s;
+        proxy_read_timeout 600s;
+        
+        # Disable buffering for streaming
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+}
+
+# Server block for MinIO Web UI
+server {
+    listen 80;
+    server_name {{ minio_web_server_name }};
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    
+    # Proxy settings
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    
+    # WebSocket support for real-time updates
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    
+    # Main MinIO Console
+    location / {
+        proxy_pass http://minio_web_backend;
+        proxy_http_version 1.1;
+        
+        # Standard timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # Buffering for better performance
+        proxy_buffering on;
+        proxy_buffer_size 64k;
+        proxy_buffers 4 64k;
+    }
+}

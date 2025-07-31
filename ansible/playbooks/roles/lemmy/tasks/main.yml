@@ -97,14 +97,16 @@
     recurse: yes
   become: true
 
-# Nginxの設定
-- name: Deploy Nginx configuration
-  template:
-    src: nginx.conf.j2
-    dest: /etc/nginx/conf.d/lemmy.conf
-    mode: '0644'
-  become: true
-  notify: Reload Nginx
+# NOTE: nginx configuration now handled by ModSecurity-Nginx container
+# Legacy nginx tasks commented out to avoid conflicts
+# 
+# - name: Deploy Nginx configuration
+#   template:
+#     src: nginx.conf.j2
+#     dest: /etc/nginx/conf.d/lemmy.conf
+#     mode: '0644'
+#   become: true
+#   notify: Reload Nginx
 
 # コンテナの起動
 - name: Start Lemmy Docker containers

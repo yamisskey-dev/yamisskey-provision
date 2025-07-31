@@ -10,8 +10,7 @@ modsecurity_nginx_restart_policy: "unless-stopped"
 # Network configuration
 modsecurity_nginx_port: "8080"
 modsecurity_nginx_ssl_port: "8443"
-modsecurity_nginx_host_port: "8081"
-modsecurity_nginx_host_ssl_port: "443"
+# Host ports not needed when using host network mode
 
 # Backend configuration
 modsecurity_backend_host: "misskey-web-1"
@@ -51,3 +50,6 @@ modsecurity_custom_rules_after: []
 # Docker volumes
 modsecurity_docker_volumes:
   - "/var/log/nginx:/var/log/nginx"
+  # Static file volumes for Element and Synapse
+  - "/var/www/element:/var/www/element:ro"
+  - "/var/www/synapse:/var/www/synapse:ro"

@@ -139,21 +139,23 @@
     state: present
     restarted: no
 
-# Nginx設定
-- name: Copy nginx configuration for synapse
-  template:
-    src: nginx_synapse.conf.j2
-    dest: /etc/nginx/conf.d/synapse.conf
-
-- name: Copy nginx configuration for element
-  template:
-    src: nginx_element.conf.j2
-    dest: /etc/nginx/conf.d/element.conf
-
-- name: Restart nginx
-  service:
-    name: nginx
-    state: restarted
+# NOTE: nginx configuration now handled by ModSecurity-Nginx container
+# Legacy nginx tasks commented out to avoid conflicts
+# 
+# - name: Copy nginx configuration for synapse
+#   template:
+#     src: nginx_synapse.conf.j2
+#     dest: /etc/nginx/conf.d/synapse.conf
+# 
+# - name: Copy nginx configuration for element
+#   template:
+#     src: nginx_element.conf.j2
+#     dest: /etc/nginx/conf.d/element.conf
+# 
+# - name: Restart nginx
+#   service:
+#     name: nginx
+#     state: restarted
 
 # Elementコンテナの起動
 - name: Start element
