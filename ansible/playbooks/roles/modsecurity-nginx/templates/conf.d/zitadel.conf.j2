@@ -11,7 +11,15 @@ upstream zitadel_backend {
 server {
     listen 80;
     server_name {{ zitadel_server_name }};
+
+    # Error page handling - redirect to maintenance page when backend is down
+    error_page 502 503 504 @maintenance_redirect;
     
+    # Maintenance page redirect location
+    location @maintenance_redirect {
+        return 302 https://down.yami.ski;
+    }
+
     # Buffer settings for gRPC
     client_body_buffer_size 16k;
     client_header_buffer_size 4k;

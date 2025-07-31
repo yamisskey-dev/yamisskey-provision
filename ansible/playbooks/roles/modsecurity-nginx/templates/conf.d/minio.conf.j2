@@ -16,7 +16,15 @@ upstream minio_web_backend {
 server {
     listen 80;
     server_name {{ minio_api_server_name }};
-    
+
+    # Error page handling - redirect to maintenance page when backend is down
+    error_page 502 503 504 @maintenance_redirect;
+
+    # Maintenance page redirect location
+    location @maintenance_redirect {
+        return 302 https://down.yami.ski;
+    }
+
     # Large file uploads
     client_max_body_size 1G;
     client_body_timeout 300s;
@@ -51,7 +59,15 @@ server {
 server {
     listen 80;
     server_name {{ minio_web_server_name }};
-    
+
+    # Error page handling - redirect to maintenance page when backend is down
+    error_page 502 503 504 @maintenance_redirect;
+
+    # Maintenance page redirect location
+    location @maintenance_redirect {
+        return 302 https://down.yami.ski;
+    }
+
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;

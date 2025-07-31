@@ -11,7 +11,15 @@ upstream outline_backend {
 server {
     listen 80;
     server_name {{ outline_server_name }};
-    
+
+    # Error page handling - redirect to maintenance page when backend is down
+    error_page 502 503 504 @maintenance_redirect;
+
+    # Maintenance page redirect location
+    location @maintenance_redirect {
+        return 302 https://down.yami.ski;
+    }
+
     # Large file uploads for documents and images
     client_max_body_size 50M;
     
