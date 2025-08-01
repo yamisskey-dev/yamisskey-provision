@@ -31,12 +31,6 @@
     daemon_reload: yes
   become: true
 
-- name: Reload Nginx
-  systemd:
-    name: nginx
-    state: reloaded
-  become: true
-
 - name: Reload sysctl
   command: sysctl -p
   become: yes

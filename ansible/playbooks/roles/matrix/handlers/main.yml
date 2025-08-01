@@ -9,13 +9,6 @@
     state: restarted
   become: true
 
-- name: Reload Nginx
-  become: yes
-  become_user: root
-  systemd:
-    name: nginx
-    state: reloaded
-
 - name: Restart element
   docker_compose:
     project_src: /var/www/element

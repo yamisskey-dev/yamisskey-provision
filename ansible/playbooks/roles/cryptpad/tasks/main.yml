@@ -59,18 +59,6 @@
     group: root
   notify: restart cryptpad
 
-# NOTE: nginx configuration now handled by ModSecurity-Nginx container
-# Legacy nginx tasks commented out to avoid conflicts
-# 
-# - name: Copy nginx configuration
-#   template:
-#     src: nginx_cryptpad.conf.j2
-#     dest: /etc/nginx/conf.d/cryptpad.conf
-#     mode: '0644'
-#   notify:
-#     - check nginx configuration
-#     - reload nginx
-
 # 5. コンテナの管理
 - name: Pull CryptPad Docker image
   docker_image:

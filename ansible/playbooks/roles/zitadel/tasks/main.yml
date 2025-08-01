@@ -78,24 +78,6 @@
     dest: "{{ zitadel_dir }}/docker-compose.yml"
     mode: '0644'
 
-# NOTE: nginx configuration now handled by ModSecurity-Nginx container
-# Legacy nginx tasks commented out to avoid conflicts
-# 
-# - name: Create Nginx configuration
-#   template:
-#     src: nginx_zitadel.conf.j2
-#     dest: /etc/nginx/conf.d/zitadel.conf
-#     mode: '0644'
-#   notify: reload nginx
-#   become: true
-# 
-# - name: Ensure nginx is started
-#   service:
-#     name: nginx
-#     state: started
-#     enabled: yes
-#   become: true
-
 - name: Set correct permissions for Zitadel directories
   file:
     path: "{{ item }}"
