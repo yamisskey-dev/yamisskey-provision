@@ -48,7 +48,7 @@ minecraft_plugins:
   - name: "ViaVersion"
     url: "https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion.jar"
   - name: "ViaBackwards"
-    url: "https://github.com/ViaVersion/ViaBackwards/releases/latest/download/ViaBackwards.jar"
+    url: "https://github.com/ViaVersion/ViaBackwards/releases/download/5.4.2/ViaBackwards-5.4.2.jar"
 
 # Docker設定
 minecraft_docker_image: "itzg/minecraft-server:java21"

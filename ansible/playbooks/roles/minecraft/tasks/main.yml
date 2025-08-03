@@ -206,14 +206,19 @@
 
         - name: Extract claim code from PlayIt output
           shell: |
-            grep -oP 'claim code is: \K[A-Z0-9-]+' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
+            # より柔軟なパターンでClaim Codeを抽出
+            grep -oE '[A-Z0-9]{1,}(-[A-Z0-9]{1,})*' /tmp/playit-setup/output.log | grep -E '^[A-Z0-9-]{6,}$' | head -1 || \
+            grep -oP 'claim.*?([A-Z0-9-]{6,})' /tmp/playit-setup/output.log | grep -oE '[A-Z0-9-]{6,}' | head -1 || \
+            grep -oE '[0-9]{1,}' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
           register: playit_claim_code_result
           changed_when: false
           become: true
 
         - name: Extract claim URL from PlayIt output
           shell: |
-            grep -oP 'https://playit\.gg/claim/[A-Z0-9-]+' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
+            # 実際のURLパターンを抽出
+            grep -oP 'https://playit\.gg/claim/[A-Za-z0-9-]+' /tmp/playit-setup/output.log | head -1 || \
+            echo "https://playit.gg/claim/{{ playit_claim_code_result.stdout }}"
           register: playit_claim_url_result
           changed_when: false
           become: true
