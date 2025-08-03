@@ -204,22 +204,23 @@
           register: playit_setup_result
           ignore_errors: yes
 
-        - name: Extract claim code from PlayIt output
+        - name: Extract claim URL from PlayIt output
           shell: |
-            # より柔軟なパターンでClaim Codeを抽出
-            grep -oE '[A-Z0-9]{1,}(-[A-Z0-9]{1,})*' /tmp/playit-setup/output.log | grep -E '^[A-Z0-9-]{6,}$' | head -1 || \
-            grep -oP 'claim.*?([A-Z0-9-]{6,})' /tmp/playit-setup/output.log | grep -oE '[A-Z0-9-]{6,}' | head -1 || \
-            grep -oE '[0-9]{1,}' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
-          register: playit_claim_code_result
+            # URLパターンを先に抽出
+            grep -oP 'https://playit\.gg/claim/[A-Za-z0-9-]+' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
+          register: playit_claim_url_result
           changed_when: false
           become: true
 
-        - name: Extract claim URL from PlayIt output
+        - name: Extract claim code from URL
           shell: |
-            # 実際のURLパターンを抽出
-            grep -oP 'https://playit\.gg/claim/[A-Za-z0-9-]+' /tmp/playit-setup/output.log | head -1 || \
-            echo "https://playit.gg/claim/{{ playit_claim_code_result.stdout }}"
-          register: playit_claim_url_result
+            # URLからClaim Codeを抽出
+            if [ "{{ playit_claim_url_result.stdout }}" != "NOT_FOUND" ]; then
+              echo "{{ playit_claim_url_result.stdout }}" | grep -oP 'https://playit\.gg/claim/\K[A-Za-z0-9-]+'
+            else
+              echo "NOT_FOUND"
+            fi
+          register: playit_claim_code_result
           changed_when: false
           become: true
 
