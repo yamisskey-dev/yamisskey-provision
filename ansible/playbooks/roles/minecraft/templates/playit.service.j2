@@ -1,15 +1,13 @@
 [Unit]
-Description=PlayIt Agent for Minecraft Server
+Description=Playit.gg Agent
 Documentation=https://playit.gg/
-After=docker.service
-Requires=docker.service
+After=network.target
 
 [Service]
 Type=simple
 User={{ ansible_user }}
-WorkingDirectory={{ minecraft_dir }}
-ExecStart=/usr/bin/docker-compose up playit
-ExecStop=/usr/bin/docker-compose stop playit
+Environment=PLAYIT_SECRET={{ playit_secret_key }}
+ExecStart=/usr/local/bin/playit
 Restart=always
 RestartSec=10
 

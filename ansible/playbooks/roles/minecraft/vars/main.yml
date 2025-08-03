@@ -16,7 +16,7 @@ minecraft_seed: ""
 
 # PlayIt設定
 playit_enabled: false          # PlayIt.gg機能の有効/無効（コマンドラインで -e playit_enabled=true で有効化）
-playit_secret_key: ""         # 初回デプロイ後にClaim Codeを設定
+playit_secret_key: "39c321b3bf"         # PlayIt.gg Claim Code
 
 # ポート設定
 minecraft_java_port: 25565
@@ -37,18 +37,12 @@ floodgate_player_link_enable: true
 floodgate_require_link: false
 floodgate_link_type: "offline"
 
-# プラグイン設定
+# プラグイン設定（クロスプラットフォーム必須のみ）
 minecraft_plugins:
   - name: "Geyser-Spigot"
     url: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot"
   - name: "floodgate"
     url: "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot"
-  - name: "EssentialsX"
-    url: "https://github.com/EssentialsX/Essentials/releases/latest/download/EssentialsX.jar"
-  - name: "ViaVersion"
-    url: "https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion.jar"
-  - name: "ViaBackwards"
-    url: "https://github.com/ViaVersion/ViaBackwards/releases/download/5.4.2/ViaBackwards-5.4.2.jar"
 
 # Docker設定
 minecraft_docker_image: "itzg/minecraft-server:java21"
