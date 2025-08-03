@@ -224,15 +224,6 @@
           changed_when: false
           become: true
 
-        - name: Auto-save claim code to vars file
-          lineinfile:
-            path: "{{ playbook_dir }}/roles/minecraft/vars/main.yml"
-            regexp: '^playit_secret_key:'
-            line: 'playit_secret_key: "{{ playit_claim_code_result.stdout }}"'
-            backup: yes
-          when: playit_claim_code_result.stdout != "NOT_FOUND"
-          delegate_to: localhost
-
         - name: Update runtime variable with extracted claim code
           set_fact:
             playit_secret_key: "{{ playit_claim_code_result.stdout }}"
@@ -253,7 +244,7 @@
               2. リンク完了後、PlayItサービスが自動的に開始されます
               
               ⚠️ 重要:
-              - Claim Codeは自動的にvars/main.ymlに保存されました
+              - Claim Codeは実行時のみ有効です
               - アカウントリンク後、systemdサービスが自動で開始されます
               ===============================================
           when: playit_claim_code_result.stdout != "NOT_FOUND"

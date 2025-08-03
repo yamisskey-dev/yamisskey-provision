@@ -16,7 +16,7 @@ minecraft_seed: ""
 
 # PlayIt設定
 playit_enabled: false          # PlayIt.gg機能の有効/無効（コマンドラインで -e playit_enabled=true で有効化）
-playit_secret_key: "39c321b3bf"         # PlayIt.gg Claim Code
+playit_secret_key: ""         # PlayIt.gg Claim Code（毎回自動生成）
 
 # ポート設定
 minecraft_java_port: 25565
