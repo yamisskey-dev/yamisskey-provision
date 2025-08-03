@@ -193,7 +193,7 @@
 
         - name: Run PlayIt setup in background for claim code extraction
           shell: |
-            timeout 30 /usr/bin/playit --stdout 2>&1 | tee /tmp/playit-setup/output.log &
+            timeout 30 /usr/local/bin/playit --stdout 2>&1 | tee /tmp/playit-setup/output.log &
             PID=$!
             sleep 15
             kill $PID 2>/dev/null || true
@@ -267,7 +267,7 @@
               {{ playit_logs.stdout }}
               
               手動設定方法:
-              1. sudo /usr/bin/playit --setup
+              1. sudo /usr/local/bin/playit --setup
               2. 表示されるClaim CodeとURLをメモ
               3. vars/main.ymlにplayit_secret_key: "YOUR_CLAIM_CODE"を設定
           when: playit_claim_code_result.stdout == "NOT_FOUND"
