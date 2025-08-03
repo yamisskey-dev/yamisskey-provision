@@ -1,19 +1,18 @@
 ---
 # Minecraft Server Handlers
 
-- name: restart minecraft server
-  block:
-    - name: Stop and remove existing containers
-      community.docker.docker_compose:
-        project_src: '{{ minecraft_dir }}'
-        state: absent
-      ignore_errors: yes
-    
-    - name: Start minecraft server
-      community.docker.docker_compose:
-        project_src: '{{ minecraft_dir }}'
-        state: present
-        pull: yes
+- name: stop minecraft containers
+  community.docker.docker_compose:
+    project_src: '{{ minecraft_dir }}'
+    state: absent
+  ignore_errors: yes
+  listen: "restart minecraft"
+
+- name: start minecraft server
+  community.docker.docker_compose:
+    project_src: '{{ minecraft_dir }}'
+    state: present
+    pull: yes
   listen: "restart minecraft"
 
 - name: reload systemd
