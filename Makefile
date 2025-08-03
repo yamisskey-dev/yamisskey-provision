@@ -1,7 +1,7 @@
 .PHONY: all install inventory clone migrate provision backup update help
 
-DESTINATION_SSH_USER=taka
-DESTINATION_HOSTNAME=balthasar
+DESTINATION_SSH_USER=$(shell whoami)
+DESTINATION_HOSTNAME=$(shell hostname)
 DESTINATION_IP=$(shell tailscale status | grep $(DESTINATION_HOSTNAME) | awk '{print $$1}')
 DESTINATION_SSH_PORT=22
 OS=$(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
