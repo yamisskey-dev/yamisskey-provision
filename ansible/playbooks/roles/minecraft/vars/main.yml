@@ -45,6 +45,8 @@ minecraft_plugins:
     url: "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot"
   - name: "ViaVersion"
     url: "https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.4.2/PAPER/ViaVersion-5.4.2.jar"
+  - name: "GeyserSkinManager"
+    url: "https://github.com/Camotoy/GeyserSkinManager/releases/latest/download/GeyserSkinManager-Spigot.jar"
 
 # Docker設定
 minecraft_docker_image: "itzg/minecraft-server:java21"
