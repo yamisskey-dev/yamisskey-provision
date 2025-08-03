@@ -78,25 +78,8 @@ services:
       retries: 3
       start_period: 60s
 
-{% if playit_secret_key is defined and playit_secret_key != "" %}
-  playit:
-    image: ghcr.io/playit-cloud/playit-agent:latest
-    container_name: playit-agent
-    restart: unless-stopped
-    
-    environment:
-      SECRET_KEY: "${PLAYIT_SECRET_KEY}"
-    
-    # より安全なネットワーク設定
-    network_mode: "container:minecraft-papermc-server"
-    
-    volumes:
-      - playit-config:/root/.config/playit
-    
-    depends_on:
-      minecraft:
-        condition: service_healthy
-{% endif %}
+# PlayIt.ggはsystemdサービスとして別途管理されます
+# Docker Composeからは除外し、APTパッケージとして動作
 
   portainer:
     image: portainer/portainer-ce:latest
@@ -112,8 +95,6 @@ services:
 
 volumes:
   minecraft-data:
-    driver: local
-  playit-config:
     driver: local
   portainer-data:
     driver: local

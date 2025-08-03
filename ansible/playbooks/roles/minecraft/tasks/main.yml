@@ -145,44 +145,64 @@
     state: started
     enabled: yes
 
-# PlayIt.gg Claim Code自動取得
+# PlayIt.gg APTパッケージのインストールと設定（ARM64対応）
 - name: PlayIt.gg setup helper
   block:
+    - name: Install required packages for PlayIt.gg
+      apt:
+        name:
+          - curl
+          - gnupg
+        state: present
+        update_cache: yes
+      become: true
+
+    - name: Download and install PlayIt.gg APT package
+      shell: |
+        curl -SsL https://playit.gg/install.sh | sudo bash
+      args:
+        creates: /usr/local/bin/playit
+      become: true
+
     - name: Check if PlayIt secret key is needed
       set_fact:
         playit_needs_setup: "{{ playit_secret_key is not defined or playit_secret_key == '' }}"
 
-    - name: Generate PlayIt claim code automatically
+    - name: Generate PlayIt claim code automatically (APT version)
       block:
-        - name: Start temporary PlayIt container for claim code extraction
-          docker_container:
-            name: playit-temp-setup
-            image: "ghcr.io/playit-cloud/playit-agent:latest"
-            network_mode: "container:minecraft-papermc-server"
-            detach: true
-            auto_remove: false
-            restart_policy: "no"
+        - name: Create temporary PlayIt configuration directory
+          file:
+            path: /tmp/playit-setup
+            state: directory
+            mode: '0700'
+          become: true
 
-        - name: Wait for claim code generation
-          pause:
-            seconds: 15
-
-        - name: Extract claim code from logs
+        - name: Run PlayIt setup in background for claim code extraction
           shell: |
-            docker logs playit-temp-setup 2>&1 | grep -oP 'Your claim code is: \K[A-Z0-9-]+' | head -1 || echo "NOT_FOUND"
+            timeout 30 /usr/local/bin/playit --stdout 2>&1 | tee /tmp/playit-setup/output.log &
+            PID=$!
+            sleep 15
+            kill $PID 2>/dev/null || true
+            wait $PID 2>/dev/null || true
+          args:
+            chdir: /tmp/playit-setup
+          become: true
+          register: playit_setup_result
+          ignore_errors: yes
+
+        - name: Extract claim code from PlayIt output
+          shell: |
+            grep -oP 'claim code is: \K[A-Z0-9-]+' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
           register: playit_claim_code_result
           changed_when: false
+          become: true
 
-        - name: Extract claim URL from logs
+        - name: Extract claim URL from PlayIt output
           shell: |
-            docker logs playit-temp-setup 2>&1 | grep -oP 'https://playit\.gg/claim/[A-Z0-9-]+' | head -1 || echo "NOT_FOUND"
+            grep -oP 'https://playit\.gg/claim/[A-Z0-9-]+' /tmp/playit-setup/output.log | head -1 || echo "NOT_FOUND"
           register: playit_claim_url_result
           changed_when: false
-
-        - name: Stop and remove temporary PlayIt container
-          docker_container:
-            name: playit-temp-setup
-            state: absent
+          become: true
 
         - name: Auto-save claim code to vars file
           lineinfile:
@@ -191,6 +211,7 @@
             line: 'playit_secret_key: "{{ playit_claim_code_result.stdout }}"'
             backup: yes
           when: playit_claim_code_result.stdout != "NOT_FOUND"
+          delegate_to: localhost
 
         - name: Update runtime variable with extracted claim code
           set_fact:
@@ -213,15 +234,15 @@
               
               ⚠️ 重要:
               - Claim Codeは自動的にvars/main.ymlに保存されました
-              - Playbookの再実行は不要です
-              - アカウントリンク後、約30秒でトンネルが利用可能になります
+              - アカウントリンク後、systemdサービスが自動で開始されます
               ===============================================
           when: playit_claim_code_result.stdout != "NOT_FOUND"
 
-        - name: Show PlayIt container logs if claim code not found
-          shell: docker logs playit-temp-setup 2>&1 || echo "Container not found"
+        - name: Show PlayIt setup logs if claim code not found
+          shell: cat /tmp/playit-setup/output.log 2>/dev/null || echo "No output log found"
           register: playit_logs
           when: playit_claim_code_result.stdout == "NOT_FOUND"
+          become: true
 
         - name: Display troubleshooting information
           debug:
@@ -232,10 +253,16 @@
               {{ playit_logs.stdout }}
               
               手動設定方法:
-              1. docker run --rm -it --net=host ghcr.io/playit-cloud/playit-agent:latest
+              1. sudo /usr/local/bin/playit --setup
               2. 表示されるClaim CodeとURLをメモ
               3. vars/main.ymlにplayit_secret_key: "YOUR_CLAIM_CODE"を設定
           when: playit_claim_code_result.stdout == "NOT_FOUND"
+
+        - name: Clean up temporary setup directory
+          file:
+            path: /tmp/playit-setup
+            state: absent
+          become: true
 
       when: playit_needs_setup and (playit_enabled | default(false))
   when: playit_enabled | default(false)
