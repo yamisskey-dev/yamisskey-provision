@@ -145,6 +145,32 @@
     state: started
     enabled: yes
 
+# プラグイン設定の強制上書き（プラグイン初期化後）
+- name: Wait for plugins to initialize
+  wait_for:
+    timeout: 60
+  when: ansible_check_mode == false
+
+- name: Force copy Geyser config after initialization
+  template:
+    src: geyser-config.yml.j2
+    dest: '{{ minecraft_dir }}/data/plugins/Geyser-Spigot/config.yml'
+    mode: '0644'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    force: yes
+  notify: restart minecraft
+
+- name: Force copy Floodgate config after initialization
+  template:
+    src: floodgate-config.yml.j2
+    dest: '{{ minecraft_dir }}/data/plugins/floodgate/config.yml'
+    mode: '0644'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+    force: yes
+  notify: restart minecraft
+
 # PlayIt.gg APTパッケージのインストールと設定（ARM64対応）
 - name: PlayIt.gg setup helper
   block:
