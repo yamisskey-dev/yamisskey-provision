@@ -1,0 +1,52 @@
+# Floodgate Configuration
+
+# Whether to enable Floodgate or not
+enabled: true
+
+# The prefix of Floodgate players.
+# It's recommended to use a prefix that doesn't collide with other player names or plugins.
+# Allowed characters: a-z, A-Z, 0-9, _
+username-prefix: "."
+
+# Should Floodgate replace spaces in Bedrock usernames with underscores
+replace-spaces: true
+
+# Should Floodgate handle player linking automatically?
+# When enabled, Floodgate will create an account for Bedrock players when they join for the first time.
+player-link:
+  # Whether to enable automatic player linking
+  enable: true
+  # Should Floodgate require a Java Edition account to be linked before a Bedrock player can join?
+  # When enabled, Bedrock players have to link their account before being able to join the server.
+  # You can link your accounts by using the link account system.
+  require-link: false
+  # The type of linking that should be used
+  # Can be 'online' for Mojang authentication or 'offline' for offline mode servers
+  type: offline
+
+# Should we send a kick message when a Bedrock player tries to join and player-link.require-link is enabled but the player isn't linked?
+link-required-kick: true
+
+# Should we send a kick message to Java players who have the same uuid as a Bedrock player (if the server is in offline mode)?
+# When disabled, the Bedrock player will be kicked instead.
+kick-java-players: false
+
+# Whether we should send a message to the server admins when a Bedrock player joins for the first time
+send-floodgate-data: true
+
+# Only change this value if you're using a proxy like BungeeCord or Velocity.
+# If you're using BungeeCord/Velocity, set this to false.
+player-link.global-linking: true
+
+# The key file for Floodgate authentication. This should not be touched unless you know what you're doing.
+key-file-name: key.pem
+
+# Whether we should kick the player after a specified time if they haven't been able to connect.
+# This feature is mainly useful for servers that have a lot of Bedrock players joining and disconnecting quickly.
+disconnect-time: 0
+
+# Should we forward player information to Bungeecord when using Floodgate on Bungeecord?
+forward-hostname: false
+
+# Config version, do not change
+config-version: 2

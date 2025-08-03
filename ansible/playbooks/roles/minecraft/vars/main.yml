@@ -1,0 +1,55 @@
+---
+# Minecraft Server Variables for PaperMC + Geyser/Floodgate
+
+# サーバー基本設定
+# Raspberry Pi 5 (8GB) でMinio + BorgBackup同居を考慮した設定
+# 統一リソース設定（全プラットフォーム共通）
+minecraft_memory: "4G"                                        # Raspberry Pi 5 (8GB) でMinio + BorgBackup同居考慮
+minecraft_motd: "PaperMC + Geyser/Floodgate Cross-Platform Server"
+minecraft_server_name: "Yamisskey Minecraft"
+minecraft_max_players: 20                                     # 全プラットフォーム統一
+minecraft_difficulty: "normal"
+minecraft_gamemode: "survival"
+minecraft_pvp: true
+minecraft_view_distance: 10                                   # 全プラットフォーム統一
+minecraft_seed: ""
+
+# PlayIt設定
+playit_enabled: false          # PlayIt.gg機能の有効/無効（コマンドラインで -e playit_enabled=true で有効化）
+playit_secret_key: ""         # 初回デプロイ後にClaim Codeを設定
+
+# ポート設定
+minecraft_java_port: 25565
+minecraft_bedrock_port: 19132
+minecraft_rcon_port: 25575
+
+# Geyser設定
+geyser_motd1: "{{ minecraft_motd }}"
+geyser_motd2: "Cross-Platform Minecraft Server"
+geyser_server_name: "{{ minecraft_server_name }}"
+geyser_compression_level: 6
+geyser_max_players: "{{ minecraft_max_players }}"
+
+# Floodgate設定
+floodgate_username_prefix: "."
+floodgate_replace_spaces: true
+floodgate_player_link_enable: true
+floodgate_require_link: false
+floodgate_link_type: "offline"
+
+# プラグイン設定
+minecraft_plugins:
+  - name: "Geyser-Spigot"
+    url: "https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot"
+  - name: "floodgate"
+    url: "https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot"
+  - name: "EssentialsX"
+    url: "https://github.com/EssentialsX/Essentials/releases/latest/download/EssentialsX.jar"
+  - name: "ViaVersion"
+    url: "https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion.jar"
+  - name: "ViaBackwards"
+    url: "https://github.com/ViaVersion/ViaBackwards/releases/latest/download/ViaBackwards.jar"
+
+# Docker設定
+minecraft_docker_image: "itzg/minecraft-server:java21"
+minecraft_container_name: "minecraft-papermc-server"

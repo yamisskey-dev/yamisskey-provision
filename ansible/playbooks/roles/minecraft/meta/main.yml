@@ -1,0 +1,38 @@
+---
+galaxy_info:
+  author: yamisskey-dev
+  description: Minecraft Server with PaperMC + Geyser/Floodgate for cross-platform gaming
+  company: yamisskey-dev
+  license: MIT
+  min_ansible_version: '2.9'
+  
+  platforms:
+    - name: Ubuntu
+      versions:
+        - '20.04'
+        - '22.04'
+        - '24.04'
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: RaspberryPiOS
+      versions:
+        - bullseye
+        - bookworm
+
+  galaxy_tags:
+    - minecraft
+    - papermc
+    - geyser
+    - floodgate
+    - docker
+    - gaming
+    - cross-platform
+
+dependencies: []
+
+collections:
+  - community.docker
+
+allow_duplicates: false

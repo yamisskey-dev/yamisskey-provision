@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  minecraft:
+    image: itzg/minecraft-server:java21
+    container_name: minecraft-papermc-server
+    restart: unless-stopped
+    {% if ansible_architecture == "aarch64" or ansible_architecture == "armv7l" %}
+    platform: linux/arm64
+    {% else %}
+    platform: linux/amd64
+    {% endif %}
+    
+    env_file:
+      - .env
+    
+    environment:
+      EULA: "TRUE"
+      TYPE: PAPER
+      VERSION: "1.21.1"
+      MEMORY: "${MEMORY:-4G}"
+      
+      # クロスプラットフォーム対応の設定
+      ONLINE_MODE: "false"
+      ENABLE_RCON: "true"
+      RCON_PASSWORD: "${RCON_PASSWORD:-minecraft}"
+      RCON_PORT: 25575
+      
+      # PaperMC特有の設定
+      USE_AIKAR_FLAGS: "true"
+      PAPER_CHANNEL: default
+      
+      # 自動でGeyser/Floodgateプラグインをダウンロード
+      PLUGINS: |
+        https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+        https://github.com/EssentialsX/Essentials/releases/latest/download/EssentialsX.jar
+        https://github.com/ViaVersion/ViaVersion/releases/latest/download/ViaVersion.jar
+        https://github.com/ViaVersion/ViaBackwards/releases/latest/download/ViaBackwards.jar
+      
+      # 古いプラグイン/MODの削除
+      REMOVE_OLD_MODS: "true"
+      REMOVE_OLD_PLUGINS: "true"
+      
+      # サーバープロパティの自動設定
+      ALLOW_NETHER: "true"
+      ANNOUNCE_PLAYER_ACHIEVEMENTS: "true"
+      ENABLE_COMMAND_BLOCK: "true"
+      FORCE_GAMEMODE: "false"
+      GENERATE_STRUCTURES: "true"
+      HARDCORE: "false"
+      MAX_PLAYERS: {{ minecraft_max_players }}
+      MAX_WORLD_SIZE: 29999984
+      MOTD: "{{ minecraft_motd }}"
+      PVP: "{{ minecraft_pvp | lower }}"
+      SPAWN_ANIMALS: "true"
+      SPAWN_MONSTERS: "true"
+      SPAWN_NPCS: "true"
+      VIEW_DISTANCE: {{ minecraft_view_distance }}
+      SEED: "{{ minecraft_seed }}"
+      MODE: {{ minecraft_gamemode }}
+      DIFFICULTY: {{ minecraft_difficulty }}
+      LEVEL_TYPE: minecraft:normal
+      GENERATOR_SETTINGS: ""
+    
+    ports:
+      - "25565:25565"    # Java Edition
+      - "19132:19132/udp" # Bedrock Edition (Geyser)
+      - "25575:25575"    # RCON
+    
+    volumes:
+      - minecraft-data:/data
+    
+    healthcheck:
+      test: ["CMD", "mc-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+{% if playit_secret_key is defined and playit_secret_key != "" %}
+  playit:
+    image: ghcr.io/playit-cloud/playit-agent:latest
+    container_name: playit-agent
+    restart: unless-stopped
+    
+    environment:
+      SECRET_KEY: "${PLAYIT_SECRET_KEY}"
+    
+    # より安全なネットワーク設定
+    network_mode: "container:minecraft-papermc-server"
+    
+    volumes:
+      - playit-config:/root/.config/playit
+    
+    depends_on:
+      minecraft:
+        condition: service_healthy
+{% endif %}
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    
+    ports:
+      - "9000:9000"
+    
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+
+volumes:
+  minecraft-data:
+    driver: local
+  playit-config:
+    driver: local
+  portainer-data:
+    driver: local

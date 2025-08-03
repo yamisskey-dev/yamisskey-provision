@@ -1,0 +1,23 @@
+---
+# Minecraft Server Handlers
+
+- name: restart minecraft server
+  community.docker.docker_compose:
+    project_src: '{{ minecraft_dir }}'
+    state: present
+    pull: yes
+    recreate: always
+  listen: "restart minecraft"
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+  become: true
+
+- name: restart playit service
+  systemd:
+    name: playit
+    state: restarted
+    enabled: yes
+  become: true
+  listen: "restart playit"

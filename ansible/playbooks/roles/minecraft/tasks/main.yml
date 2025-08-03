@@ -69,36 +69,72 @@
     group: '{{ ansible_user }}'
   when: not minecraft_secrets_file_stat.stat.exists
 
+# 環境変数ファイルの配置
+- name: Copy .env file
+  template:
+    src: minecraft.env.j2
+    dest: '{{ minecraft_dir }}/.env'
+    mode: '0600'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+  notify: restart minecraft
+
 # Docker Compose設定の展開
 - name: Copy docker-compose.yml
   template:
-    src: templates/minecraft_docker-compose.yml.j2
+    src: docker-compose.yml.j2
     dest: '{{ minecraft_dir }}/docker-compose.yml'
     mode: '0644'
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
+  notify: restart minecraft
 
-# MODの設定ディレクトリの作成
-- name: Create Minecraft mods config directory
+# プラグイン設定ディレクトリの作成
+- name: Create Minecraft plugins config directories
   file:
-    path: '{{ minecraft_dir }}/data/config'
+    path: '{{ item }}'
     state: directory
     mode: '0755'
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
+  loop:
+    - '{{ minecraft_dir }}/data/plugins'
+    - '{{ minecraft_dir }}/data/plugins/Geyser-Spigot'
+    - '{{ minecraft_dir }}/data/plugins/floodgate'
 
-# MODリストファイルの配置
-- name: Copy mods list file
+# Geyser設定ファイルの配置
+- name: Copy Geyser config
   template:
-    src: templates/minecraft_mods.txt.j2
-    dest: '{{ minecraft_dir }}/data/config/mods.txt'
+    src: geyser-config.yml.j2
+    dest: '{{ minecraft_dir }}/data/plugins/Geyser-Spigot/config.yml'
     mode: '0644'
     owner: '{{ ansible_user }}'
     group: '{{ ansible_user }}'
+  notify: restart minecraft
+
+# Floodgate設定ファイルの配置
+- name: Copy Floodgate config
+  template:
+    src: floodgate-config.yml.j2
+    dest: '{{ minecraft_dir }}/data/plugins/floodgate/config.yml'
+    mode: '0644'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+  notify: restart minecraft
+
+# server.propertiesの配置
+- name: Copy server.properties
+  template:
+    src: server.properties.j2
+    dest: '{{ minecraft_dir }}/data/server.properties'
+    mode: '0644'
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+  notify: restart minecraft
 
 # サーバーの起動
 - name: Start Minecraft server
-  docker_compose:
+  community.docker.docker_compose:
     project_src: '{{ minecraft_dir }}'
     state: present
     pull: yes
@@ -109,12 +145,111 @@
     state: started
     enabled: yes
 
+# PlayIt.gg Claim Code自動取得
+- name: PlayIt.gg setup helper
+  block:
+    - name: Check if PlayIt secret key is needed
+      set_fact:
+        playit_needs_setup: "{{ playit_secret_key is not defined or playit_secret_key == '' }}"
+
+    - name: Generate PlayIt claim code automatically
+      block:
+        - name: Start temporary PlayIt container for claim code extraction
+          docker_container:
+            name: playit-temp-setup
+            image: "ghcr.io/playit-cloud/playit-agent:latest"
+            network_mode: "container:minecraft-papermc-server"
+            detach: true
+            auto_remove: false
+            restart_policy: "no"
+
+        - name: Wait for claim code generation
+          pause:
+            seconds: 15
+
+        - name: Extract claim code from logs
+          shell: |
+            docker logs playit-temp-setup 2>&1 | grep -oP 'Your claim code is: \K[A-Z0-9-]+' | head -1 || echo "NOT_FOUND"
+          register: playit_claim_code_result
+          changed_when: false
+
+        - name: Extract claim URL from logs
+          shell: |
+            docker logs playit-temp-setup 2>&1 | grep -oP 'https://playit\.gg/claim/[A-Z0-9-]+' | head -1 || echo "NOT_FOUND"
+          register: playit_claim_url_result
+          changed_when: false
+
+        - name: Stop and remove temporary PlayIt container
+          docker_container:
+            name: playit-temp-setup
+            state: absent
+
+        - name: Auto-save claim code to vars file
+          lineinfile:
+            path: "{{ playbook_dir }}/roles/minecraft/vars/main.yml"
+            regexp: '^playit_secret_key:'
+            line: 'playit_secret_key: "{{ playit_claim_code_result.stdout }}"'
+            backup: yes
+          when: playit_claim_code_result.stdout != "NOT_FOUND"
+
+        - name: Update runtime variable with extracted claim code
+          set_fact:
+            playit_secret_key: "{{ playit_claim_code_result.stdout }}"
+          when: playit_claim_code_result.stdout != "NOT_FOUND"
+
+        - name: Display PlayIt setup information
+          debug:
+            msg: |
+              ===============================================
+              🔗 PlayIt.gg セットアップ - 自動設定完了
+              ===============================================
+              
+              ✅ Claim Code: {{ playit_claim_code_result.stdout }}
+              🔗 セットアップURL: {{ playit_claim_url_result.stdout }}
+              
+              📋 次のステップ:
+              1. 上記URLにアクセスしてPlayIt.ggアカウントにリンク
+              2. リンク完了後、PlayItサービスが自動的に開始されます
+              
+              ⚠️ 重要:
+              - Claim Codeは自動的にvars/main.ymlに保存されました
+              - Playbookの再実行は不要です
+              - アカウントリンク後、約30秒でトンネルが利用可能になります
+              ===============================================
+          when: playit_claim_code_result.stdout != "NOT_FOUND"
+
+        - name: Show PlayIt container logs if claim code not found
+          shell: docker logs playit-temp-setup 2>&1 || echo "Container not found"
+          register: playit_logs
+          when: playit_claim_code_result.stdout == "NOT_FOUND"
+
+        - name: Display troubleshooting information
+          debug:
+            msg: |
+              ⚠️ PlayIt Claim Codeの自動取得に失敗しました
+              
+              以下のログを確認してください:
+              {{ playit_logs.stdout }}
+              
+              手動設定方法:
+              1. docker run --rm -it --net=host ghcr.io/playit-cloud/playit-agent:latest
+              2. 表示されるClaim CodeとURLをメモ
+              3. vars/main.ymlにplayit_secret_key: "YOUR_CLAIM_CODE"を設定
+          when: playit_claim_code_result.stdout == "NOT_FOUND"
+
+      when: playit_needs_setup and (playit_enabled | default(false))
+  when: playit_enabled | default(false)
+
 - name: Create playit systemd service
   template:
-    src: templates/playit.service.j2
+    src: playit.service.j2
     dest: /etc/systemd/system/playit.service
     mode: '0644'
   become: true
+  notify:
+    - reload systemd
+    - restart playit
+  when: (playit_enabled | default(false)) and (playit_secret_key is defined and playit_secret_key != "")
 
 - name: Start and enable playit service
   systemd:
@@ -123,3 +258,4 @@
     enabled: yes
     daemon_reload: yes
   become: true
+  when: (playit_enabled | default(false)) and (playit_secret_key is defined and playit_secret_key != "")
