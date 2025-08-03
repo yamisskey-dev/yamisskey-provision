@@ -157,11 +157,25 @@
         update_cache: yes
       become: true
 
-    - name: Download and install PlayIt.gg APT package
+    - name: Add PlayIt.gg APT repository key
       shell: |
-        curl -SsL https://playit.gg/install.sh | sudo bash
+        curl -SsL https://playit-cloud.github.io/ppa/key.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/playit.gpg >/dev/null
       args:
-        creates: /usr/local/bin/playit
+        creates: /etc/apt/trusted.gpg.d/playit.gpg
+      become: true
+
+    - name: Add PlayIt.gg APT repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/trusted.gpg.d/playit.gpg] https://playit-cloud.github.io/ppa/data ./"
+        filename: playit-cloud
+        state: present
+        update_cache: yes
+      become: true
+
+    - name: Install PlayIt.gg package
+      apt:
+        name: playit
+        state: present
       become: true
 
     - name: Check if PlayIt secret key is needed
@@ -179,7 +193,7 @@
 
         - name: Run PlayIt setup in background for claim code extraction
           shell: |
-            timeout 30 /usr/local/bin/playit --stdout 2>&1 | tee /tmp/playit-setup/output.log &
+            timeout 30 /usr/bin/playit --stdout 2>&1 | tee /tmp/playit-setup/output.log &
             PID=$!
             sleep 15
             kill $PID 2>/dev/null || true
@@ -253,7 +267,7 @@
               {{ playit_logs.stdout }}
               
               手動設定方法:
-              1. sudo /usr/local/bin/playit --setup
+              1. sudo /usr/bin/playit --setup
               2. 表示されるClaim CodeとURLをメモ
               3. vars/main.ymlにplayit_secret_key: "YOUR_CLAIM_CODE"を設定
           when: playit_claim_code_result.stdout == "NOT_FOUND"
