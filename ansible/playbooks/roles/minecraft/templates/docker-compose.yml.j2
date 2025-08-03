@@ -5,11 +5,11 @@ services:
     image: itzg/minecraft-server:java21
     container_name: minecraft-papermc-server
     restart: unless-stopped
-    {% if ansible_architecture == "aarch64" or ansible_architecture == "armv7l" %}
+{% if ansible_architecture == "aarch64" or ansible_architecture == "armv7l" %}
     platform: linux/arm64
-    {% else %}
+{% else %}
     platform: linux/amd64
-    {% endif %}
+{% endif %}
     
     env_file:
       - .env
