@@ -32,8 +32,8 @@ make install
 cloudflared tunnel login
 
 # トンネル作成
-cloudflared tunnel create yaminio
-cloudflared tunnel route dns yaminio drive.yami.ski
+cloudflared tunnel create raspberrypi-yaminio
+cloudflared tunnel route dns raspberrypi-yaminio drive.yami.ski
 
 # 設定ファイル更新
 # /home/taka/.cloudflared/config.yml の <Tunnel-UUID> を実際の値に変更
