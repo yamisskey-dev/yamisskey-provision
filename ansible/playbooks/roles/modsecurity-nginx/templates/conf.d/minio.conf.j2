@@ -170,9 +170,6 @@ server {
         proxy_max_temp_file_size 2048m;
         proxy_request_buffering off;
         
-        # HTTP/2 push for prefetching (if supported)
-        http2_push_preload on;
-        
         # Pass through S3 error responses
         proxy_intercept_errors off;
     }
