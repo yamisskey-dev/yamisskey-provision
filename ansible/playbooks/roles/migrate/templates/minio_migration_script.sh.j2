@@ -8,7 +8,7 @@ set -e
 SOURCE_ALIAS="{{ source_minio_alias }}"
 TARGET_ALIAS="{{ target_minio_alias }}"
 TEMP_DIR="{{ migration_temp_dir }}"
-BUCKETS=({{ buckets_to_migrate | map('quote') | join(' ') }})
+BUCKETS=({% for bucket in buckets_to_migrate %}"{{ bucket }}"{% if not loop.last %} {% endif %}{% endfor %})
 LOG_FILE="${TEMP_DIR}/migration.log"
 
 # Logging function
