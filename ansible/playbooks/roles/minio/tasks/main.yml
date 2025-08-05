@@ -71,11 +71,11 @@
     from_ip: 100.64.0.0/10
   become: yes
 
-- name: Wait for MinIO to be ready
+- name: Wait for MinIO port to be ready
   wait_for:
     host: localhost
     port: 9000
-    timeout: 30
+    timeout: 60
 
 - name: Check if Minio Client exists
   stat:
@@ -94,13 +94,26 @@
     name: minio
   register: minio_container_info
 
-- name: Set Minio Client alias
+- name: Wait for MinIO service to be fully ready (health check)
+  uri:
+    url: "http://{{ minio_container_info.container.NetworkSettings.Networks.external_network.IPAddress }}:9000/minio/health/live"
+    method: GET
+  register: health_check
+  until: health_check.status == 200
+  retries: 12
+  delay: 5
+  ignore_errors: yes
+
+- name: Set Minio Client alias with retry mechanism
   command: >
     /usr/local/bin/mc alias set "{{ minio_alias }}"
     http://{{ minio_container_info.container.NetworkSettings.Networks.external_network.IPAddress }}:9000
     "{{ minio_root_user }}"
     "{{ minio_root_password }}"
   register: mc_alias_result
+  until: mc_alias_result.rc == 0
+  retries: 5
+  delay: 3
   changed_when: mc_alias_result.rc == 0
 
 - name: Create and configure secure buckets
