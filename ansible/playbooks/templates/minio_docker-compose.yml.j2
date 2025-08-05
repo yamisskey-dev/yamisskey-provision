@@ -1,13 +1,14 @@
-version: '3'
-
 services:
   minio:
     image: quay.io/minio/minio
     container_name: minio
     restart: always
-    # Basic resource limits
-    mem_limit: 1g
-    cpus: 0.5
+    # Basic resource limits for ARM64 compatibility
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: '0.5'
     # Basic healthcheck
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/minio/health/live"]
