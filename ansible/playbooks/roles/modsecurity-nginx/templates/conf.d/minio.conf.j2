@@ -167,7 +167,7 @@ server {
         proxy_buffers 8 512k;
         proxy_busy_buffers_size 1m;
         proxy_temp_file_write_size 1m;
-        proxy_max_temp_file_size 2g;
+        proxy_max_temp_file_size 2048m;
         proxy_request_buffering off;
         
         # HTTP/2 push for prefetching (if supported)
