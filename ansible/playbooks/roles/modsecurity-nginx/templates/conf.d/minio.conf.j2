@@ -40,45 +40,39 @@ server {
     
     # Main MinIO API with proper access control
     location / {
-        # Block direct browser access (but allow federation)
-        set $block_direct "";
-        if ($http_referer = "") {
-            set $block_direct "${block_direct}1";
+        # Allow S3 API clients (AWS SDK, etc.)
+        set $allowed_client 0;
+        
+        # Allow AWS SDK and S3 clients
+        if ($http_user_agent ~* "(aws-sdk|boto|s3cmd|rclone|minio-go|aws-cli)") {
+            set $allowed_client 1;
         }
-        if ($http_user_agent ~* "(Mozilla|Chrome|Safari|Edge|Firefox)") {
-            set $block_direct "${block_direct}2";
-        }
-        if ($http_accept ~* "text/html") {
-            set $block_direct "${block_direct}3";
+        
+        # Allow ActivityPub federation platforms
+        if ($http_user_agent ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed|outline|axios|curl|wget|python-requests|go-fed)") {
+            set $allowed_client 1;
         }
         
         # Allow Cloudflare traffic
         if ($http_cf_ray != "") {
-            set $block_direct "allowed";
+            set $allowed_client 1;
         }
         
-        # Allow all ActivityPub federation platforms
-        if ($http_referer ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed)") {
-            set $block_direct "allowed";
+        # Block direct browser access (text/html requests)
+        if ($http_accept ~* "text/html") {
+            set $browser_access 1;
         }
         
-        # Block direct browser access
-        if ($block_direct = "123") {
-            return 403 "Direct access not allowed. Use federation platforms.";
+        # Block browsers unless they're federation platforms
+        if ($browser_access = 1) {
+            if ($http_referer !~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed)") {
+                return 403 "Direct browser access not allowed";
+            }
         }
         
-        # Upload restrictions - use map for better performance and no nesting
-        set $upload_check "${request_method}:${http_user_agent}";
-        
-        # Block uploads from unauthorized clients
-        if ($request_method ~ ^(PUT|POST|DELETE)$) {
-            set $upload_blocked 1;
-        }
-        if ($http_user_agent ~* "(misskey|pleroma|mastodon|firefish|outline|axios|curl|wget|python-requests|go-fed)") {
-            set $upload_blocked 0;
-        }
-        if ($upload_blocked = 1) {
-            return 403 "Upload not allowed from this client";
+        # Block non-allowed clients
+        if ($allowed_client = 0) {
+            return 403 "Client not allowed";
         }
         
         proxy_pass http://minio_api_backend;
