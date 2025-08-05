@@ -27,9 +27,6 @@ server {
     client_max_body_size 1G;
     client_body_timeout 300s;
     
-    # Cache settings for better performance
-    proxy_cache_path /var/cache/nginx/minio levels=1:2 keys_zone=minio_cache:100m max_size=1g inactive=7d use_temp_path=off;
-    
     # Basic security headers
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
@@ -101,7 +98,7 @@ server {
         proxy_set_header Host $http_host;
         
         # Performance and caching optimizations
-        proxy_cache minio_cache;
+        proxy_cache media_cache;
         proxy_cache_valid 200 304 7d;
         proxy_cache_valid 404 1m;
         proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
