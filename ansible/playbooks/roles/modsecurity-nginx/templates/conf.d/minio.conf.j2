@@ -52,10 +52,45 @@ server {
         return 403 "MinIO S3 API - Direct access not allowed";
     }
     
-    # Ultra-fast path for thumbnail and small images (bypass some checks)
+    # Ultra-fast path for thumbnail and small images with access control
     location ~* \.(webp|jpg|jpeg|png|gif|ico|svg)$ {
-        # Minimal access control for speed
-        set $allowed_client 1;
+        # Fast access control for images
+        set $allowed_client 0;
+        
+        # Allow AWS SDK and S3 clients
+        if ($http_user_agent ~* "(aws-sdk|boto|s3cmd|rclone|minio-go|aws-cli)") {
+            set $allowed_client 1;
+        }
+        
+        # Allow ActivityPub federation platforms
+        if ($http_user_agent ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed|outline|axios|curl|wget|python-requests|go-fed)") {
+            set $allowed_client 1;
+        }
+        
+        # Allow Cloudflare traffic
+        if ($http_cf_ray != "") {
+            set $allowed_client 1;
+        }
+        
+        # Block direct browser access
+        if ($http_accept ~* "text/html") {
+            set $browser_access 1;
+        }
+        
+        # Block browsers unless they're federation platforms
+        set $allow_federation 0;
+        if ($http_referer ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed)") {
+            set $allow_federation 1;
+        }
+        set $block_browser "${browser_access}${allow_federation}";
+        if ($block_browser = "10") {
+            return 403 "Direct browser access not allowed";
+        }
+        
+        # Block non-allowed clients
+        if ($allowed_client = 0) {
+            return 403 "Client not allowed";
+        }
         
         # Ultra-aggressive caching
         proxy_cache media_cache;
