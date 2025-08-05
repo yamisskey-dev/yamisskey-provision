@@ -60,7 +60,7 @@ install:
 
 inventory:
 	@echo "Creating inventory file..."
-	@if [ -n "$(SOURCE)" ] && [ -n "$(TARGET)" ]; then \
+	@if [ "$(MODE)" = "migration" ] || ([ -n "$(SOURCE)" ] && [ -n "$(TARGET)" ]); then \
 		echo "Creating migration inventory for $(SOURCE) → $(TARGET)..."; \
 		SOURCE_IP=$$(tailscale status 2>/dev/null | grep "$(SOURCE)" | awk '{print $$1}' | head -1 || echo "$(SOURCE)"); \
 		TARGET_IP=$$(tailscale status 2>/dev/null | grep "$(TARGET)" | awk '{print $$1}' | head -1 || echo "$(TARGET)"); \
@@ -79,6 +79,13 @@ inventory:
 			echo "$(TARGET) ansible_host=$(TARGET) ansible_user=$(USER)" >> ansible/inventory; \
 		fi; \
 		echo "" >> ansible/inventory; \
+		echo "# Migration mode aliases for compatibility" >> ansible/inventory; \
+		echo "[source:children]" >> ansible/inventory; \
+		echo "source_hosts" >> ansible/inventory; \
+		echo "" >> ansible/inventory; \
+		echo "[destination:children]" >> ansible/inventory; \
+		echo "target_hosts" >> ansible/inventory; \
+		echo "" >> ansible/inventory; \
 		echo "[all:vars]" >> ansible/inventory; \
 		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ProxyCommand=\"tailscale nc %h %p\"'" >> ansible/inventory; \
 		echo "ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory; \
@@ -90,13 +97,28 @@ inventory:
 		echo "Source: $(SOURCE) ($$SOURCE_IP)"; \
 		echo "Target: $(TARGET) ($$TARGET_IP)"; \
 	else \
-		echo "Creating default inventory..."; \
+		echo "Creating standard inventory..."; \
+		CURRENT_HOST=$$(hostname); \
 		echo "[source]" > ansible/inventory; \
-		echo "$(shell hostname) ansible_connection=local" >> ansible/inventory; \
+		echo "$$CURRENT_HOST ansible_connection=local" >> ansible/inventory; \
 		echo "" >> ansible/inventory; \
 		echo "[destination]" >> ansible/inventory; \
-		echo "$(DESTINATION_HOSTNAME) ansible_host=$(DESTINATION_IP) ansible_user=$(DESTINATION_SSH_USER) ansible_port=$(DESTINATION_SSH_PORT) ansible_become=true" >> ansible/inventory; \
-		echo "Default inventory file created at ansible/inventory"; \
+		if [ "$$CURRENT_HOST" != "$(DESTINATION_HOSTNAME)" ]; then \
+			echo "$(DESTINATION_HOSTNAME) ansible_host=$(DESTINATION_IP) ansible_user=$(DESTINATION_SSH_USER) ansible_port=$(DESTINATION_SSH_PORT)" >> ansible/inventory; \
+		else \
+			echo "$$CURRENT_HOST ansible_connection=local" >> ansible/inventory; \
+		fi; \
+		echo "" >> ansible/inventory; \
+		echo "[all:vars]" >> ansible/inventory; \
+		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10'" >> ansible/inventory; \
+		echo "ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory; \
+		echo "ansible_ssh_pipelining=true" >> ansible/inventory; \
+		echo "ansible_become=true" >> ansible/inventory; \
+		echo "ansible_become_method=sudo" >> ansible/inventory; \
+		echo "ansible_become_user=root" >> ansible/inventory; \
+		echo "Standard inventory created at ansible/inventory"; \
+		echo "Source: $$CURRENT_HOST (local)"; \
+		echo "Destination: $(DESTINATION_HOSTNAME) ($(DESTINATION_IP))"; \
 	fi
 
 clone:
@@ -142,7 +164,7 @@ migrate:
 		echo "🎯 Target: $(TARGET)"; \
 		echo "🌐 Network: Tailscale private network"; \
 		echo ""; \
-		$(MAKE) inventory SOURCE=$(SOURCE) TARGET=$(TARGET); \
+		$(MAKE) inventory MODE=migration SOURCE=$(SOURCE) TARGET=$(TARGET); \
 		echo ""; \
 		echo "⏳ Starting migration with real-time progress monitoring..."; \
 		echo "📊 Progress will be displayed every 10 seconds during transfer"; \
@@ -165,7 +187,7 @@ migrate:
 		fi; \
 	else \
 		echo "🔧 Using default source→destination migration..."; \
-		$(MAKE) inventory; \
+		$(MAKE) inventory MODE=migration; \
 		echo ""; \
 		echo "⏳ Starting migration with real-time progress monitoring..."; \
 		start_time=$$(date +%s); \
@@ -312,7 +334,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all           - Install, clone, setup, provision, and backup"
 	@echo "  install       - Update and install necessary packages"
-	@echo "  inventory     - Create Ansible inventory (supports SOURCE/TARGET for migration)"
+	@echo "  inventory     - Create Ansible inventory (MODE=migration for migration, default for standard)"
 	@echo "  clone         - Clone the repositories if they don't exist"
 	@echo "  provision     - Provision the server using Ansible"
 	@echo "  backup        - Run the backup playbook"
@@ -325,7 +347,8 @@ help:
 	@echo ""
 	@echo "Migration examples:"
 	@echo "  make migrate SOURCE=balthasar TARGET=raspberrypi  # Full progress monitoring"
-	@echo "  make inventory SOURCE=balthasar TARGET=raspberrypi"
+	@echo "  make inventory MODE=migration SOURCE=balthasar TARGET=raspberrypi  # Migration inventory"
+	@echo "  make inventory        # Standard inventory for regular playbooks"
 	@echo "  make test             # Test system with progress feature validation"
 	@echo ""
 	@echo "Progress monitoring features:"
