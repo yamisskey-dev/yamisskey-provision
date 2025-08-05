@@ -80,8 +80,7 @@ inventory:
 		fi; \
 		echo "" >> ansible/inventory; \
 		echo "[all:vars]" >> ansible/inventory; \
-		echo "ansible_ssh_executable=tailscale" >> ansible/inventory; \
-		echo "ansible_ssh_common_args='ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10'" >> ansible/inventory; \
+		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -o ProxyCommand=\"tailscale nc %h %p\"'" >> ansible/inventory; \
 		echo "ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory; \
 		echo "ansible_ssh_pipelining=true" >> ansible/inventory; \
 		echo "ansible_become=true" >> ansible/inventory; \
