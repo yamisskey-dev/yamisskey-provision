@@ -71,10 +71,8 @@ server {
         }
         
         # Block browsers unless they're federation platforms
-        if ($browser_access = 1) {
-            if ($http_referer !~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed)") {
-                return 403 "Direct browser access not allowed";
-            }
+        if ($browser_access = 1 and $http_referer !~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed)") {
+            return 403 "Direct browser access not allowed";
         }
         
         # Block non-allowed clients
