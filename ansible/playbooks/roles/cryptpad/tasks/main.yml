@@ -68,7 +68,7 @@
     force_source: yes
 
 - name: Start CryptPad containers
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ cryptpad_dir }}"
     state: present
     restarted: yes

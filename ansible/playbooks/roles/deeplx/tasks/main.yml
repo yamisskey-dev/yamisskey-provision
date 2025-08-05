@@ -14,7 +14,7 @@
   notify: restart deeplx
 
 - name: Deploy DeepLX container
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ deeplx_dir }}"
     state: present
     pull: yes

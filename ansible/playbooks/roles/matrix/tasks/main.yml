@@ -134,14 +134,14 @@
 
 # Synapseコンテナを起動
 - name: Start Synapse container
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: /var/www/synapse
     state: present
     restarted: no
 
 # Elementコンテナの起動
 - name: Start element
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: /var/www/element
     state: present
     restarted: yes

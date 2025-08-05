@@ -75,6 +75,6 @@
 
 # コンテナの起動
 - name: Start Neo-Quesdon containers
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ neo_quesdon_dir }}"
     state: present

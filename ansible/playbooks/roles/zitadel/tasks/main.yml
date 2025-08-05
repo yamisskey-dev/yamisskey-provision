@@ -91,7 +91,7 @@
     - "{{ zitadel_dir }}/logs"
 
 - name: Ensure Docker Compose services are running
-  community.docker.docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ zitadel_dir }}"
     state: present
     pull: yes

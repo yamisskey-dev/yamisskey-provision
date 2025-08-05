@@ -10,7 +10,7 @@
   become: true
 
 - name: Restart element
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: /var/www/element
     state: present
     restarted: yes

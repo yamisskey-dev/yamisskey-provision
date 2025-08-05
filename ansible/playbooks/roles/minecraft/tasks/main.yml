@@ -134,7 +134,7 @@
 
 # サーバーの起動
 - name: Start Minecraft server
-  community.docker.docker_compose:
+  community.docker.docker_compose_v2:
     project_src: '{{ minecraft_dir }}'
     state: present
     pull: yes

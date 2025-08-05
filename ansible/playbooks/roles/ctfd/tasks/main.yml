@@ -29,13 +29,13 @@
 - name: Start or restart CTFd Docker container
   block:
     - name: Restart existing CTFd Docker container
-      docker_compose:
+      community.docker.docker_compose_v2:
         project_src: '{{ ctfd_dir }}'
         restarted: true
       when: ctfd_container_status.stdout is defined and ctfd_container_status.stdout != ""
 
     - name: Start new CTFd Docker container
-      docker_compose:
+      community.docker.docker_compose_v2:
         project_src: '{{ ctfd_dir }}'
         state: present
         restarted: true

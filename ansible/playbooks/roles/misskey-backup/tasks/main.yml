@@ -33,7 +33,7 @@
   register: backup_container
 
 - name: Pull and build Docker images
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: /opt/misskey-backup
     state: present
     pull: yes
@@ -42,7 +42,7 @@
   register: compose_pull_build
 
 - name: Start Docker Compose services
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: /opt/misskey-backup
     state: present
   when: not backup_container.exists or backup_container.container.State.Status != 'running'

@@ -2,14 +2,14 @@
 # Minecraft Server Handlers
 
 - name: stop minecraft containers
-  community.docker.docker_compose:
+  community.docker.docker_compose_v2:
     project_src: '{{ minecraft_dir }}'
     state: absent
   ignore_errors: yes
   listen: "restart minecraft"
 
 - name: start minecraft server
-  community.docker.docker_compose:
+  community.docker.docker_compose_v2:
     project_src: '{{ minecraft_dir }}'
     state: present
     pull: yes

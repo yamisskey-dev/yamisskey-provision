@@ -35,7 +35,7 @@
   become: true
 
 - name: Deploy Impostor server
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: "{{ impostor_dir }}"
     state: present
     pull: yes

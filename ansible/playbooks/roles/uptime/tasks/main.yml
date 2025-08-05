@@ -11,7 +11,7 @@
   notify: restart uptime-kuma
 
 - name: Start Uptime Kuma
-  docker_compose:
+  community.docker.docker_compose_v2:
     project_src: '{{ uptime_dir }}'
     state: present
   register: output

@@ -37,7 +37,7 @@
     replace: '# cap_drop: - ALL'
 
 - name: Start SearXNG Docker container
-  ansible.builtin.docker_compose:
+  community.docker.docker_compose_v2:
     project_src: '{{ searxng_dir }}'
     state: present
     restarted: true
