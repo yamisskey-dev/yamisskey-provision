@@ -55,9 +55,6 @@ install:
 	@echo "deb [signed-by=/etc/apt/trusted.gpg.d/playit.gpg] https://playit-cloud.github.io/ppa/data ./" | sudo tee /etc/apt/sources.list.d/playit-cloud.list
 	@sudo apt update
 	@@sudo apt install playit
-	@sudo add-apt-repository ppa:oisf/suricata-stable
-	@sudo apt update
-	@sudo apt install suricata jq
 
 inventory:
 	@echo "Creating inventory file..."
