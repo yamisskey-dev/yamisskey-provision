@@ -64,19 +64,39 @@ minio_secrets_file: '/opt/minio/secrets.yml'
 minio_alias: yaminio
 ```
 
-### Required Secrets File (`/opt/minio/secrets.yml`)
+### Secrets File (`/opt/minio/secrets.yml`) - **完全自動生成対応**
+
+#### 🎯 **Zero Configuration Required**
+このロールは**完全自動化**されており、`secrets.yml`ファイルが存在しない場合は全ての必要な認証情報を自動生成します。
+
 ```yaml
+# この構造は自動生成されます - 手動作成不要
 minio:
-  root_user: "admin"
-  root_password: "your-secure-root-password"
-  # S3 credentials (optional - auto-generated if not provided)
-  misskey_s3_access_key: "your-s3-access-key"    # Optional: auto-generated
-  misskey_s3_secret_key: "your-s3-secret-key"    # Optional: auto-generated
-  # KMS encryption key (optional - auto-generated if not provided)
-  kms_master_key: "your-kms-master-key"          # Optional: auto-generated
+  root_user: "auto-generated-32-chars"           # 自動生成: 32文字
+  root_password: "auto-generated-64-chars"       # 自動生成: 64文字
+  misskey_s3_access_key: "hostname-timestamp"    # 自動生成: ホスト名-タイムスタンプ
+  misskey_s3_secret_key: "auto-generated-32-chars" # 自動生成: 32文字
+  kms_master_key: "minio-master-key:base64-key"  # 自動生成: KMS暗号化キー
 ```
 
-**Note**: If `misskey_s3_access_key`, `misskey_s3_secret_key`, or `kms_master_key` are not provided, they will be automatically generated during deployment. The KMS key enables server-side encryption for enhanced data protection.
+#### 📋 **動作パターン**
+1. **初回デプロイ**: `secrets.yml`が存在しない → 全認証情報を自動生成して保存
+2. **再デプロイ**: `secrets.yml`が存在する → 既存の設定を使用（変更なし）
+3. **部分設定**: 一部の設定のみ存在 → 不足分のみ自動生成して追加
+
+#### ✅ **設定例（オプション）**
+必要に応じて手動で設定をカスタマイズできます：
+```yaml
+minio:
+  root_user: "custom-admin"                      # カスタム設定
+  root_password: "your-secure-root-password"     # カスタム設定
+  # 以下は自動生成されます（設定がない場合）
+  misskey_s3_access_key: "auto-generated"
+  misskey_s3_secret_key: "auto-generated"
+  kms_master_key: "auto-generated"
+```
+
+**重要**: 自動生成された認証情報は`/opt/minio/secrets.yml`に安全に保存され、再デプロイ時に再利用されます。
 
 ### System Requirements
 - Docker and Docker Compose
@@ -116,7 +136,7 @@ minio:
 
 ## Deployment
 
-### 1. Run the Role
+### 1. Run the Role - **完全自動デプロイ**
 ```bash
 ansible-playbook -i inventory site.yml --tags minio
 ```
@@ -126,9 +146,19 @@ The role will display a configuration summary with:
 - ✅ Security features enabled
 - ✅ Bucket creation status
 - ✅ IAM user configuration
-- 🔑 Misskey configuration parameters
+- 🔑 **Auto-generated credentials** (saved to `/opt/minio/secrets.yml`)
 
-### 3. Configure Applications
+### 3. Get Auto-Generated Credentials
+```bash
+# View generated credentials
+cat /opt/minio/secrets.yml
+
+# Or get specific values
+grep "misskey_s3_access_key" /opt/minio/secrets.yml
+grep "misskey_s3_secret_key" /opt/minio/secrets.yml
+```
+
+### 4. Configure Applications
 
 #### Misskey Configuration (balthasar server)
 Add to Misskey's `.env` file:
@@ -137,16 +167,14 @@ Add to Misskey's `.env` file:
 S3_BUCKET=files
 S3_PREFIX=""
 S3_ENDPOINT=http://[TAILSCALE_RASPBERRYPI_IP]:9000
-S3_ACCESS_KEY=[AUTO_GENERATED_ACCESS_KEY]
-S3_SECRET_KEY=[AUTO_GENERATED_SECRET_KEY]
+S3_ACCESS_KEY=raspberry-1733364727    # 例：自動生成された値
+S3_SECRET_KEY=k3mB7xN9qZ8wR4yT2vS6h...  # 例：自動生成された値
 S3_REGION=ap-northeast-3
 S3_USE_SSL=false
 S3_FORCE_PATH_STYLE=true
 # Public URL for federation (via Cloudflare)
 S3_BASE_URL=https://drive.yami.ski/files
 ```
-
-**Note**: The actual `S3_ACCESS_KEY` and `S3_SECRET_KEY` values will be displayed after deployment.
 
 #### Outline Configuration
 Add to Outline's `.env` file:
@@ -156,11 +184,14 @@ AWS_S3_UPLOAD_BUCKET_NAME=assets
 AWS_S3_UPLOAD_BUCKET_URL=https://drive.yami.ski/assets
 AWS_S3_UPLOAD_MAX_SIZE=104857600
 AWS_REGION=ap-northeast-3
-AWS_ACCESS_KEY_ID=[AUTO_GENERATED_ACCESS_KEY]
-AWS_SECRET_ACCESS_KEY=[AUTO_GENERATED_SECRET_KEY]
+AWS_ACCESS_KEY_ID=raspberry-1733364727    # Misskeyと同じ自動生成値
+AWS_SECRET_ACCESS_KEY=k3mB7xN9qZ8wR4yT2vS6h...  # Misskeyと同じ自動生成値
 ```
 
-**Note**: The same auto-generated credentials are used for both Misskey and Outline.
+**重要**:
+- 全ての認証情報は自動生成され、`/opt/minio/secrets.yml`に安全に保存されます
+- 同じ認証情報がMisskeyとOutlineの両方で使用されます
+- 再デプロイ時は既存の認証情報が保持されます（変更されません）
 
 ## Management
 
@@ -214,14 +245,17 @@ curl -H "User-Agent: Misskey/13.0.0" https://drive.yami.ski/files/test.jpg
 ```
 
 #### 2. Upload Failures
-**Problem**: Applications can't upload files  
+**Problem**: Applications can't upload files
 **Solution**: Verify Tailscale connectivity and IAM permissions
 ```bash
 # Test Tailscale connection
 ping [TAILSCALE_RASPBERRYPI_IP]
 
-# Check IAM user (replace with auto-generated username)
-mc admin user info yaminio [AUTO_GENERATED_ACCESS_KEY]
+# Get auto-generated access key from secrets
+ACCESS_KEY=$(grep "misskey_s3_access_key" /opt/minio/secrets.yml | cut -d'"' -f4)
+
+# Check IAM user with auto-generated credentials
+mc admin user info yaminio $ACCESS_KEY
 ```
 
 #### 3. Direct Access Not Blocked
@@ -282,11 +316,31 @@ playbooks/roles/modsecurity-nginx/templates/conf.d/
 - **Tailscale Required**: Internal application access requires Tailscale network
 
 ### 🔒 Best Practices
-1. **Regular Secret Rotation**: Update passwords and keys periodically
+1. **Secret Management**:
+   - 自動生成された認証情報は`/opt/minio/secrets.yml`に安全に保存されます
+   - ファイルの権限は自動的に`600`（所有者のみ読み書き可能）に設定されます
+   - 定期的なローテーション時は`secrets.yml`を削除してから再デプロイすると新しい認証情報が生成されます
 2. **Monitor Access Logs**: Review Nginx logs for suspicious activity
-3. **Backup Strategy**: Implement regular data backups
+3. **Backup Strategy**:
+   - MinIOデータのバックアップ
+   - `/opt/minio/secrets.yml`ファイルのバックアップ（認証情報復元のため）
 4. **Security Updates**: Keep MinIO and dependencies updated
 5. **Access Auditing**: Review IAM policies and bucket permissions
+
+### 🔄 **認証情報のローテーション手順**
+```bash
+# 1. 現在の認証情報をバックアップ
+cp /opt/minio/secrets.yml /opt/minio/secrets.yml.backup
+
+# 2. secrets.ymlを削除（新しい認証情報を強制生成）
+rm /opt/minio/secrets.yml
+
+# 3. MinIOロールを再実行（新しい認証情報が自動生成される）
+ansible-playbook -i inventory site.yml --tags minio
+
+# 4. 新しい認証情報でアプリケーション設定を更新
+cat /opt/minio/secrets.yml
+```
 
 ## Migration Notes
 

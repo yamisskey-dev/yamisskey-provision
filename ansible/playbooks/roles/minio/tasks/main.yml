@@ -9,22 +9,42 @@
     - /opt/minio
     - /opt/minio/minio-data
 
-- name: Load Minio secrets from secrets.yml
-  set_fact:
-    minio_root_user: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_user }}"
-    minio_root_password: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_password }}"
-    misskey_s3_access_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_access_key | default('') }}"
-    misskey_s3_secret_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_secret_key | default('') }}"
-    minio_kms_master_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.kms_master_key | default('') }}"
+- name: Check if secrets.yml exists
+  stat:
+    path: "{{ minio_secrets_file }}"
+  register: secrets_file_stat
 
-- name: Generate S3 credentials if not provided
+- name: Load existing secrets from secrets.yml
   set_fact:
-    misskey_s3_access_key: "{{ misskey_s3_access_key if misskey_s3_access_key != '' else (ansible_hostname + '-' + ansible_date_time.epoch) }}"
-    misskey_s3_secret_key: "{{ misskey_s3_secret_key if misskey_s3_secret_key != '' else (lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
+    existing_secrets: "{{ lookup('file', minio_secrets_file) | from_yaml }}"
+  when: secrets_file_stat.stat.exists
 
-- name: Generate KMS master key if not provided
+- name: Initialize empty secrets structure if file doesn't exist
   set_fact:
-    minio_kms_master_key: "{{ minio_kms_master_key if minio_kms_master_key != '' else ('minio-master-key:' + (lookup('password', '/dev/null chars=ascii_letters,digits,+,/ length=44') | b64encode)) }}"
+    existing_secrets:
+      minio: {}
+  when: not secrets_file_stat.stat.exists
+
+- name: Generate all credentials (auto-generate missing ones)
+  set_fact:
+    minio_root_user: "{{ existing_secrets.minio.root_user | default(lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
+    minio_root_password: "{{ existing_secrets.minio.root_password | default(lookup('password', '/dev/null chars=ascii_letters,digits length=64')) }}"
+    misskey_s3_access_key: "{{ existing_secrets.minio.misskey_s3_access_key | default(ansible_hostname + '-' + ansible_date_time.epoch) }}"
+    misskey_s3_secret_key: "{{ existing_secrets.minio.misskey_s3_secret_key | default(lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
+    minio_kms_master_key: "{{ existing_secrets.minio.kms_master_key | default('minio-master-key:' + (lookup('password', '/dev/null chars=ascii_letters,digits,+,/ length=44') | b64encode)) }}"
+
+- name: Create/update secrets.yml with all credentials
+  copy:
+    content: |
+      minio:
+        root_user: "{{ minio_root_user }}"
+        root_password: "{{ minio_root_password }}"
+        misskey_s3_access_key: "{{ misskey_s3_access_key }}"
+        misskey_s3_secret_key: "{{ misskey_s3_secret_key }}"
+        kms_master_key: "{{ minio_kms_master_key }}"
+    dest: "{{ minio_secrets_file }}"
+    backup: yes
+    mode: '0600'
 
 - name: Deploy Docker Compose file for Minio
   template:
