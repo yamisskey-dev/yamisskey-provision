@@ -15,11 +15,16 @@
     minio_root_password: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_password }}"
     misskey_s3_access_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_access_key | default('') }}"
     misskey_s3_secret_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_secret_key | default('') }}"
+    minio_kms_master_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.kms_master_key | default('') }}"
 
 - name: Generate S3 credentials if not provided
   set_fact:
     misskey_s3_access_key: "{{ misskey_s3_access_key if misskey_s3_access_key != '' else (ansible_hostname + '-' + ansible_date_time.epoch) }}"
     misskey_s3_secret_key: "{{ misskey_s3_secret_key if misskey_s3_secret_key != '' else (lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
+
+- name: Generate KMS master key if not provided
+  set_fact:
+    minio_kms_master_key: "{{ minio_kms_master_key if minio_kms_master_key != '' else ('minio-master-key:' + (lookup('password', '/dev/null chars=ascii_letters,digits,+,/ length=44') | b64encode)) }}"
 
 - name: Deploy Docker Compose file for Minio
   template:
@@ -175,7 +180,8 @@
           ✅ Web UI disabled (CLI management only)
           ✅ Buckets: {{ minio_bucket_name_for_misskey }}, {{ minio_bucket_name_for_outline }}
           ✅ IAM User: {{ misskey_s3_access_key }} (auto-generated, restricted permissions)
-          ✅ Server-Side Encryption enabled (privacy protection)
+          ✅ Server-Side Encryption enabled with KMS (privacy protection)
+          ✅ KMS Master Key: {{ minio_kms_master_key }} (auto-generated)
           ✅ Federation access enabled (ActivityPub platforms)
           ✅ Direct browser access prevention (Nginx layer)
           ✅ Tailscale network access (internal communication)
@@ -194,7 +200,11 @@
           AWS_S3_UPLOAD_BUCKET_NAME={{ minio_bucket_name_for_outline }}
           AWS_S3_UPLOAD_BUCKET_URL=https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_outline }}
           
-          🔑 Testing Steps:
+          🔐 Save to secrets.yml for persistence:
+          minio:
+            kms_master_key: "{{ minio_kms_master_key }}"
+          
+          � Testing Steps:
           1. ✅ Tailscale connectivity: balthasar → raspberrypi
           2. ✅ Misskey file upload functionality
           3. ✅ Federation image display via Cloudflare

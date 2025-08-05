@@ -24,6 +24,9 @@ services:
       - MINIO_DOMAIN={{ minio_api_server_name }}
       # Basic security settings
       - MINIO_COMPRESS=on
+      # KMS encryption settings (auto-generated)
+      - MINIO_KMS_SECRET_KEY={{ minio_kms_master_key }}
+      - MINIO_KMS_AUTO_ENCRYPTION=on
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"

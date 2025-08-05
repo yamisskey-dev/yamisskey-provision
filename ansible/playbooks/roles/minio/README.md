@@ -13,7 +13,7 @@ This role deploys a production-ready MinIO instance with enhanced security featu
 - **Multi-layer Access Control**: Nginx + IAM + Bucket policies
 - **Direct Browser Access Prevention**: Blocks unauthorized direct access
 - **Rate Limiting**: DDoS protection with 60 req/min limit
-- **Server-Side Encryption**: Data at rest protection (SSE-S3)
+- **Server-Side Encryption**: Data at rest protection with KMS (SSE-S3 + KMS)
 - **Tailscale Network Integration**: Secure internal communication
 
 ### 🌐 Federation Support
@@ -72,9 +72,11 @@ minio:
   # S3 credentials (optional - auto-generated if not provided)
   misskey_s3_access_key: "your-s3-access-key"    # Optional: auto-generated
   misskey_s3_secret_key: "your-s3-secret-key"    # Optional: auto-generated
+  # KMS encryption key (optional - auto-generated if not provided)
+  kms_master_key: "your-kms-master-key"          # Optional: auto-generated
 ```
 
-**Note**: If `misskey_s3_access_key` or `misskey_s3_secret_key` are not provided, they will be automatically generated during deployment.
+**Note**: If `misskey_s3_access_key`, `misskey_s3_secret_key`, or `kms_master_key` are not provided, they will be automatically generated during deployment. The KMS key enables server-side encryption for enhanced data protection.
 
 ### System Requirements
 - Docker and Docker Compose
@@ -239,8 +241,12 @@ curl http://localhost:9000/minio/health/live
 mc stat yaminio/files
 mc stat yaminio/assets
 
-# Verify encryption
+# Verify encryption (should show KMS encryption enabled)
 mc encrypt info yaminio/files
+mc encrypt info yaminio/assets
+
+# Check KMS configuration
+mc admin config get yaminio kms
 ```
 
 ## File Structure
