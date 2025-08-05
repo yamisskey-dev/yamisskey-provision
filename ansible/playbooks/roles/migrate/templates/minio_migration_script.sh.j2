@@ -223,7 +223,7 @@ log "Next steps:"
 log "1. Update application configurations with new endpoint"
 log "2. Test file upload/download functionality"
 log "3. Verify federation image display (ActivityPub compatibility)"
-log "4. Update DNS: drive.yami.ski → {{ ansible_default_ipv4.address | default('new-server-ip') }}"
+log "4. Update DNS: drive.yami.ski → {{ ansible_default_ipv4.address | default(inventory_hostname) }}"
 log "5. Consider stopping source MinIO ({{ source_minio_host }})"
 log "6. Monitor system performance and encryption overhead"
 
