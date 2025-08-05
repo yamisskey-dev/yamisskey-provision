@@ -1,4 +1,4 @@
-.PHONY: all install inventory clone migrate provision backup update help
+.PHONY: all install inventory clone migrate test provision backup update help
 
 DESTINATION_SSH_USER=$(shell whoami)
 DESTINATION_HOSTNAME=$(shell hostname)
@@ -60,12 +60,40 @@ install:
 
 inventory:
 	@echo "Creating inventory file..."
-	@echo "[source]" > ansible/inventory
-	@echo "$(shell hostname) ansible_connection=local" >> ansible/inventory
-	@echo "" >> ansible/inventory
-	@echo "[destination]" >> ansible/inventory
-	@echo "$(DESTINATION_HOSTNAME) ansible_host=$(DESTINATION_IP) ansible_user=$(DESTINATION_SSH_USER) ansible_port=$(DESTINATION_SSH_PORT) ansible_become=true" >> ansible/inventory
-	@echo "Inventory file created at ansible/inventory"
+	@if [ -n "$(SOURCE)" ] && [ -n "$(TARGET)" ]; then \
+		echo "Creating migration inventory for $(SOURCE) → $(TARGET)..."; \
+		SOURCE_IP=$$(tailscale status 2>/dev/null | grep "$(SOURCE)" | awk '{print $$1}' | head -1 || echo "$(SOURCE)"); \
+		TARGET_IP=$$(tailscale status 2>/dev/null | grep "$(TARGET)" | awk '{print $$1}' | head -1 || echo "$(TARGET)"); \
+		CURRENT_HOST=$$(hostname); \
+		echo "[$(SOURCE)]" > ansible/inventory; \
+		if [ "$$CURRENT_HOST" = "$(SOURCE)" ]; then \
+			echo "$(SOURCE) ansible_connection=local" >> ansible/inventory; \
+		else \
+			echo "$(SOURCE) ansible_host=$$SOURCE_IP ansible_user=$(USER) ansible_port=22" >> ansible/inventory; \
+		fi; \
+		echo "" >> ansible/inventory; \
+		echo "[$(TARGET)]" >> ansible/inventory; \
+		if [ "$$CURRENT_HOST" = "$(TARGET)" ]; then \
+			echo "$(TARGET) ansible_connection=local" >> ansible/inventory; \
+		else \
+			echo "$(TARGET) ansible_host=$$TARGET_IP ansible_user=$(USER) ansible_port=22" >> ansible/inventory; \
+		fi; \
+		echo "" >> ansible/inventory; \
+		echo "[all:vars]" >> ansible/inventory; \
+		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" >> ansible/inventory; \
+		echo "ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory; \
+		echo "Migration inventory created at ansible/inventory"; \
+		echo "Source: $(SOURCE) ($$SOURCE_IP)"; \
+		echo "Target: $(TARGET) ($$TARGET_IP)"; \
+	else \
+		echo "Creating default inventory..."; \
+		echo "[source]" > ansible/inventory; \
+		echo "$(shell hostname) ansible_connection=local" >> ansible/inventory; \
+		echo "" >> ansible/inventory; \
+		echo "[destination]" >> ansible/inventory; \
+		echo "$(DESTINATION_HOSTNAME) ansible_host=$(DESTINATION_IP) ansible_user=$(DESTINATION_SSH_USER) ansible_port=$(DESTINATION_SSH_PORT) ansible_become=true" >> ansible/inventory; \
+		echo "Default inventory file created at ansible/inventory"; \
+	fi
 
 clone:
 	@echo "Cloning repositories if not already present..."
@@ -98,6 +126,86 @@ clone:
 	fi
 
 migrate:
+	@echo "Migrating MinIO data with encryption..."
+	@echo "Usage examples:"
+	@echo "  make migrate                           # Default: source→destination"
+	@echo "  make migrate SOURCE=balthasar TARGET=raspberrypi  # Custom hosts"
+	@if [ -n "$(SOURCE)" ] && [ -n "$(TARGET)" ]; then \
+		echo "Creating migration inventory and executing..."; \
+		$(MAKE) inventory SOURCE=$(SOURCE) TARGET=$(TARGET); \
+		ansible-playbook -i ansible/inventory \
+			-e "migrate_source=$(SOURCE) migrate_target=$(TARGET)" \
+			--limit $(TARGET) ansible/playbooks/migrate.yml --ask-become-pass; \
+	else \
+		echo "Using default source→destination migration..."; \
+		$(MAKE) inventory; \
+		ansible-playbook -i ansible/inventory --limit destination ansible/playbooks/migrate.yml --ask-become-pass; \
+	fi
+
+test:
+	@echo "=== MinIO Migration System Test ==="
+	@echo ""
+	@echo "Test 1: Basic inventory generation..."
+	@$(MAKE) inventory > /dev/null 2>&1
+	@if [ -f ansible/inventory ]; then \
+		echo "✅ Default inventory created successfully"; \
+		echo "Contents:"; \
+		cat ansible/inventory | head -10; \
+	else \
+		echo "❌ Default inventory creation failed"; \
+	fi
+	@echo ""
+	@echo "Test 2: Migration inventory generation..."
+	@$(MAKE) inventory SOURCE=balthasar TARGET=raspberrypi > /dev/null 2>&1
+	@if [ -f ansible/inventory ]; then \
+		echo "✅ Migration inventory created successfully"; \
+		echo "Contents:"; \
+		cat ansible/inventory | head -10; \
+	else \
+		echo "❌ Migration inventory creation failed"; \
+	fi
+	@echo ""
+	@echo "Test 3: Tailscale status check..."
+	@if command -v tailscale >/dev/null 2>&1; then \
+		tailscale status | head -5; \
+		echo "✅ Tailscale available"; \
+	else \
+		echo "⚠️  Tailscale not installed (expected in development)"; \
+	fi
+	@echo ""
+	@echo "Test 4: Ansible availability..."
+	@if command -v ansible >/dev/null 2>&1; then \
+		ansible --version | head -1; \
+		echo "✅ Ansible available"; \
+	else \
+		echo "❌ Ansible not available"; \
+	fi
+	@echo ""
+	@echo "Test 5: Check migrate role structure..."
+	@if [ -d ansible/playbooks/roles/migrate ]; then \
+		echo "✅ Migrate role directory exists"; \
+		ls -la ansible/playbooks/roles/migrate/; \
+	else \
+		echo "❌ Migrate role directory missing"; \
+	fi
+	@echo ""
+	@echo "Test 6: README and Makefile consistency check..."
+	@echo "README commands found:"
+	@grep -n "make " ansible/playbooks/roles/migrate/README.md | head -5
+	@echo ""
+	@echo "Makefile targets available:"
+	@$(MAKE) help | grep -E "(inventory|migrate)"
+	@echo ""
+	@echo "=== Test Summary ==="
+	@echo "✅ = Pass, ❌ = Fail, ⚠️ = Warning"
+	@echo ""
+	@echo "To perform actual migration:"
+	@echo "1. make migrate SOURCE=balthasar TARGET=raspberrypi"
+	@echo "2. Ensure both hosts are accessible via Tailscale"
+	@echo "3. Verify /opt/yamisskey-provision/secrets.yml exists on both hosts"
+
+transfer:
+	@echo "Transfer complete system: export from source and import to destination..."
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/export.yml --ask-become-pass
 	@ansible-playbook -i ansible/inventory --limit destination ansible/playbooks/import.yml --ask-become-pass
 
@@ -142,10 +250,20 @@ update:
 
 help:
 	@echo "Available targets:"
-	@echo "  all       - Install, clone, setup, provision, and backup"
-	@echo "  install   - Update and install necessary packages"
-	@echo "  inventory - Create the Ansible inventory"
-	@echo "  clone     - Clone the repositories if they don't exist"
-	@echo "  provision - Provision the server using Ansible"
-	@echo "  backup    - Run the backup playbook"
-	@echo "  update    - Update Misskey and rebuild Docker images"
+	@echo "  all           - Install, clone, setup, provision, and backup"
+	@echo "  install       - Update and install necessary packages"
+	@echo "  inventory     - Create Ansible inventory (supports SOURCE/TARGET for migration)"
+	@echo "  clone         - Clone the repositories if they don't exist"
+	@echo "  provision     - Provision the server using Ansible"
+	@echo "  backup        - Run the backup playbook"
+	@echo "  update        - Update Misskey and rebuild Docker images"
+	@echo ""
+	@echo "Migration commands:"
+	@echo "  migrate       - Migrate MinIO data with encryption"
+	@echo "  test          - Test migration system functionality"
+	@echo "  transfer      - Transfer complete system using export/import playbooks"
+	@echo ""
+	@echo "Migration examples:"
+	@echo "  make migrate SOURCE=balthasar TARGET=raspberrypi"
+	@echo "  make inventory SOURCE=balthasar TARGET=raspberrypi"
+	@echo "  make test             # Test migration system"

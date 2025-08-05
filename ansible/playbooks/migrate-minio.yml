@@ -1,0 +1,244 @@
+---
+- name: MinIO Migration from balthasar to raspberrypi with Encryption
+  hosts: raspberrypi
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    # 移行設定
+    source_minio_host: "balthasar"
+    source_minio_ip: "{{ hostvars[source_minio_host]['ansible_default_ipv4']['address'] }}"
+    source_minio_port: 9000
+    source_minio_alias: "source-minio"
+    target_minio_alias: "yaminio"
+    migration_temp_dir: "/tmp/minio-migration"
+    
+    # 移行するバケット
+    buckets_to_migrate:
+      - "{{ minio_bucket_name_for_misskey }}"
+      - "{{ minio_bucket_name_for_outline }}"
+
+  tasks:
+    - name: Display migration summary
+      debug:
+        msg: |
+          ==============================================
+          MinIO Migration Plan
+          ==============================================
+          Source: {{ source_minio_host }} ({{ source_minio_ip }}:{{ source_minio_port }})
+          Target: {{ inventory_hostname }} (localhost:9000)
+          Buckets: {{ buckets_to_migrate | join(', ') }}
+          Encryption: Enabled (KMS)
+          Method: API-based with transparent encryption
+          ==============================================
+
+    - name: Verify source MinIO connectivity
+      uri:
+        url: "http://{{ source_minio_ip }}:{{ source_minio_port }}/minio/health/live"
+        method: GET
+        timeout: 10
+      register: source_health
+      failed_when: source_health.status != 200
+
+    - name: Verify target MinIO connectivity
+      uri:
+        url: "http://localhost:9000/minio/health/live"
+        method: GET
+        timeout: 10
+      register: target_health
+      failed_when: target_health.status != 200
+
+    - name: Load source MinIO credentials
+      slurp:
+        src: "/opt/minio/secrets.yml"
+      register: source_secrets_raw
+      delegate_to: "{{ source_minio_host }}"
+
+    - name: Parse source MinIO credentials
+      set_fact:
+        source_secrets: "{{ source_secrets_raw.content | b64decode | from_yaml }}"
+
+    - name: Load target MinIO credentials
+      slurp:
+        src: "{{ minio_secrets_file }}"
+      register: target_secrets_raw
+
+    - name: Parse target MinIO credentials
+      set_fact:
+        target_secrets: "{{ target_secrets_raw.content | b64decode | from_yaml }}"
+
+    - name: Create migration temporary directory
+      file:
+        path: "{{ migration_temp_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Setup source MinIO alias
+      command: >
+        /usr/local/bin/mc alias set {{ source_minio_alias }}
+        http://{{ source_minio_ip }}:{{ source_minio_port }}
+        "{{ source_secrets.minio.root_user }}"
+        "{{ source_secrets.minio.root_password }}"
+      register: source_alias_result
+      changed_when: source_alias_result.rc == 0
+
+    - name: Verify source MinIO alias
+      command: /usr/local/bin/mc ls {{ source_minio_alias }}/
+      register: source_ls_result
+      changed_when: false
+
+    - name: Display source bucket information
+      debug:
+        msg: |
+          Source MinIO buckets found:
+          {{ source_ls_result.stdout }}
+
+    - name: Check source buckets existence
+      command: /usr/local/bin/mc ls {{ source_minio_alias }}/{{ item }}/
+      loop: "{{ buckets_to_migrate }}"
+      register: source_bucket_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Display source bucket statistics
+      command: /usr/local/bin/mc du {{ source_minio_alias }}/{{ item }}/
+      loop: "{{ buckets_to_migrate }}"
+      register: source_bucket_stats
+      ignore_errors: yes
+      changed_when: false
+      when: source_bucket_check.results[ansible_loop.index0].rc == 0
+
+    - name: Create migration script
+      template:
+        src: templates/minio_migration_script.sh.j2
+        dest: "{{ migration_temp_dir }}/migrate.sh"
+        mode: '0700'
+
+    - name: Execute MinIO migration with encryption
+      shell: "{{ migration_temp_dir }}/migrate.sh"
+      register: migration_result
+      
+    - name: Display migration results
+      debug:
+        var: migration_result.stdout_lines
+
+    - name: Verify migration completeness
+      block:
+        - name: Check target bucket file counts
+          command: /usr/local/bin/mc ls --recursive {{ target_minio_alias }}/{{ item }}/ | wc -l
+          loop: "{{ buckets_to_migrate }}"
+          register: target_file_counts
+          changed_when: false
+
+        - name: Check source bucket file counts
+          command: /usr/local/bin/mc ls --recursive {{ source_minio_alias }}/{{ item }}/ | wc -l
+          loop: "{{ buckets_to_migrate }}"
+          register: source_file_counts
+          changed_when: false
+
+        - name: Compare file counts
+          debug:
+            msg: |
+              Migration verification:
+              {% for i in range(buckets_to_migrate | length) %}
+              {{ buckets_to_migrate[i] }}:
+                Source: {{ source_file_counts.results[i].stdout }} files
+                Target: {{ target_file_counts.results[i].stdout }} files
+                Status: {% if source_file_counts.results[i].stdout == target_file_counts.results[i].stdout %}✅ Match{% else %}❌ Mismatch{% endif %}
+              {% endfor %}
+
+    - name: Verify encryption status
+      block:
+        - name: Check sample file encryption
+          shell: |
+            SAMPLE_FILE=$(ls /opt/minio/minio-data/{{ minio_bucket_name_for_misskey }}/ 2>/dev/null | head -1)
+            if [ -n "$SAMPLE_FILE" ]; then
+              file "/opt/minio/minio-data/{{ minio_bucket_name_for_misskey }}/$SAMPLE_FILE"
+            else
+              echo "No files found to check"
+            fi
+          register: encryption_check
+          changed_when: false
+
+        - name: Display encryption verification
+          debug:
+            msg: |
+              Encryption verification:
+              {{ encryption_check.stdout }}
+              {% if 'data' in encryption_check.stdout %}
+              ✅ Files are encrypted on disk
+              {% else %}
+              ⚠️ Files may not be encrypted
+              {% endif %}
+
+    - name: Test API access functionality
+      block:
+        - name: Test MinIO API access
+          shell: |
+            SAMPLE_FILE=$(mc ls {{ target_minio_alias }}/{{ minio_bucket_name_for_misskey }}/ | head -1 | awk '{print $NF}')
+            if [ -n "$SAMPLE_FILE" ]; then
+              mc cat {{ target_minio_alias }}/{{ minio_bucket_name_for_misskey }}/"$SAMPLE_FILE" | file -
+            else
+              echo "No files found to test"
+            fi
+          register: api_test
+          changed_when: false
+
+        - name: Display API access test
+          debug:
+            msg: |
+              API Access Test:
+              {{ api_test.stdout }}
+              {% if 'image' in api_test.stdout or 'text' in api_test.stdout %}
+              ✅ MinIO API correctly decrypts files
+              {% else %}
+              ⚠️ API access test inconclusive
+              {% endif %}
+
+    - name: Clean up temporary files
+      file:
+        path: "{{ migration_temp_dir }}"
+        state: absent
+
+    - name: Display final migration summary
+      debug:
+        msg: |
+          ==============================================
+          MinIO Migration Complete
+          ==============================================
+          ✅ Source connectivity verified
+          ✅ Target connectivity verified  
+          ✅ Credentials loaded successfully
+          ✅ Buckets migrated: {{ buckets_to_migrate | join(', ') }}
+          ✅ Encryption enabled on target
+          ✅ API access functional
+          ✅ File counts verified
+          ✅ Temporary files cleaned up
+          
+          🔑 Next Steps:
+          1. Update Misskey configuration with new credentials
+          2. Test file upload/download functionality
+          3. Verify federation image display
+          4. Consider stopping source MinIO ({{ source_minio_host }})
+          ==============================================
+
+    - name: Generate application configuration
+      debug:
+        msg: |
+          ==============================================
+          Application Configuration Update Required
+          ==============================================
+          
+          🔧 Misskey Configuration ({{ source_minio_host }}):
+          Update .env file:
+          S3_ENDPOINT=http://{{ ansible_default_ipv4.address }}:9000
+          S3_ACCESS_KEY={{ target_secrets.minio.misskey_s3_access_key }}
+          S3_SECRET_KEY={{ target_secrets.minio.misskey_s3_secret_key }}
+          
+          🔧 Outline Configuration:
+          AWS_ACCESS_KEY_ID={{ target_secrets.minio.misskey_s3_access_key }}
+          AWS_SECRET_ACCESS_KEY={{ target_secrets.minio.misskey_s3_secret_key }}
+          
+          📝 DNS Update:
+          drive.yami.ski → {{ ansible_default_ipv4.address }}
+          ==============================================

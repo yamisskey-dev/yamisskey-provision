@@ -1,0 +1,17 @@
+---
+# MinIO Migration Configuration
+# Note: Most variables are now set dynamically in the main.yml tasks file
+
+# MinIO Client Aliases
+# 一時的なエイリアス名を使用（既存のyaminioエイリアスと競合を避ける）
+source_minio_alias: "migration-source"
+target_minio_alias: "migration-target"
+
+# Advanced configuration
+migration_retry_count: 3
+migration_timeout: 3600  # 1 hour timeout for large migrations
+
+# Notes for yaminio alias compatibility:
+# - Both balthasar and raspberrypi can use 'yaminio' as their permanent alias
+# - During migration, temporary aliases (migration-source/migration-target) are used
+# - After migration, both hosts can continue using 'yaminio' independently

@@ -1,0 +1,356 @@
+---
+# Pre-flight checks and variable setup
+- name: Set default variables
+  set_fact:
+    # Migration configuration with defaults
+    minio_bucket_name_for_misskey: "{{ minio_bucket_name_for_misskey | default('files') }}"
+    minio_bucket_name_for_outline: "{{ minio_bucket_name_for_outline | default('assets') }}"
+    minio_secrets_file: "{{ minio_secrets_file | default('/opt/secrets.yml') }}"
+    source_minio_port: "{{ source_minio_port | default(9000) }}"
+    target_minio_port: "{{ target_minio_port | default(9000) }}"
+    migration_temp_dir: "{{ migration_temp_dir | default('/tmp/minio-migration') }}"
+    # MinIO aliases with unique timestamps
+    source_minio_alias: "source_{{ ansible_date_time.epoch }}"
+    target_minio_alias: "target_{{ ansible_date_time.epoch }}"
+    # Bucket list
+    buckets_to_migrate:
+      - "{{ minio_bucket_name_for_misskey }}"
+      - "{{ minio_bucket_name_for_outline }}"
+
+- name: Get source host IP address from dynamic inventory
+  set_fact:
+    source_minio_ip: "{{ hostvars[source_minio_host]['ansible_host'] | default(source_minio_host) }}"
+  when: source_minio_host in hostvars
+
+- name: Fallback to hostname if IP not available
+  set_fact:
+    source_minio_ip: "{{ source_minio_host }}"
+  when: source_minio_ip is not defined
+
+- name: Display host resolution results
+  debug:
+    msg: |
+      Host resolution results:
+      - Source host: {{ source_minio_host }}
+      - Resolved IP: {{ source_minio_ip }}
+      - Target host: {{ inventory_hostname }}
+      - Available hosts in inventory: {{ groups['all'] }}
+
+- name: Install MinIO CLI if not present
+  block:
+    - name: Check if MinIO CLI exists
+      stat:
+        path: /usr/local/bin/mc
+      register: mc_exists
+
+    - name: Download and install MinIO CLI
+      get_url:
+        url: "https://dl.min.io/client/mc/release/linux-{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}/mc"
+        dest: /usr/local/bin/mc
+        mode: '0755'
+        owner: root
+        group: root
+      when: not mc_exists.stat.exists
+      become: yes
+
+    - name: Verify MinIO CLI installation
+      command: /usr/local/bin/mc --version
+      register: mc_version
+      changed_when: false
+
+    - name: Display MinIO CLI version
+      debug:
+        msg: "MinIO CLI installed: {{ mc_version.stdout_lines[0] }}"
+
+- name: Display migration summary
+  debug:
+    msg: |
+      ==============================================
+      MinIO Migration Plan
+      ==============================================
+      Source: {{ source_minio_host }} ({{ source_minio_ip }}:{{ source_minio_port }})
+      Target: {{ inventory_hostname }} (localhost:{{ target_minio_port }})
+      Buckets: {{ buckets_to_migrate | join(', ') }}
+      Encryption: Enabled (KMS)
+      Method: API-based with transparent encryption
+      Temp Dir: {{ migration_temp_dir }}
+      ==============================================
+
+- name: Verify source MinIO connectivity
+  uri:
+    url: "http://{{ source_minio_ip }}:{{ source_minio_port }}/minio/health/live"
+    method: GET
+    timeout: 10
+  register: source_health
+  failed_when: false
+  when: source_minio_host != inventory_hostname
+
+- name: Skip source connectivity for local migration
+  set_fact:
+    source_health:
+      status: 200
+      msg: "Local migration - source connectivity check skipped"
+  when: source_minio_host == inventory_hostname
+
+- name: Handle source connectivity failure
+  fail:
+    msg: |
+      Failed to connect to source MinIO at {{ source_minio_ip }}:{{ source_minio_port }}
+      Status: {{ source_health.status | default('Connection failed') }}
+      Please ensure:
+      1. Source MinIO is running
+      2. Network connectivity exists between hosts
+      3. Firewall allows access to port {{ source_minio_port }}
+  when: source_health.status | default(0) != 200
+
+- name: Verify target MinIO connectivity
+  uri:
+    url: "http://localhost:{{ target_minio_port }}/minio/health/live"
+    method: GET
+    timeout: 10
+  register: target_health
+  failed_when: false
+
+- name: Handle target connectivity failure
+  fail:
+    msg: |
+      Failed to connect to target MinIO at localhost:{{ target_minio_port }}
+      Status: {{ target_health.status | default('Connection failed') }}
+      Please ensure target MinIO is running and accessible.
+  when: target_health.status | default(0) != 200
+
+- name: Load source MinIO credentials
+  block:
+    - name: Check source secrets file exists (remote)
+      stat:
+        path: "/opt/yamisskey-provision/secrets.yml"
+      register: source_secrets_stat
+      delegate_to: "{{ source_minio_host }}"
+      when: source_minio_host != inventory_hostname
+
+    - name: Check source secrets file exists (local)
+      stat:
+        path: "/opt/yamisskey-provision/secrets.yml"
+      register: source_secrets_stat_local
+      when: source_minio_host == inventory_hostname
+
+    - name: Fail if source secrets not found
+      fail:
+        msg: "Source secrets file not found at /opt/yamisskey-provision/secrets.yml on {{ source_minio_host }}"
+      when: >
+        (source_minio_host != inventory_hostname and not source_secrets_stat.stat.exists) or
+        (source_minio_host == inventory_hostname and not source_secrets_stat_local.stat.exists)
+
+    - name: Read source secrets (remote)
+      slurp:
+        src: "/opt/yamisskey-provision/secrets.yml"
+      register: source_secrets_raw
+      delegate_to: "{{ source_minio_host }}"
+      when: source_minio_host != inventory_hostname
+
+    - name: Read source secrets (local)
+      slurp:
+        src: "/opt/yamisskey-provision/secrets.yml"
+      register: source_secrets_raw_local
+      when: source_minio_host == inventory_hostname
+
+    - name: Parse source MinIO credentials
+      set_fact:
+        source_secrets: "{{ (source_secrets_raw.content if source_minio_host != inventory_hostname else source_secrets_raw_local.content) | b64decode | from_yaml }}"
+
+- name: Load target MinIO credentials
+  block:
+    - name: Check target secrets file exists
+      stat:
+        path: "/opt/yamisskey-provision/secrets.yml"
+      register: target_secrets_stat
+
+    - name: Fail if target secrets not found
+      fail:
+        msg: "Target secrets file not found at /opt/yamisskey-provision/secrets.yml"
+      when: not target_secrets_stat.stat.exists
+
+    - name: Read target secrets
+      slurp:
+        src: "/opt/yamisskey-provision/secrets.yml"
+      register: target_secrets_raw
+
+    - name: Parse target MinIO credentials
+      set_fact:
+        target_secrets: "{{ target_secrets_raw.content | b64decode | from_yaml }}"
+
+    - name: Display credential loading status
+      debug:
+        msg: |
+          Credential loading completed:
+          ✅ Source: {{ source_minio_host }} (user: {{ source_secrets.minio_root_user }})
+          ✅ Target: {{ inventory_hostname }} (user: {{ target_secrets.minio_root_user }})
+
+- name: Create migration temporary directory
+  file:
+    path: "{{ migration_temp_dir }}"
+    state: directory
+    mode: '0700'
+
+- name: Setup source MinIO alias
+  command: >
+    /usr/local/bin/mc alias set {{ source_minio_alias }}
+    http://{{ source_minio_ip }}:{{ source_minio_port }}
+    "{{ source_secrets.minio.root_user }}"
+    "{{ source_secrets.minio.root_password }}"
+  register: source_alias_result
+  changed_when: source_alias_result.rc == 0
+
+- name: Setup target MinIO alias
+  command: >
+    /usr/local/bin/mc alias set {{ target_minio_alias }}
+    http://localhost:{{ target_minio_port }}
+    "{{ target_secrets.minio.root_user }}"
+    "{{ target_secrets.minio.root_password }}"
+  register: target_alias_result
+  changed_when: target_alias_result.rc == 0
+
+- name: Verify source MinIO alias
+  command: /usr/local/bin/mc ls {{ source_minio_alias }}/
+  register: source_ls_result
+  changed_when: false
+  failed_when: false
+
+- name: Handle source alias verification failure
+  fail:
+    msg: |
+      Failed to list source MinIO buckets. Error: {{ source_ls_result.stderr }}
+      Please check source credentials and connectivity.
+  when: source_ls_result.rc != 0
+
+- name: Display source bucket information
+  debug:
+    msg: |
+      Source MinIO buckets found:
+      {{ source_ls_result.stdout }}
+
+- name: Check source buckets existence and get statistics
+  block:
+    - name: Check source buckets existence
+      command: /usr/local/bin/mc ls {{ source_minio_alias }}/{{ item }}/
+      loop: "{{ buckets_to_migrate }}"
+      register: source_bucket_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Display source bucket statistics
+      command: /usr/local/bin/mc du {{ source_minio_alias }}/{{ item }}/
+      loop: "{{ buckets_to_migrate }}"
+      register: source_bucket_stats
+      ignore_errors: yes
+      changed_when: false
+      when: source_bucket_check.results[ansible_loop.index0].rc == 0
+
+    - name: Display bucket statistics
+      debug:
+        msg: |
+          Source bucket statistics:
+          {% for i in range(buckets_to_migrate | length) %}
+          {{ buckets_to_migrate[i] }}:
+          {% if source_bucket_check.results[i].rc == 0 %}
+            ✅ Available {% if source_bucket_stats.results[i] is defined %}({{ source_bucket_stats.results[i].stdout }}){% endif %}
+          {% else %}
+            ❌ Not found or empty
+          {% endif %}
+          {% endfor %}
+
+- name: Create migration script
+  template:
+    src: minio_migration_script.sh.j2
+    dest: "{{ migration_temp_dir }}/migrate.sh"
+    mode: '0700'
+
+- name: Execute MinIO migration with encryption
+  shell: "{{ migration_temp_dir }}/migrate.sh"
+  register: migration_result
+  failed_when: migration_result.rc != 0
+
+- name: Display migration results
+  debug:
+    var: migration_result.stdout_lines
+
+- name: Verify migration completeness
+  block:
+    - name: Check target bucket file counts
+      command: /usr/local/bin/mc ls --recursive {{ target_minio_alias }}/{{ item }}/ | wc -l
+      loop: "{{ buckets_to_migrate }}"
+      register: target_file_counts
+      changed_when: false
+      failed_when: false
+
+    - name: Check source bucket file counts
+      command: /usr/local/bin/mc ls --recursive {{ source_minio_alias }}/{{ item }}/ | wc -l
+      loop: "{{ buckets_to_migrate }}"
+      register: source_file_counts
+      changed_when: false
+      failed_when: false
+
+    - name: Compare file counts
+      debug:
+        msg: |
+          Migration verification:
+          {% for i in range(buckets_to_migrate | length) %}
+          {{ buckets_to_migrate[i] }}:
+            Source: {{ source_file_counts.results[i].stdout | default('N/A') }} files
+            Target: {{ target_file_counts.results[i].stdout | default('N/A') }} files
+            Status: {% if source_file_counts.results[i].stdout | default('0') == target_file_counts.results[i].stdout | default('0') %}✅ Match{% else %}❌ Mismatch{% endif %}
+          {% endfor %}
+
+- name: Clean up temporary files
+  file:
+    path: "{{ migration_temp_dir }}"
+    state: absent
+
+- name: Display final migration summary
+  debug:
+    msg: |
+      ==============================================
+      MinIO Migration Complete
+      ==============================================
+      ✅ Source connectivity verified ({{ source_minio_host }})
+      ✅ Target connectivity verified ({{ inventory_hostname }})
+      ✅ Credentials loaded successfully
+      ✅ MinIO CLI installed and configured
+      ✅ Buckets migrated: {{ buckets_to_migrate | join(', ') }}
+      ✅ Migration verification completed
+      ✅ Temporary files cleaned up
+      
+      🔑 Next Steps:
+      1. Update application configurations with new endpoint
+      2. Test file upload/download functionality
+      3. Verify federation image display
+      4. Update DNS: drive.yami.ski → {{ ansible_default_ipv4.address }}
+      5. Consider stopping source MinIO ({{ source_minio_host }})
+      ==============================================
+
+- name: Generate flexible usage instructions
+  debug:
+    msg: |
+      ==============================================
+      Migration Usage Examples
+      ==============================================
+      
+      🚀 Basic migration (default: source→destination):
+      make migrate
+      
+      🎯 Flexible host migration:
+      ansible-playbook -i ansible/inventory ansible/playbooks/migrate.yml \
+        -e "migrate_source=balthasar migrate_target=raspberrypi" \
+        --limit raspberrypi --ask-become-pass
+      
+      🔄 Reverse migration (raspberrypi→balthasar):
+      ansible-playbook -i ansible/inventory ansible/playbooks/migrate.yml \
+        -e "migrate_source=raspberrypi migrate_target=balthasar" \
+        --limit balthasar --ask-become-pass
+      
+      📡 Custom endpoints:
+      ansible-playbook -i ansible/inventory ansible/playbooks/migrate.yml \
+        -e "migrate_source=server1 migrate_target=server2" \
+        -e "source_minio_port=9001 target_minio_port=9002" \
+        --limit server2 --ask-become-pass
+      ==============================================

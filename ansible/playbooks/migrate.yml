@@ -1,0 +1,68 @@
+---
+- name: Migrate MinIO data between hosts with encryption
+  hosts: "{{ migrate_target | default('destination') }}"
+  become: true
+  become_method: sudo
+  vars:
+    # Migration host configuration
+    source_minio_host: "{{ migrate_source | default('source') }}"
+    target_minio_host: "{{ migrate_target | default('destination') }}"
+  pre_tasks:
+    - name: Display current execution context
+      debug:
+        msg: |
+          Current execution context:
+          - Running on: {{ inventory_hostname }}
+          - Current host: {{ ansible_hostname }}
+          - Available groups: {{ groups.keys() | list }}
+          - All hosts: {{ groups['all'] }}
+    
+    - name: Validate migration parameters
+      assert:
+        that:
+          - source_minio_host is defined
+          - target_minio_host is defined
+          - source_minio_host != target_minio_host
+          - source_minio_host in groups['all']
+          - target_minio_host in groups['all']
+        fail_msg: |
+          Invalid migration configuration:
+          - Source: {{ source_minio_host | default('undefined') }}
+          - Target: {{ target_minio_host | default('undefined') }}
+          - Available hosts: {{ groups['all'] }}
+          Both source and target must be different and exist in inventory.
+    
+    - name: Display migration configuration
+      debug:
+        msg: |
+          ==============================================
+          MinIO Migration Configuration
+          ==============================================
+          Source Host: {{ source_minio_host }}
+          Target Host: {{ target_minio_host }} (current execution host)
+          Source IP: {{ hostvars[source_minio_host]['ansible_host'] | default(source_minio_host) }}
+          Target IP: {{ hostvars[target_minio_host]['ansible_host'] | default('localhost') }}
+          Buckets: {{ minio_bucket_name_for_misskey | default('files') }}, {{ minio_bucket_name_for_outline | default('assets') }}
+          ==============================================
+    
+    - name: Test SSH connectivity to source host
+      command: ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no {{ hostvars[source_minio_host]['ansible_user'] | default(ansible_user) }}@{{ hostvars[source_minio_host]['ansible_host'] | default(source_minio_host) }} "echo 'SSH connection successful'"
+      register: ssh_test
+      failed_when: false
+      changed_when: false
+      when: source_minio_host != inventory_hostname
+    
+    - name: Display SSH connectivity result
+      debug:
+        msg: |
+          SSH connectivity test:
+          {% if source_minio_host == inventory_hostname %}
+          ✅ Source is local host (no SSH needed)
+          {% elif ssh_test.rc == 0 %}
+          ✅ SSH connection to {{ source_minio_host }} successful
+          {% else %}
+          ❌ SSH connection to {{ source_minio_host }} failed: {{ ssh_test.stderr | default('Unknown error') }}
+          {% endif %}
+      when: source_minio_host != inventory_hostname
+  roles:
+    - migrate
