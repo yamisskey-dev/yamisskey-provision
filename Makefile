@@ -65,14 +65,14 @@ inventory:
 		SOURCE_IP=$$(tailscale status 2>/dev/null | grep "$(SOURCE)" | awk '{print $$1}' | head -1 || echo "$(SOURCE)"); \
 		TARGET_IP=$$(tailscale status 2>/dev/null | grep "$(TARGET)" | awk '{print $$1}' | head -1 || echo "$(TARGET)"); \
 		CURRENT_HOST=$$(hostname); \
-		echo "[$(SOURCE)]" > ansible/inventory; \
+		echo "[source_hosts]" > ansible/inventory; \
 		if [ "$$CURRENT_HOST" = "$(SOURCE)" ]; then \
 			echo "$(SOURCE) ansible_connection=local" >> ansible/inventory; \
 		else \
 			echo "$(SOURCE) ansible_host=$$SOURCE_IP ansible_user=$(USER) ansible_port=22" >> ansible/inventory; \
 		fi; \
 		echo "" >> ansible/inventory; \
-		echo "[$(TARGET)]" >> ansible/inventory; \
+		echo "[target_hosts]" >> ansible/inventory; \
 		if [ "$$CURRENT_HOST" = "$(TARGET)" ]; then \
 			echo "$(TARGET) ansible_connection=local" >> ansible/inventory; \
 		else \
@@ -80,8 +80,12 @@ inventory:
 		fi; \
 		echo "" >> ansible/inventory; \
 		echo "[all:vars]" >> ansible/inventory; \
-		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'" >> ansible/inventory; \
+		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10'" >> ansible/inventory; \
 		echo "ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory; \
+		echo "ansible_ssh_pipelining=true" >> ansible/inventory; \
+		echo "ansible_become=true" >> ansible/inventory; \
+		echo "ansible_become_method=sudo" >> ansible/inventory; \
+		echo "ansible_become_user=root" >> ansible/inventory; \
 		echo "Migration inventory created at ansible/inventory"; \
 		echo "Source: $(SOURCE) ($$SOURCE_IP)"; \
 		echo "Target: $(TARGET) ($$TARGET_IP)"; \
@@ -135,11 +139,11 @@ migrate:
 		$(MAKE) inventory SOURCE=$(SOURCE) TARGET=$(TARGET); \
 		ansible-playbook -i ansible/inventory \
 			-e "migrate_source=$(SOURCE) migrate_target=$(TARGET)" \
-			--limit $(TARGET) ansible/playbooks/migrate.yml --ask-become-pass; \
+			--limit $(TARGET) ansible/playbooks/migrate.yml; \
 	else \
 		echo "Using default source→destination migration..."; \
 		$(MAKE) inventory; \
-		ansible-playbook -i ansible/inventory --limit destination ansible/playbooks/migrate.yml --ask-become-pass; \
+		ansible-playbook -i ansible/inventory --limit destination ansible/playbooks/migrate.yml; \
 	fi
 
 test:
