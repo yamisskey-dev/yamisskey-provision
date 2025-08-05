@@ -13,7 +13,13 @@
   set_fact:
     minio_root_user: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_user }}"
     minio_root_password: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_password }}"
-    misskey_s3_secret_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_secret_key }}"
+    misskey_s3_access_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_access_key | default('') }}"
+    misskey_s3_secret_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_secret_key | default('') }}"
+
+- name: Generate S3 credentials if not provided
+  set_fact:
+    misskey_s3_access_key: "{{ misskey_s3_access_key if misskey_s3_access_key != '' else (ansible_hostname + '-' + ansible_date_time.epoch) }}"
+    misskey_s3_secret_key: "{{ misskey_s3_secret_key if misskey_s3_secret_key != '' else (lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
 
 - name: Deploy Docker Compose file for Minio
   template:
@@ -95,7 +101,7 @@
       when: assets_bucket_check.rc != 0
 
     - name: Create Misskey IAM user
-      command: /usr/local/bin/mc admin user add "{{ minio_alias }}" misskey-user "{{ misskey_s3_secret_key }}"
+      command: /usr/local/bin/mc admin user add "{{ minio_alias }}" "{{ misskey_s3_access_key }}" "{{ misskey_s3_secret_key }}"
       register: misskey_user_result
       ignore_errors: yes
       changed_when: misskey_user_result.rc == 0
@@ -119,7 +125,7 @@
         state: absent
 
     - name: Attach policy to Misskey user
-      command: /usr/local/bin/mc admin policy attach "{{ minio_alias }}" misskey-policy --user misskey-user
+      command: /usr/local/bin/mc admin policy attach "{{ minio_alias }}" misskey-policy --user "{{ misskey_s3_access_key }}"
       register: policy_attach_result
       changed_when: policy_attach_result.rc == 0
 
@@ -159,7 +165,7 @@
           ==============================================
           ✅ Web UI disabled (CLI management only)
           ✅ Buckets: {{ minio_bucket_name_for_misskey }}, {{ minio_bucket_name_for_outline }}
-          ✅ IAM User: misskey-user (restricted permissions)
+          ✅ IAM User: {{ misskey_s3_access_key }} (auto-generated, restricted permissions)
           ✅ Server-Side Encryption enabled (privacy protection)
           ✅ Federation access enabled (ActivityPub platforms)
           ✅ Direct browser access prevention (Nginx layer)
@@ -169,9 +175,15 @@
           🔑 Misskey Configuration (balthasar):
           S3_BUCKET={{ minio_bucket_name_for_misskey }}
           S3_ENDPOINT=http://[TAILSCALE_RASPBERRYPI_IP]:9000
-          S3_ACCESS_KEY=misskey-user
+          S3_ACCESS_KEY={{ misskey_s3_access_key }}
           S3_SECRET_KEY={{ misskey_s3_secret_key }}
           S3_BASE_URL=https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_misskey }}
+          
+          🔑 Outline Configuration:
+          AWS_ACCESS_KEY_ID={{ misskey_s3_access_key }}
+          AWS_SECRET_ACCESS_KEY={{ misskey_s3_secret_key }}
+          AWS_S3_UPLOAD_BUCKET_NAME={{ minio_bucket_name_for_outline }}
+          AWS_S3_UPLOAD_BUCKET_URL=https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_outline }}
           
           🔑 Testing Steps:
           1. ✅ Tailscale connectivity: balthasar → raspberrypi

@@ -69,8 +69,12 @@ minio_alias: yaminio
 minio:
   root_user: "admin"
   root_password: "your-secure-root-password"
-  misskey_s3_secret_key: "your-secure-s3-secret-key"
+  # S3 credentials (optional - auto-generated if not provided)
+  misskey_s3_access_key: "your-s3-access-key"    # Optional: auto-generated
+  misskey_s3_secret_key: "your-s3-secret-key"    # Optional: auto-generated
 ```
+
+**Note**: If `misskey_s3_access_key` or `misskey_s3_secret_key` are not provided, they will be automatically generated during deployment.
 
 ### System Requirements
 - Docker and Docker Compose
@@ -94,7 +98,7 @@ minio:
 - **Method Restrictions**: Controls upload operations
 
 #### Layer 2: IAM (User Level)
-- **Dedicated User**: `misskey-user` with minimal permissions
+- **Dedicated User**: Auto-generated user with minimal permissions
 - **Restricted Policy**: Only `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`
 - **Bucket Scope**: Access limited to `files` and `assets` buckets only
 
@@ -131,14 +135,16 @@ Add to Misskey's `.env` file:
 S3_BUCKET=files
 S3_PREFIX=""
 S3_ENDPOINT=http://[TAILSCALE_RASPBERRYPI_IP]:9000
-S3_ACCESS_KEY=misskey-user
-S3_SECRET_KEY=[FROM_SECRETS_FILE]
+S3_ACCESS_KEY=[AUTO_GENERATED_ACCESS_KEY]
+S3_SECRET_KEY=[AUTO_GENERATED_SECRET_KEY]
 S3_REGION=ap-northeast-3
 S3_USE_SSL=false
 S3_FORCE_PATH_STYLE=true
 # Public URL for federation (via Cloudflare)
 S3_BASE_URL=https://drive.yami.ski/files
 ```
+
+**Note**: The actual `S3_ACCESS_KEY` and `S3_SECRET_KEY` values will be displayed after deployment.
 
 #### Outline Configuration
 Add to Outline's `.env` file:
@@ -148,9 +154,11 @@ AWS_S3_UPLOAD_BUCKET_NAME=assets
 AWS_S3_UPLOAD_BUCKET_URL=https://drive.yami.ski/assets
 AWS_S3_UPLOAD_MAX_SIZE=104857600
 AWS_REGION=ap-northeast-3
-AWS_ACCESS_KEY_ID=misskey-user
-AWS_SECRET_ACCESS_KEY=[FROM_SECRETS_FILE]
+AWS_ACCESS_KEY_ID=[AUTO_GENERATED_ACCESS_KEY]
+AWS_SECRET_ACCESS_KEY=[AUTO_GENERATED_SECRET_KEY]
 ```
+
+**Note**: The same auto-generated credentials are used for both Misskey and Outline.
 
 ## Management
 
@@ -210,8 +218,8 @@ curl -H "User-Agent: Misskey/13.0.0" https://drive.yami.ski/files/test.jpg
 # Test Tailscale connection
 ping [TAILSCALE_RASPBERRYPI_IP]
 
-# Check IAM user
-mc admin user info yaminio misskey-user
+# Check IAM user (replace with auto-generated username)
+mc admin user info yaminio [AUTO_GENERATED_ACCESS_KEY]
 ```
 
 #### 3. Direct Access Not Blocked
