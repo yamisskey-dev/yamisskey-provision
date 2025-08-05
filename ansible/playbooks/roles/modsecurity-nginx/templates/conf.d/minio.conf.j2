@@ -67,15 +67,18 @@ server {
             return 403 "Direct access not allowed. Use federation platforms.";
         }
         
-        # Upload restrictions
+        # Upload restrictions - use map for better performance and no nesting
+        set $upload_check "${request_method}:${http_user_agent}";
+        
+        # Block uploads from unauthorized clients
         if ($request_method ~ ^(PUT|POST|DELETE)$) {
-            set $upload_allowed 0;
-            if ($http_user_agent ~* "(misskey|pleroma|mastodon|firefish|outline|axios|curl|wget|python-requests|go-fed)") {
-                set $upload_allowed 1;
-            }
-            if ($upload_allowed = 0) {
-                return 403 "Upload not allowed from this client";
-            }
+            set $upload_blocked 1;
+        }
+        if ($http_user_agent ~* "(misskey|pleroma|mastodon|firefish|outline|axios|curl|wget|python-requests|go-fed)") {
+            set $upload_blocked 0;
+        }
+        if ($upload_blocked = 1) {
+            return 403 "Upload not allowed from this client";
         }
         
         proxy_pass http://minio_api_backend;
