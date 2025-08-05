@@ -31,7 +31,7 @@
     minio_root_password: "{{ existing_secrets.minio.root_password | default(lookup('password', '/dev/null chars=ascii_letters,digits length=64')) }}"
     misskey_s3_access_key: "{{ existing_secrets.minio.misskey_s3_access_key | default(ansible_hostname + '-' + ansible_date_time.epoch) }}"
     misskey_s3_secret_key: "{{ existing_secrets.minio.misskey_s3_secret_key | default(lookup('password', '/dev/null chars=ascii_letters,digits length=32')) }}"
-    minio_kms_master_key: "{{ existing_secrets.minio.kms_master_key | default('minio-master-key:' + (lookup('password', '/dev/null chars=ascii_letters,digits,+,/ length=44') | b64encode)) }}"
+    minio_kms_master_key: "{{ existing_secrets.minio.kms_master_key | default('minio-master-key:' + (lookup('password', '/dev/null chars=ascii_letters,digits length=32') | b64encode)) }}"
 
 - name: Create/update secrets.yml with all credentials
   copy:
