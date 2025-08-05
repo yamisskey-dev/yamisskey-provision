@@ -5,7 +5,6 @@ packages:
   - inetutils-traceroute
   - rsync
   - zip
-  - libmodsecurity3t64
   - certbot
   - python3-certbot-dns-cloudflare
   - tor
