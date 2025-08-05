@@ -10,6 +10,8 @@
     - "/etc/modsecurity-nginx"
     - "/var/log/nginx"
     - "/etc/modsecurity-nginx/rules"
+    - "/var/cache/nginx"
+    - "/var/cache/nginx/minio"
 
 - name: Set proper permissions for log directory
   file:
