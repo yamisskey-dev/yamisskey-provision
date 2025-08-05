@@ -36,8 +36,6 @@ ingress:
     service: http://localhost:8080
   - hostname: {{ minio_api_server_name }}
     service: http://localhost:8080
-  - hostname: {{ minio_web_server_name }}
-    service: http://localhost:8080
   - hostname: {{ jitsi_server_name }}
     service: http://localhost:8080
   - hostname: {{ grafana_server_name }}

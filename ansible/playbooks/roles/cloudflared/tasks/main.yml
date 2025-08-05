@@ -1,0 +1,66 @@
+---
+# Cloudflared role for managing configuration with existing make install system
+# Installation and systemd setup follows project README.md procedures
+
+- name: Ensure cloudflared config directory exists
+  file:
+    path: /home/taka/.cloudflared
+    state: directory
+    owner: taka
+    group: taka
+    mode: '0755'
+
+- name: Check if cloudflared config exists
+  stat:
+    path: /home/taka/.cloudflared/config.yml
+  register: cloudflared_config_exists
+
+- name: Create cloudflared config from template
+  template:
+    src: config.yml.j2
+    dest: /home/taka/.cloudflared/config.yml
+    owner: taka
+    group: taka
+    mode: '0640'
+  when: not cloudflared_config_exists.stat.exists
+
+- name: Check if cloudflared service is available
+  systemd:
+    name: cloudflared
+  register: cloudflared_service_status
+  failed_when: false
+
+- name: Display cloudflared setup status
+  debug:
+    msg: |
+      =============================================================
+      CLOUDFLARED CONFIGURATION DEPLOYED
+      =============================================================
+      
+      ✅ Configuration: /home/taka/.cloudflared/config.yml
+      ✅ MinIO routing: {{ minio_api_server_name }} → localhost:8080
+      
+      📋 Manual steps required (follow project README.md):
+      
+      1. Install cloudflared:
+         make install
+      
+      2. Login and create tunnel:
+         cloudflared tunnel login
+         cloudflared tunnel create yamisskey
+         cloudflared tunnel route dns yamisskey {{ minio_api_server_name }}
+      
+      3. Update config with tunnel UUID:
+         Edit /home/taka/.cloudflared/config.yml
+         Replace <Tunnel-UUID> with actual tunnel UUID
+      
+      4. Setup systemd service:
+         sudo mkdir -p /etc/cloudflared
+         sudo cp /home/taka/.cloudflared/config.yml /etc/cloudflared/
+         sudo cloudflared service install
+         sudo systemctl enable cloudflared
+         sudo systemctl start cloudflared
+      
+      📊 Service status: {{ cloudflared_service_status.status.ActiveState | default('not installed') }}
+      🔗 Expected URL: https://{{ minio_api_server_name }}
+      =============================================================

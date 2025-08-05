@@ -1,0 +1,7 @@
+---
+# Default values for Cloudflared
+cloudflared_tunnel_name: "minio-tunnel"
+cloudflared_hostname: "drive.yami.ski"
+
+# These will be set by the playbook or user
+# cloudflared_tunnel_uuid: "your-tunnel-uuid-here"
