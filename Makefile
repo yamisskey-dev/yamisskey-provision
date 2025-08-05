@@ -202,7 +202,7 @@ test:
 	@echo "To perform actual migration:"
 	@echo "1. make migrate SOURCE=balthasar TARGET=raspberrypi"
 	@echo "2. Ensure both hosts are accessible via Tailscale"
-	@echo "3. Verify /opt/yamisskey-provision/secrets.yml exists on both hosts"
+	@echo "3. Verify /opt/minio/secrets.yml exists on both hosts"
 
 transfer:
 	@echo "Transfer complete system: export from source and import to destination..."
