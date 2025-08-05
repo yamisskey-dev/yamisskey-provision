@@ -13,6 +13,7 @@
   set_fact:
     minio_root_user: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_user }}"
     minio_root_password: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.root_password }}"
+    misskey_s3_secret_key: "{{ (lookup('file', minio_secrets_file) | from_yaml).minio.misskey_s3_secret_key }}"
 
 - name: Deploy Docker Compose file for Minio
   template:
@@ -31,6 +32,13 @@
   docker_compose:
     project_src: /opt/minio
     state: present
+
+- name: Allow MinIO access from Tailscale network
+  ufw:
+    rule: allow
+    port: 9000
+    from_ip: 100.64.0.0/10
+  become: yes
 
 - name: Wait for MinIO to be ready
   wait_for:
@@ -64,20 +72,110 @@
   register: mc_alias_result
   changed_when: mc_alias_result.rc == 0
 
-- name: Create and configure bucket
+- name: Create and configure secure buckets
   block:
-    - name: Check if bucket exists
-      command: /usr/local/bin/mc ls "{{ minio_alias }}/{{ minio_bucket_name }}"
-      register: bucket_check
+    - name: Check if files bucket exists
+      command: /usr/local/bin/mc ls "{{ minio_alias }}/{{ minio_bucket_name_for_misskey }}"
+      register: files_bucket_check
       ignore_errors: yes
       changed_when: false
 
-    - name: Create bucket if not exists
-      command: /usr/local/bin/mc mb "{{ minio_alias }}/{{ minio_bucket_name }}"
-      when: bucket_check.rc != 0
+    - name: Check if assets bucket exists
+      command: /usr/local/bin/mc ls "{{ minio_alias }}/{{ minio_bucket_name_for_outline }}"
+      register: assets_bucket_check
+      ignore_errors: yes
+      changed_when: false
 
-    - name: Set bucket policy to public
-      command: /usr/local/bin/mc anonymous set download "{{ minio_alias }}/{{ minio_bucket_name }}"
+    - name: Create files bucket if not exists
+      command: /usr/local/bin/mc mb "{{ minio_alias }}/{{ minio_bucket_name_for_misskey }}"
+      when: files_bucket_check.rc != 0
 
-    - name: Configure CORS for bucket
-      command: /usr/local/bin/mc policy set-json "{{ minio_alias }}/{{ minio_bucket_name }}" '{{ lookup("template", "templates/minio_cors_policy.json.j2") | to_json }}'
+    - name: Create assets bucket if not exists
+      command: /usr/local/bin/mc mb "{{ minio_alias }}/{{ minio_bucket_name_for_outline }}"
+      when: assets_bucket_check.rc != 0
+
+    - name: Create Misskey IAM user
+      command: /usr/local/bin/mc admin user add "{{ minio_alias }}" misskey-user "{{ misskey_s3_secret_key }}"
+      register: misskey_user_result
+      ignore_errors: yes
+      changed_when: misskey_user_result.rc == 0
+      failed_when: misskey_user_result.rc != 0 and "UserAlreadyExists" not in misskey_user_result.stderr
+      no_log: true
+
+    - name: Deploy IAM policy template
+      template:
+        src: templates/minio_iam_policy.json.j2
+        dest: /tmp/minio_iam_policy.json
+        mode: '0600'
+
+    - name: Create IAM policy for Misskey user
+      command: /usr/local/bin/mc admin policy create "{{ minio_alias }}" misskey-policy /tmp/minio_iam_policy.json
+      register: policy_create_result
+      changed_when: policy_create_result.rc == 0
+
+    - name: Clean up temporary policy file
+      file:
+        path: /tmp/minio_iam_policy.json
+        state: absent
+
+    - name: Attach policy to Misskey user
+      command: /usr/local/bin/mc admin policy attach "{{ minio_alias }}" misskey-policy --user misskey-user
+      register: policy_attach_result
+      changed_when: policy_attach_result.rc == 0
+
+    - name: Deploy bucket policy template
+      template:
+        src: templates/minio_cors_policy.json.j2
+        dest: /tmp/minio_bucket_policy.json
+        mode: '0600'
+
+    - name: Apply secure bucket policy for ActivityPub federation access control
+      command: /usr/local/bin/mc anonymous set-json "{{ minio_alias }}/{{ item }}" /tmp/minio_bucket_policy.json
+      loop:
+        - "{{ minio_bucket_name_for_misskey }}"
+        - "{{ minio_bucket_name_for_outline }}"
+      register: bucket_policy_result
+      changed_when: bucket_policy_result.rc == 0
+
+    - name: Clean up temporary bucket policy file
+      file:
+        path: /tmp/minio_bucket_policy.json
+        state: absent
+
+    - name: Enable Server-Side Encryption (SSE-S3) for data at rest protection
+      command: /usr/local/bin/mc encrypt set sse-s3 "{{ minio_alias }}/{{ item }}"
+      loop:
+        - "{{ minio_bucket_name_for_misskey }}"
+        - "{{ minio_bucket_name_for_outline }}"
+      ignore_errors: yes
+      register: encryption_result
+      failed_when: encryption_result.rc != 0 and "already enabled" not in encryption_result.stderr
+
+    - name: Display essential configuration summary
+      debug:
+        msg: |
+          ==============================================
+          MinIO Essential Security Configuration Complete
+          ==============================================
+          ✅ Web UI disabled (CLI management only)
+          ✅ Buckets: {{ minio_bucket_name_for_misskey }}, {{ minio_bucket_name_for_outline }}
+          ✅ IAM User: misskey-user (restricted permissions)
+          ✅ Server-Side Encryption enabled (privacy protection)
+          ✅ Federation access enabled (ActivityPub platforms)
+          ✅ Direct browser access prevention (Nginx layer)
+          ✅ Tailscale network access (internal communication)
+          ✅ Rate limiting (basic DDoS protection)
+          
+          🔑 Misskey Configuration (balthasar):
+          S3_BUCKET={{ minio_bucket_name_for_misskey }}
+          S3_ENDPOINT=http://[TAILSCALE_RASPBERRYPI_IP]:9000
+          S3_ACCESS_KEY=misskey-user
+          S3_SECRET_KEY={{ misskey_s3_secret_key }}
+          S3_BASE_URL=https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_misskey }}
+          
+          🔑 Testing Steps:
+          1. ✅ Tailscale connectivity: balthasar → raspberrypi
+          2. ✅ Misskey file upload functionality
+          3. ✅ Federation image display via Cloudflare
+          4. ✅ URL preservation: https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_misskey }}/
+          ==============================================

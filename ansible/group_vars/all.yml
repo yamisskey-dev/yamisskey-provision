@@ -20,8 +20,8 @@ matrix_use_ssl: true
 minio_alias: yaminio
 minio_api_server_name: drive.{{ domain }}
 minio_web_server_name: minio.{{ domain }}
-minio_bucket_name: "files"
-minio_bucket_for_outline_name: "assets"
+minio_bucket_name_for_misskey: "files"
+minio_bucket_name_for_outline: "assets"
 minio_secrets_file: '/opt/minio/secrets.yml'
 backup_dir: '/home/{{ ansible_user }}/backups'
 vikunja_server_name: task.{{ domain }}
