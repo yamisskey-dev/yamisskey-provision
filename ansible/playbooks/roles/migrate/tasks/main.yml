@@ -249,7 +249,7 @@
       changed_when: false
 
     - name: Display source bucket statistics
-      command: /usr/local/bin/mc du {{ source_minio_alias }}/{{ buckets_to_migrate[ansible_loop.index0] }}/
+      command: /usr/local/bin/mc du {{ source_minio_alias }}/{{ buckets_to_migrate[ansible_loop_index] }}/
       loop: "{{ range(buckets_to_migrate | length) | list }}"
       loop_control:
         index_var: ansible_loop_index

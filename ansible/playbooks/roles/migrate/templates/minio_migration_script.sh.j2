@@ -29,7 +29,7 @@ for bucket in "${BUCKETS[@]}"; do
 done
 
 log "=== MinIO Migration Started (Dynamic Inventory) ==="
-log "Source: {{ source_minio_host }} ({{ hostvars[source_minio_host]['ansible_host'] | default(source_minio_host) }}:{{ source_minio_port }})"
+log "Source: {{ source_minio_host }} ({{ source_minio_ip }}:{{ source_minio_port }})"
 log "Target: {{ inventory_hostname }} (localhost:{{ target_minio_port }})"
 log "Buckets: ${BUCKETS[*]}"
 log "Temp dir: $TEMP_DIR"
@@ -223,7 +223,7 @@ log "Next steps:"
 log "1. Update application configurations with new endpoint"
 log "2. Test file upload/download functionality"
 log "3. Verify federation image display (ActivityPub compatibility)"
-log "4. Update DNS: drive.yami.ski → {{ hostvars[inventory_hostname]['ansible_host'] | default('new-server-ip') }}"
+log "4. Update DNS: drive.yami.ski → {{ ansible_default_ipv4.address | default('new-server-ip') }}"
 log "5. Consider stopping source MinIO ({{ source_minio_host }})"
 log "6. Monitor system performance and encryption overhead"
 
