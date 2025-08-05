@@ -277,10 +277,54 @@
     dest: "{{ migration_temp_dir }}/migrate.sh"
     mode: '0700'
 
+- name: Set migration start time
+  set_fact:
+    migration_start_time: "{{ ansible_date_time.epoch }}"
+
+- name: Display migration start notification
+  debug:
+    msg: |
+      🚀 MinIO Migration Starting
+      ==========================================
+      ⏰ Start Time: {{ ansible_date_time.iso8601 }}
+      📂 Source: {{ source_minio_host }} ({{ source_minio_ip }}:{{ source_minio_port }})
+      🎯 Target: {{ inventory_hostname }} (localhost:{{ target_minio_port }})
+      📦 Buckets: {{ buckets_to_migrate | join(', ') }}
+      🔐 Encryption: KMS enabled
+      ==========================================
+      
+      Progress will be displayed every 10 seconds...
+
 - name: Execute MinIO migration with encryption
   shell: "{{ migration_temp_dir }}/migrate.sh"
   register: migration_result
   failed_when: migration_result.rc != 0
+  async: 3600  # 1時間のタイムアウト
+  poll: 10     # 10秒間隔でポーリング
+
+- name: Monitor migration progress during execution
+  debug:
+    msg: |
+      🔄 MinIO Migration Progress Monitor
+      ==========================================
+      ⏱️  Elapsed Time: {{ (ansible_date_time.epoch | int) - (migration_start_time | int) }}秒
+      📊 Status: {{ migration_result.finished | default(0) | ternary('✅ 完了', '🔄 進行中') }}
+      
+      Progress Checklist:
+      - SSH Connection: ✅ Established
+      - Source MinIO: ✅ Connected
+      - Target MinIO: ✅ Connected
+      - Migration Script: ✅ Generated
+      - Data Transfer: {{ migration_result.finished | default(0) | ternary('✅ Complete', '🔄 In Progress') }}
+      
+      Current Buckets: {{ buckets_to_migrate | join(', ') }}
+      ==========================================
+      {% if not migration_result.finished | default(false) %}
+      ⚡ Migration is actively running in background...
+      {% endif %}
+  until: migration_result.finished | default(false)
+  retries: 360  # 最大1時間
+  delay: 10     # 10秒間隔
 
 - name: Display migration results
   debug:

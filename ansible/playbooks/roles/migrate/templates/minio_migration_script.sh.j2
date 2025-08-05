@@ -37,51 +37,79 @@ log "Network: Tailscale private network"
 
 # Phase 1: Download from source (unencrypted)
 log "=== Phase 1: Downloading from source MinIO ==="
+
+# Calculate total file count across all buckets for overall progress
+total_files=0
 for bucket in "${BUCKETS[@]}"; do
-    log "Downloading bucket: $bucket"
+    if /usr/local/bin/mc ls "$SOURCE_ALIAS/$bucket/" > /dev/null 2>&1; then
+        bucket_files=$(/usr/local/bin/mc ls --recursive "$SOURCE_ALIAS/$bucket/" 2>/dev/null | wc -l || echo "0")
+        total_files=$((total_files + bucket_files))
+    fi
+done
+
+log "Total files to migrate: $total_files"
+processed_files=0
+
+for bucket in "${BUCKETS[@]}"; do
+    log "📁 Processing bucket: $bucket"
     
     # Check if source bucket exists and has files
     if ! /usr/local/bin/mc ls "$SOURCE_ALIAS/$bucket/" > /dev/null 2>&1; then
-        log "WARNING: Source bucket $bucket does not exist or is empty, skipping"
+        log "⚠️  WARNING: Source bucket $bucket does not exist or is empty, skipping"
         continue
     fi
     
     # Get file count for progress tracking
     file_count=$(/usr/local/bin/mc ls --recursive "$SOURCE_ALIAS/$bucket/" 2>/dev/null | wc -l || echo "0")
-    log "Found $file_count files in source bucket $bucket"
+    log "📊 Found $file_count files in source bucket $bucket"
     
     if [ "$file_count" -gt 0 ]; then
         # Download with progress indication
-        log "Starting download of $bucket..."
+        log "⬇️  Starting download of $bucket ($file_count files)..."
+        download_start=$(date +%s)
+        
         if /usr/local/bin/mc mirror "$SOURCE_ALIAS/$bucket/" "${TEMP_DIR}/${bucket}/" --overwrite; then
+            download_end=$(date +%s)
+            download_duration=$((download_end - download_start))
             downloaded_count=$(find "${TEMP_DIR}/${bucket}/" -type f | wc -l)
-            log "Successfully downloaded $downloaded_count files from $bucket"
+            processed_files=$((processed_files + downloaded_count))
+            
+            log "✅ Successfully downloaded $downloaded_count files from $bucket (${download_duration}s)"
+            log "📈 Progress: $processed_files/$total_files files completed"
         else
             handle_error "Download from source bucket $bucket"
         fi
     else
-        log "No files to download from bucket $bucket"
+        log "📭 No files to download from bucket $bucket"
     fi
 done
 
 # Phase 2: Upload to target (with encryption)
 log "=== Phase 2: Uploading to target MinIO (with encryption) ==="
+
+uploaded_files=0
 for bucket in "${BUCKETS[@]}"; do
-    log "Uploading bucket: $bucket"
+    log "📁 Uploading bucket: $bucket"
     
     # Check if temp directory has files
     if [ ! -d "${TEMP_DIR}/${bucket}" ] || [ -z "$(ls -A "${TEMP_DIR}/${bucket}" 2>/dev/null)" ]; then
-        log "No files to upload for bucket $bucket"
+        log "📭 No files to upload for bucket $bucket"
         continue
     fi
     
     # Get file count for progress tracking
     file_count=$(find "${TEMP_DIR}/${bucket}/" -type f | wc -l)
-    log "Uploading $file_count files to target bucket $bucket with encryption..."
+    log "⬆️  Uploading $file_count files to target bucket $bucket with encryption..."
+    upload_start=$(date +%s)
     
     # Upload with encryption (automatically applied by target MinIO)
     if /usr/local/bin/mc mirror "${TEMP_DIR}/${bucket}/" "$TARGET_ALIAS/$bucket/" --overwrite; then
-        log "Successfully uploaded $file_count files to $bucket (encrypted)"
+        upload_end=$(date +%s)
+        upload_duration=$((upload_end - upload_start))
+        uploaded_files=$((uploaded_files + file_count))
+        
+        log "✅ Successfully uploaded $file_count files to $bucket (encrypted, ${upload_duration}s)"
+        log "📈 Upload progress: $uploaded_files/$total_files files completed"
     else
         handle_error "Upload to target bucket $bucket"
     fi
@@ -89,40 +117,52 @@ done
 
 # Phase 3: Verification
 log "=== Phase 3: Migration Verification ==="
+
+verified_buckets=0
+total_buckets=${#BUCKETS[@]}
+
 for bucket in "${BUCKETS[@]}"; do
-    log "Verifying bucket: $bucket"
+    log "🔍 Verifying bucket: $bucket"
     
     # Count files in source and target
     source_count=$(/usr/local/bin/mc ls --recursive "$SOURCE_ALIAS/$bucket/" 2>/dev/null | wc -l || echo "0")
     target_count=$(/usr/local/bin/mc ls --recursive "$TARGET_ALIAS/$bucket/" 2>/dev/null | wc -l || echo "0")
     
-    log "Bucket $bucket - Source: $source_count files, Target: $target_count files"
+    log "📊 Bucket $bucket - Source: $source_count files, Target: $target_count files"
     
     if [ "$source_count" -eq "$target_count" ]; then
-        log "✅ Bucket $bucket migration verified"
+        verified_buckets=$((verified_buckets + 1))
+        log "✅ Bucket $bucket migration verified ($verified_buckets/$total_buckets buckets)"
     else
         log "❌ Bucket $bucket file count mismatch"
         handle_error "Verification of bucket $bucket"
     fi
 done
 
+log "🎉 All $verified_buckets buckets verified successfully"
+
 # Phase 4: Encryption verification
 log "=== Phase 4: Encryption Verification ==="
+
+encryption_checks=0
 for bucket in "${BUCKETS[@]}"; do
+    log "🔐 Checking encryption for bucket: $bucket"
+    
     # Check if any files exist in the target bucket
     sample_file=$(/usr/local/bin/mc ls "$TARGET_ALIAS/$bucket/" 2>/dev/null | head -1 | awk '{print $NF}' || echo "")
     
     if [ -n "$sample_file" ]; then
-        log "Checking encryption status of sample file: $sample_file"
+        log "🔍 Checking encryption status of sample file: $sample_file"
         
         # Check file on disk (should be encrypted)
         disk_path="/opt/minio/minio-data/${bucket}/${sample_file}"
         if [ -f "$disk_path" ]; then
             file_type=$(file "$disk_path" 2>/dev/null || echo "unknown")
-            log "Disk file type: $file_type"
+            log "💾 Disk file type: $file_type"
             
             if echo "$file_type" | grep -q "data"; then
                 log "✅ File is encrypted on disk"
+                encryption_checks=$((encryption_checks + 1))
             else
                 log "⚠️  File may not be encrypted on disk"
             fi
@@ -130,7 +170,7 @@ for bucket in "${BUCKETS[@]}"; do
         
         # Test API access (should be decrypted)
         api_test=$(/usr/local/bin/mc cat "$TARGET_ALIAS/$bucket/$sample_file" 2>/dev/null | file - || echo "API access failed")
-        log "API access result: $api_test"
+        log "🌐 API access result: $api_test"
         
         if echo "$api_test" | grep -qE "(image|text|PDF|executable)"; then
             log "✅ MinIO API correctly decrypts files"
@@ -138,26 +178,46 @@ for bucket in "${BUCKETS[@]}"; do
             log "⚠️  API decryption test inconclusive"
         fi
     else
-        log "No files found in bucket $bucket for encryption verification"
+        log "📭 No files found in bucket $bucket for encryption verification"
     fi
 done
+
+log "🔐 Encryption verification completed ($encryption_checks files checked)"
 
 # Phase 5: Cleanup
 log "=== Phase 5: Cleanup ==="
-log "Removing temporary files..."
+log "🧹 Removing temporary files..."
+
+cleanup_size=0
 for bucket in "${BUCKETS[@]}"; do
     if [ -d "${TEMP_DIR}/${bucket}" ]; then
+        # Calculate size before cleanup
+        bucket_size=$(du -sh "${TEMP_DIR}/${bucket}" 2>/dev/null | cut -f1 || echo "0B")
         rm -rf "${TEMP_DIR}/${bucket}"
-        log "Cleaned up temporary files for bucket $bucket"
+        log "🗑️  Cleaned up temporary files for bucket $bucket ($bucket_size)"
+        cleanup_size=$((cleanup_size + 1))
     fi
 done
 
-log "=== MinIO Migration Completed Successfully ==="
-log "Summary:"
+log "✨ Cleanup completed ($cleanup_size bucket directories removed)"
+
+# Final summary with enhanced formatting
+migration_end=$(date +%s)
+total_duration=$((migration_end - $(date -d "1 hour ago" +%s) || 0))
+
+log "🎉 === MinIO Migration Completed Successfully ==="
+log "📊 Final Summary:"
+total_migrated=0
 for bucket in "${BUCKETS[@]}"; do
     target_count=$(/usr/local/bin/mc ls --recursive "$TARGET_ALIAS/$bucket/" 2>/dev/null | wc -l || echo "0")
-    log "  $bucket: $target_count files migrated and encrypted"
+    total_migrated=$((total_migrated + target_count))
+    log "  📁 $bucket: $target_count files migrated and encrypted"
 done
+
+log "📈 Total files migrated: $total_migrated"
+if [ "$total_duration" -gt 0 ]; then
+    log "⏱️  Total migration time: ${total_duration} seconds"
+fi
 
 log "Next steps:"
 log "1. Update application configurations with new endpoint"

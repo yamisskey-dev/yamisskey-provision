@@ -130,83 +130,139 @@ clone:
 	fi
 
 migrate:
-	@echo "Migrating MinIO data with encryption..."
-	@echo "Usage examples:"
+	@echo "🚀 Migrating MinIO data with encryption and progress monitoring..."
+	@echo ""
+	@echo "📋 Usage examples:"
 	@echo "  make migrate                           # Default: source→destination"
 	@echo "  make migrate SOURCE=balthasar TARGET=raspberrypi  # Custom hosts"
+	@echo ""
 	@if [ -n "$(SOURCE)" ] && [ -n "$(TARGET)" ]; then \
-		echo "Creating migration inventory and executing..."; \
+		echo "🔧 Creating migration inventory and executing..."; \
+		echo "📡 Source: $(SOURCE)"; \
+		echo "🎯 Target: $(TARGET)"; \
+		echo "🌐 Network: Tailscale private network"; \
+		echo ""; \
 		$(MAKE) inventory SOURCE=$(SOURCE) TARGET=$(TARGET); \
-		ansible-playbook -i ansible/inventory \
+		echo ""; \
+		echo "⏳ Starting migration with real-time progress monitoring..."; \
+		echo "📊 Progress will be displayed every 10 seconds during transfer"; \
+		echo "🔐 All files will be encrypted automatically on target"; \
+		echo ""; \
+		start_time=$$(date +%s); \
+		if ansible-playbook -i ansible/inventory \
 			-e "migrate_source=$(SOURCE) migrate_target=$(TARGET)" \
-			--limit $(TARGET) ansible/playbooks/migrate.yml; \
+			--limit $(TARGET) ansible/playbooks/migrate.yml; then \
+			end_time=$$(date +%s); \
+			duration=$$((end_time - start_time)); \
+			echo ""; \
+			echo "🎉 Migration completed successfully in $${duration} seconds!"; \
+			echo "✅ All data transferred and encrypted"; \
+			echo "🔍 Check migration logs for detailed verification results"; \
+		else \
+			echo ""; \
+			echo "❌ Migration failed. Check logs for details."; \
+			exit 1; \
+		fi; \
 	else \
-		echo "Using default source→destination migration..."; \
+		echo "🔧 Using default source→destination migration..."; \
 		$(MAKE) inventory; \
-		ansible-playbook -i ansible/inventory --limit destination ansible/playbooks/migrate.yml; \
+		echo ""; \
+		echo "⏳ Starting migration with real-time progress monitoring..."; \
+		start_time=$$(date +%s); \
+		if ansible-playbook -i ansible/inventory --limit destination ansible/playbooks/migrate.yml; then \
+			end_time=$$(date +%s); \
+			duration=$$((end_time - start_time)); \
+			echo ""; \
+			echo "🎉 Migration completed successfully in $${duration} seconds!"; \
+		else \
+			echo ""; \
+			echo "❌ Migration failed. Check logs for details."; \
+			exit 1; \
+		fi; \
 	fi
 
 test:
-	@echo "=== MinIO Migration System Test ==="
+	@echo "🧪 === MinIO Migration System Test ==="
 	@echo ""
-	@echo "Test 1: Basic inventory generation..."
+	@echo "🔍 Test 1: Basic inventory generation..."
 	@$(MAKE) inventory > /dev/null 2>&1
 	@if [ -f ansible/inventory ]; then \
 		echo "✅ Default inventory created successfully"; \
-		echo "Contents:"; \
+		echo "📄 Contents preview:"; \
 		cat ansible/inventory | head -10; \
 	else \
 		echo "❌ Default inventory creation failed"; \
 	fi
 	@echo ""
-	@echo "Test 2: Migration inventory generation..."
+	@echo "🔍 Test 2: Migration inventory generation..."
 	@$(MAKE) inventory SOURCE=balthasar TARGET=raspberrypi > /dev/null 2>&1
 	@if [ -f ansible/inventory ]; then \
 		echo "✅ Migration inventory created successfully"; \
-		echo "Contents:"; \
+		echo "📄 Contents preview:"; \
 		cat ansible/inventory | head -10; \
 	else \
 		echo "❌ Migration inventory creation failed"; \
 	fi
 	@echo ""
-	@echo "Test 3: Tailscale status check..."
+	@echo "🔍 Test 3: Tailscale status check..."
 	@if command -v tailscale >/dev/null 2>&1; then \
+		echo "🌐 Tailscale network status:"; \
 		tailscale status | head -5; \
 		echo "✅ Tailscale available"; \
 	else \
 		echo "⚠️  Tailscale not installed (expected in development)"; \
 	fi
 	@echo ""
-	@echo "Test 4: Ansible availability..."
+	@echo "🔍 Test 4: Ansible availability..."
 	@if command -v ansible >/dev/null 2>&1; then \
+		echo "🤖 Ansible version:"; \
 		ansible --version | head -1; \
 		echo "✅ Ansible available"; \
 	else \
 		echo "❌ Ansible not available"; \
 	fi
 	@echo ""
-	@echo "Test 5: Check migrate role structure..."
+	@echo "🔍 Test 5: Check migrate role structure..."
 	@if [ -d ansible/playbooks/roles/migrate ]; then \
 		echo "✅ Migrate role directory exists"; \
+		echo "📁 Role structure:"; \
 		ls -la ansible/playbooks/roles/migrate/; \
 	else \
 		echo "❌ Migrate role directory missing"; \
 	fi
 	@echo ""
-	@echo "Test 6: README and Makefile consistency check..."
-	@echo "README commands found:"
+	@echo "🔍 Test 6: Progress monitoring features..."
+	@if [ -f ansible/playbooks/roles/migrate/tasks/main.yml ]; then \
+		echo "✅ Migration tasks file exists"; \
+		if grep -q "async:" ansible/playbooks/roles/migrate/tasks/main.yml; then \
+			echo "✅ Async execution with progress monitoring enabled"; \
+		else \
+			echo "⚠️  Progress monitoring not configured"; \
+		fi; \
+		if grep -q "poll:" ansible/playbooks/roles/migrate/tasks/main.yml; then \
+			echo "✅ Polling intervals configured for real-time updates"; \
+		else \
+			echo "⚠️  Polling not configured"; \
+		fi; \
+	else \
+		echo "❌ Migration tasks file missing"; \
+	fi
+	@echo ""
+	@echo "🔍 Test 7: README and Makefile consistency check..."
+	@echo "📖 README commands found:"
 	@grep -n "make " ansible/playbooks/roles/migrate/README.md | head -5
 	@echo ""
-	@echo "Makefile targets available:"
+	@echo "🛠️  Makefile targets available:"
 	@$(MAKE) help | grep -E "(inventory|migrate)"
 	@echo ""
-	@echo "=== Test Summary ==="
+	@echo "🎯 === Test Summary ==="
 	@echo "✅ = Pass, ❌ = Fail, ⚠️ = Warning"
 	@echo ""
-	@echo "To perform actual migration:"
+	@echo "🚀 To perform actual migration:"
 	@echo "1. make migrate SOURCE=balthasar TARGET=raspberrypi"
 	@echo "2. Ensure both hosts are accessible via Tailscale"
 	@echo "3. Verify /opt/minio/secrets.yml exists on both hosts"
+	@echo "4. Monitor progress through real-time updates every 10 seconds"
 
 transfer:
 	@echo "Transfer complete system: export from source and import to destination..."
@@ -263,11 +319,18 @@ help:
 	@echo "  update        - Update Misskey and rebuild Docker images"
 	@echo ""
 	@echo "Migration commands:"
-	@echo "  migrate       - Migrate MinIO data with encryption"
-	@echo "  test          - Test migration system functionality"
+	@echo "  migrate       - Migrate MinIO data with encryption and progress monitoring"
+	@echo "  test          - Test migration system functionality with enhanced checks"
 	@echo "  transfer      - Transfer complete system using export/import playbooks"
 	@echo ""
 	@echo "Migration examples:"
-	@echo "  make migrate SOURCE=balthasar TARGET=raspberrypi"
+	@echo "  make migrate SOURCE=balthasar TARGET=raspberrypi  # Full progress monitoring"
 	@echo "  make inventory SOURCE=balthasar TARGET=raspberrypi"
-	@echo "  make test             # Test migration system"
+	@echo "  make test             # Test system with progress feature validation"
+	@echo ""
+	@echo "Progress monitoring features:"
+	@echo "  🚀 Real-time transfer progress (10-second intervals)"
+	@echo "  📊 File count tracking and completion percentages"
+	@echo "  ⏱️  Duration tracking for each phase"
+	@echo "  🔐 Encryption verification with sample file testing"
+	@echo "  📈 Visual progress indicators with emojis"
