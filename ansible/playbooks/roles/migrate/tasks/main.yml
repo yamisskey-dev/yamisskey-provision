@@ -123,34 +123,38 @@
   block:
     - name: Check source secrets file exists (remote)
       stat:
-        path: "/opt/yamisskey-provision/secrets.yml"
+        path: "/opt/minio/secrets.yml"
       register: source_secrets_stat
       delegate_to: "{{ source_minio_host }}"
       when: source_minio_host != inventory_hostname
 
     - name: Check source secrets file exists (local)
       stat:
-        path: "/opt/yamisskey-provision/secrets.yml"
+        path: "/opt/minio/secrets.yml"
       register: source_secrets_stat_local
       when: source_minio_host == inventory_hostname
 
     - name: Fail if source secrets not found
       fail:
-        msg: "Source secrets file not found at /opt/yamisskey-provision/secrets.yml on {{ source_minio_host }}"
+        msg: "Source MinIO secrets file not found at /opt/minio/secrets.yml on {{ source_minio_host }}"
       when: >
         (source_minio_host != inventory_hostname and not source_secrets_stat.stat.exists) or
         (source_minio_host == inventory_hostname and not source_secrets_stat_local.stat.exists)
 
+    - name: Display found source secrets file
+      debug:
+        msg: "✅ Found source secrets at: /opt/minio/secrets.yml"
+
     - name: Read source secrets (remote)
       slurp:
-        src: "/opt/yamisskey-provision/secrets.yml"
+        src: "/opt/minio/secrets.yml"
       register: source_secrets_raw
       delegate_to: "{{ source_minio_host }}"
       when: source_minio_host != inventory_hostname
 
     - name: Read source secrets (local)
       slurp:
-        src: "/opt/yamisskey-provision/secrets.yml"
+        src: "/opt/minio/secrets.yml"
       register: source_secrets_raw_local
       when: source_minio_host == inventory_hostname
 
@@ -162,17 +166,21 @@
   block:
     - name: Check target secrets file exists
       stat:
-        path: "/opt/yamisskey-provision/secrets.yml"
+        path: "/opt/minio/secrets.yml"
       register: target_secrets_stat
 
     - name: Fail if target secrets not found
       fail:
-        msg: "Target secrets file not found at /opt/yamisskey-provision/secrets.yml"
+        msg: "Target MinIO secrets file not found at /opt/minio/secrets.yml on {{ inventory_hostname }}"
       when: not target_secrets_stat.stat.exists
+
+    - name: Display found target secrets file
+      debug:
+        msg: "✅ Found target secrets at: /opt/minio/secrets.yml"
 
     - name: Read target secrets
       slurp:
-        src: "/opt/yamisskey-provision/secrets.yml"
+        src: "/opt/minio/secrets.yml"
       register: target_secrets_raw
 
     - name: Parse target MinIO credentials
@@ -183,8 +191,10 @@
       debug:
         msg: |
           Credential loading completed:
-          ✅ Source: {{ source_minio_host }} (user: {{ source_secrets.minio_root_user }})
-          ✅ Target: {{ inventory_hostname }} (user: {{ target_secrets.minio_root_user }})
+          ✅ Source: {{ source_minio_host }} (/opt/minio/secrets.yml)
+          ✅ Target: {{ inventory_hostname }} (/opt/minio/secrets.yml)
+          ✅ Source user: {{ source_secrets.minio.root_user | default(source_secrets.minio_root_user) }}
+          ✅ Target user: {{ target_secrets.minio.root_user | default(target_secrets.minio_root_user) }}
 
 - name: Create migration temporary directory
   file:
