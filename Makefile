@@ -6,6 +6,7 @@ DESTINATION_IP=$(shell tailscale status | grep $(DESTINATION_HOSTNAME) | awk '{p
 DESTINATION_SSH_PORT=22
 OS=$(shell lsb_release -is | tr '[:upper:]' '[:lower:]')
 CODENAME=$(shell lsb_release -cs)
+ARCH=$(shell dpkg --print-architecture)
 USER=$(shell whoami)
 TIMESTAMP=$(shell date +%Y%m%dT%H%M%S`date +%N | cut -c 1-6`)
 GITHUB_ORG=yamisskey-dev
@@ -43,13 +44,14 @@ install:
 	@echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(CODENAME) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
 	@sudo apt-get update && sudo apt-get install -y cloudflare-warp
 	@echo "Installing Cloudflared..."
-	@wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-	@sudo dpkg -i cloudflared-linux-amd64.deb
+	@wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$(ARCH).deb
+	@sudo dpkg -i cloudflared-linux-$(ARCH).deb
+	@rm -f cloudflared-linux-$(ARCH).deb
 	@echo "Installing Docker..."
 	@sudo install -m 0755 -d /etc/apt/keyrings
 	@sudo curl -fsSL https://download.docker.com/linux/$(OS)/gpg -o /etc/apt/keyrings/docker.asc
 	@sudo chmod a+r /etc/apt/keyrings/docker.asc
-	@echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/$(OS) $(CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+	@echo "deb [arch=$(ARCH) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/$(OS) $(CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 	@sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || (echo "Docker installation failed" && exit 1)
 	@curl -SsL https://playit-cloud.github.io/ppa/key.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/playit.gpg >/dev/null
 	@echo "deb [signed-by=/etc/apt/trusted.gpg.d/playit.gpg] https://playit-cloud.github.io/ppa/data ./" | sudo tee /etc/apt/sources.list.d/playit-cloud.list
