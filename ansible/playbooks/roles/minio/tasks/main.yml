@@ -136,12 +136,21 @@
         mode: '0600'
 
     - name: Apply secure bucket policy for ActivityPub federation access control
-      command: /usr/local/bin/mc anonymous set-json "{{ minio_alias }}/{{ item }}" /tmp/minio_bucket_policy.json
+      command: /usr/local/bin/mc anonymous set download "{{ minio_alias }}/{{ item }}"
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
         - "{{ minio_bucket_name_for_outline }}"
       register: bucket_policy_result
       changed_when: bucket_policy_result.rc == 0
+
+    - name: Apply advanced bucket policy for User-Agent based access control
+      command: /usr/local/bin/mc admin policy create "{{ minio_alias }}" bucket-policy-{{ item }} /tmp/minio_bucket_policy.json
+      loop:
+        - "{{ minio_bucket_name_for_misskey }}"
+        - "{{ minio_bucket_name_for_outline }}"
+      register: advanced_policy_result
+      changed_when: advanced_policy_result.rc == 0
+      ignore_errors: yes
 
     - name: Clean up temporary bucket policy file
       file:
