@@ -91,7 +91,7 @@ server {
     }
 
     # User uploaded images from MinIO
-    location ~* /{{ minio_bucket_name }}/.*\.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff)$ {
+    location ~* /{{ minio_bucket_name_for_misskey }}/.*\.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff)$ {
         proxy_pass https://{{ minio_api_server_name }};
         proxy_set_header Host {{ minio_api_server_name }};
         proxy_set_header X-Real-IP $remote_addr;
