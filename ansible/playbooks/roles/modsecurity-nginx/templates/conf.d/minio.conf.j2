@@ -45,6 +45,11 @@ server {
     proxy_set_header X-Amz-Security-Token $http_x_amz_security_token;
     proxy_set_header Content-Type $content_type;
     
+    # Root path access control
+    location = / {
+        return 403 "MinIO S3 API - Direct access not allowed";
+    }
+    
     # Main MinIO API with proper access control
     location / {
         # Allow S3 API clients (AWS SDK, etc.)
