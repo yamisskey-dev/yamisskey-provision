@@ -69,18 +69,19 @@ inventory:
 		if [ "$$CURRENT_HOST" = "$(SOURCE)" ]; then \
 			echo "$(SOURCE) ansible_connection=local" >> ansible/inventory; \
 		else \
-			echo "$(SOURCE) ansible_host=$$SOURCE_IP ansible_user=$(USER) ansible_port=22" >> ansible/inventory; \
+			echo "$(SOURCE) ansible_host=$(SOURCE) ansible_user=$(USER)" >> ansible/inventory; \
 		fi; \
 		echo "" >> ansible/inventory; \
 		echo "[target_hosts]" >> ansible/inventory; \
 		if [ "$$CURRENT_HOST" = "$(TARGET)" ]; then \
 			echo "$(TARGET) ansible_connection=local" >> ansible/inventory; \
 		else \
-			echo "$(TARGET) ansible_host=$$TARGET_IP ansible_user=$(USER) ansible_port=22" >> ansible/inventory; \
+			echo "$(TARGET) ansible_host=$(TARGET) ansible_user=$(USER)" >> ansible/inventory; \
 		fi; \
 		echo "" >> ansible/inventory; \
 		echo "[all:vars]" >> ansible/inventory; \
-		echo "ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10'" >> ansible/inventory; \
+		echo "ansible_ssh_executable=tailscale" >> ansible/inventory; \
+		echo "ansible_ssh_common_args='ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10'" >> ansible/inventory; \
 		echo "ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory; \
 		echo "ansible_ssh_pipelining=true" >> ansible/inventory; \
 		echo "ansible_become=true" >> ansible/inventory; \
