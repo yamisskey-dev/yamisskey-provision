@@ -78,16 +78,16 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Connection "";
 
-        # Static content cache
+        # Static content cache - extended for better performance
         proxy_cache static_cache;
-        proxy_cache_valid 200 1d;
+        proxy_cache_valid 200 30d;  # 1日から30日に延長
         proxy_cache_valid 404 1h;
         proxy_cache_use_stale error timeout updating;
         proxy_cache_key "$scheme$request_method$host$request_uri";
 
         add_header X-Cache-Status $upstream_cache_status;
-        expires 1d;
-        add_header Cache-Control "public, immutable";
+        expires 30d;  # 1日から30日に延長
+        add_header Cache-Control "public, immutable, max-age=2592000";  # 30日のmax-age追加
     }
 
     # User uploaded images from MinIO
@@ -98,9 +98,9 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
 
-        # Media cache for user images
+        # Media cache for user images - moderate extension for performance
         proxy_cache media_cache;
-        proxy_cache_valid 200 7d;
+        proxy_cache_valid 200 14d;  # 7日から14日に適度に延長（ユーザー画像のため）
         proxy_cache_valid 404 1h;
         proxy_cache_use_stale error timeout updating;
         proxy_cache_key "$scheme$request_method$host$request_uri";
@@ -110,19 +110,38 @@ server {
         add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS' always;
         add_header Access-Control-Allow-Headers 'Origin, Content-Type, Accept' always;
 
-        expires 7d;
-        add_header Cache-Control "public, immutable";
+        expires 14d;  # 7日から14日に適度に延長
+        add_header Cache-Control "public, max-age=1209600";  # 14日のmax-age
     }
+
     
     # Client body size for uploads
     client_max_body_size 80m;
     
-    # Gzip compression
+    # Enhanced compression settings
     gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        text/javascript
+        application/json
+        application/javascript
+        application/xml+rss
+        application/atom+xml
+        image/svg+xml
+        font/truetype
+        font/opentype
+        application/vnd.ms-fontobject;
     gzip_proxied any;
     gzip_vary on;
     gzip_min_length 256;
+    gzip_comp_level 6;
+    
+    # Add Brotli compression if available
+    # brotli on;
+    # brotli_comp_level 6;
+    # brotli_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
     
     # API endpoints (no caching)
     location ~* ^/api/ {
