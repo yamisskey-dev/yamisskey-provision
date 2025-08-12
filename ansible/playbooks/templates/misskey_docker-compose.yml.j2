@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: yamisskey/yamisskey:{{ misskey_tag }}
     security_opt:
       - no-new-privileges:true
     restart: always

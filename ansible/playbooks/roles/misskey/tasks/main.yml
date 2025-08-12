@@ -4,20 +4,6 @@
     path: '{{ misskey_dir }}'
   register: dir_check
 
-- name: Clone repository if not exists
-  git:
-    repo: '{{ misskey_repo }}'
-    dest: '{{ misskey_dir }}'
-    version: '{{ misskey_branch }}'
-  when: not dir_check.stat.exists
-
-- name: Ensure correct branch and pull latest changes
-  shell: |
-    git checkout {{ misskey_branch }}
-    git pull origin {{ misskey_branch }}
-  args:
-    chdir: '{{ misskey_dir }}'
-
 - name: Ensure Misskey directory exists
   file:
     path: '{{ misskey_dir }}'
@@ -80,38 +66,6 @@
   when: not item.stat.exists
   loop: '{{ required_files.results }}'
 
-- name: Stash local changes
-  shell: git stash
-  args:
-    chdir: '{{ misskey_dir }}'
-  register: stash_output
-  ignore_errors: yes
-
-- name: Checkout master branch
-  shell: git checkout master
-  args:
-    chdir: '{{ misskey_dir }}'
-  register: git_checkout_output
-
-- name: Pull latest changes
-  shell: git pull
-  args:
-    chdir: '{{ misskey_dir }}'
-  register: git_pull_output
-
-- name: Update submodules
-  shell: git submodule update --init
-  args:
-    chdir: '{{ misskey_dir }}'
-  register: git_submodule_update_output
-
-- name: Apply stashed changes
-  shell: git stash pop
-  args:
-    chdir: '{{ misskey_dir }}'
-  when: stash_output is defined and "'No stash entries found.' not in stash_output.stderr"
-  ignore_errors: yes
-
 - name: Check if external network exists
   shell: 'docker network ls | grep external_network || true'
   register: network_check
@@ -132,14 +86,6 @@
     chdir: '{{ misskey_dir }}'
   when: not db_initialized.stat.exists
 
-- name: Build Misskey for first initialization
-  shell: '{{ docker_compose_cmd }} build'
-  args:
-    chdir: '{{ misskey_dir }}'
-  when: not db_initialized.stat.exists
-  register: first_build_output
-  failed_when: first_build_output.rc != 0
-
 - name: Initialize database (first time only)
   shell: '{{ docker_compose_cmd }} run --rm web pnpm run init'
   args:
@@ -151,24 +97,6 @@
 - name: Determine if updates are needed
   set_fact:
     updates_needed: "{{ git_pull_output.stdout != 'Already up to date.' or git_submodule_update_output.stdout != '' }}"
-
-- name: Build Misskey image if updates are needed
-  shell: '{{ docker_compose_cmd }} build'
-  args:
-    chdir: '{{ misskey_dir }}'
-  when: updates_needed
-  register: build_output
-  failed_when: build_output.rc != 0
-
-- name: Debug build output
-  debug:
-    var: build_output
-  when: updates_needed
-
-- name: Fail if build failed
-  fail:
-    msg: "Build of Misskey failed with error: {{ build_output.stderr | default('Unknown error') }}"
-  when: updates_needed and build_output.rc != 0
 
 - name: Stop Misskey services
   shell: '{{ docker_compose_cmd }} stop'

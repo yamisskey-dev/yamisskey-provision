@@ -8,6 +8,7 @@ domain: yami.ski
 github_org: yamisskey-dev
 misskey_repo: 'https://github.com/{{ github_org }}/yamisskey.git'
 misskey_branch: master
+misskey_tag: latest
 misskey_dir: '/var/www/misskey'
 misskey_backup_secrets_file: '/opt/misskey-backup/secrets.yml'
 ai_dir: '/home/{{ ansible_user }}/ai'

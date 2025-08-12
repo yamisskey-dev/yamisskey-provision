@@ -1,4 +1,4 @@
-.PHONY: all install inventory clone migrate test provision backup update help
+.PHONY: all install inventory clone migrate test provision backup help
 
 DESTINATION_SSH_USER=$(shell whoami)
 DESTINATION_HOSTNAME=$(shell hostname)
@@ -317,18 +317,7 @@ provision:
 
 backup:
 	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/misskey-backup.yml --ask-become-pass
-	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/borgbackup.yml --ask-become-pass
-
-update:
-	@echo "Updating Misskey (Branch: $(MISSKEY_BRANCH))..."
-	@cd $(MISSKEY_DIR) && sudo docker-compose down
-	@cd $(MISSKEY_DIR) && sudo git stash || true
-	@cd $(MISSKEY_DIR) && sudo git checkout $(MISSKEY_BRANCH) && sudo git pull origin $(MISSKEY_BRANCH)
-	@cd $(MISSKEY_DIR) && sudo git submodule update --init
-	@cd $(MISSKEY_DIR) && sudo git stash pop || true
-	@cd $(MISSKEY_DIR) && sudo COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build --no-cache --build-arg TAG=misskey_web:$(TIMESTAMP)
-	@cd $(MISSKEY_DIR) && sudo docker tag misskey_web:latest misskey_web:$(TIMESTAMP)
-	@cd $(MISSKEY_DIR) && sudo docker compose stop && sudo docker compose up -d
+	@ansible-playbook -i ansible/inventory --limit source ansible/playbooks/borgbackup.yml --ask-become-pass"
 
 help:
 	@echo "Available targets:"
