@@ -7,5 +7,6 @@
     yamix_postgres_db: "{{ yamix.postgresql.database }}"
     yamix_openai_api_key: "{{ yamix.openai_api_key }}"
     yamix_jwt_secret: "{{ yamix.jwt_secret }}"
+    yamix_yamii_api_key: "{{ yamix.yamii_api_key }}"
   roles:
     - yamix
