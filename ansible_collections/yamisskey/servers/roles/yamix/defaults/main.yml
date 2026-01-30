@@ -20,3 +20,4 @@ yamix_host: "0.0.0.0"
 
 # OpenAI API configuration (required for AI counseling)
 # yamix_openai_api_key: set in secrets.sops.yml
+# yamix_yamii_api_key: set in secrets.sops.yml
