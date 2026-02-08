@@ -16,7 +16,6 @@ host_services:
     modsecurity_nginx: 8080     # Main reverse proxy
     misskey: 3001              # Yamisskey container port
     neo_quesdon: 3025          # Neo-Quesdon
-    outline: 3004              # Outline
     element: 8081              # Element Matrix client
     synapse: 8008              # Matrix Synapse
     cryptpad: 3003             # CryptPad (main) 3333 (websocket)
@@ -34,11 +33,7 @@ host_services:
     blackbox_exporter: 9115    # Blackbox Exporter
     alert_manager: 9093        # AlertManager
     misskey_beta: 3002         # Misskey Beta (test environment for yamisskey-dev)
-    # Auth & Security services (moved from balthasar)
-    authentik: 9003            # Authentik (identity provider)
     mcaptcha: 7493             # mCaptcha (CAPTCHA service)
-    # Nostr services (experimental)
-    nostr: 8008                # Nostr relay (nostr-rs-relay)
     # AI Life Counseling service
     yamix: 3026                # Yamix (AI counseling)
 
@@ -76,8 +71,6 @@ cloudflared_ingress:
       service: "http://localhost:{{ host_services.balthasar.modsecurity_nginx }}"
     - hostname: "drive.{{ domain }}"
       service: "http://localhost:{{ host_services.balthasar.modsecurity_nginx }}"
-    - hostname: "wiki.{{ domain }}"
-      service: "http://localhost:{{ host_services.balthasar.modsecurity_nginx }}"
     - hostname: "matrix.{{ domain }}"
       service: "http://localhost:{{ host_services.balthasar.modsecurity_nginx }}"
     - hostname: "chat.{{ domain }}"
@@ -93,13 +86,7 @@ cloudflared_ingress:
       service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
     - hostname: "uptime.{{ domain }}"
       service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
-    # Auth & Security services (moved from balthasar)
-    - hostname: "auth.{{ domain }}"
-      service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
     - hostname: "captcha.{{ domain }}"
-      service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
-    # Nostr services
-    - hostname: "nostr.{{ domain }}"
       service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
     # Yamix service
     - hostname: "mix.{{ domain }}"
@@ -127,11 +114,8 @@ element_server_name: "chat.{{ domain }}"
 ctfd_server_name: "ctf.{{ domain }}"
 grafana_server_name: "grafana.{{ domain }}"
 cryptpad_server_name: "pad.{{ domain }}"
-authentik_server_name: "auth.{{ domain }}"
-outline_server_name: "wiki.{{ domain }}"
 uptime_server_name: "uptime.{{ domain }}"
 mcaptcha_server_name: "captcha.{{ domain }}"
 neo_quesdon_server_name: "neo-quesdon.{{ domain }}"
 minio_api_server_name: "drive.{{ domain }}"
-nostr_server_name: "nostr.{{ domain }}"
 yamix_server_name: "mix.{{ domain }}"
