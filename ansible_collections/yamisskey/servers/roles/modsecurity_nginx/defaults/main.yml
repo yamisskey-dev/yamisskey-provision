@@ -89,8 +89,6 @@ host_services:
     ctfd: 8000
     grafana: 3000
     cryptpad: 3000
-    authentik: 9003
-    outline: 3000
     uptime: 3001
     mcaptcha: 8080
     neo_quesdon: 3025
@@ -102,8 +100,6 @@ element_server_name: "element.example.com"
 ctfd_server_name: "ctf.example.com"
 grafana_server_name: "grafana.example.com"
 cryptpad_server_name: "cryptpad.example.com"
-authentik_server_name: "authentik.example.com"
-outline_server_name: "outline.example.com"
 uptime_server_name: "uptime.example.com"
 mcaptcha_server_name: "mcaptcha.example.com"
 neo_quesdon_server_name: "neo-quesdon.example.com"
@@ -144,8 +140,6 @@ modsecurity_services_default:
   - "grafana"
   - "minio"
   - "cryptpad"
-  - "authentik"
-  - "outline"
   - "uptime"
   - "mcaptcha"
   - "neo_quesdon"

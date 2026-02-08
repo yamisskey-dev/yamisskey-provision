@@ -18,5 +18,4 @@ modsecurity_nginx_services:
   - "element"
   - "minio"
   - "cryptpad"
-  - "outline"
   - "neo_quesdon"

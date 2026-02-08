@@ -15,16 +15,12 @@ misskey_port: "{{ host_services.caspar.misskey_beta }}"
 misskey_host: "beta.{{ domain }}"
 misskey_tag: "staging"
 
-# Nginx services to deploy (monitoring + auth + nostr + beta misskey + yamix)
+# Nginx services to deploy (monitoring + beta misskey + yamix)
 modsecurity_nginx_services:
   - "grafana"
   - "uptime"
   - "misskey_beta"
-  # Auth & Security services (moved from balthasar)
-  - "authentik"
   - "mcaptcha"
-  # Nostr services (experimental)
-  - "nostr"
   # AI Life Counseling service
   - "yamix"
 
