@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mcaptcha:
     restart: always
@@ -12,12 +10,18 @@ services:
     env_file:
       - .env-docker-compose
     environment:
-      RUST_LOG: "debug"
+      RUST_LOG: "info"
     depends_on:
       mcaptcha_postgres:
         condition: service_healthy
       mcaptcha_redis:
         condition: service_healthy
+    healthcheck:
+      test: "curl -sf http://localhost:7493/ || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   mcaptcha_postgres:
     restart: always
@@ -25,9 +29,9 @@ services:
     networks:
       - mcaptcha_network
     environment:
-      POSTGRES_USER: {{ mcaptcha_postgres_user }}
-      POSTGRES_PASSWORD: {{ mcaptcha_postgres_password }}
-      POSTGRES_DB: {{ mcaptcha_postgres_db }}
+      POSTGRES_USER: "{{ mcaptcha_postgres_user }}"
+      POSTGRES_PASSWORD: "{{ mcaptcha_postgres_password }}"
+      POSTGRES_DB: "{{ mcaptcha_postgres_db }}"
     volumes:
       - {{ mcaptcha_dir }}/mcaptcha_db:/var/lib/postgresql/data
     healthcheck:
@@ -36,6 +40,7 @@ services:
       retries: 20
 
   mcaptcha_redis:
+    restart: always
     image: mcaptcha/cache:latest
     networks:
       - mcaptcha_network
