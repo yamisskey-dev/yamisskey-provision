@@ -9,3 +9,11 @@ include /etc/nginx/conf.d/00-security-headers.conf;
 # Note: X-Frame-Options is intentionally omitted as it conflicts with frame-ancestors
 # and does not support multiple domains
 add_header Content-Security-Policy "frame-ancestors 'self' https://yami.ski https://*.yami.ski;" always;
+
+# CORS headers for CAPTCHA widget (embedded via iframe/fetch from other origins)
+# These must be in this include file because nginx does NOT inherit server-level
+# add_header directives into location blocks that define their own add_header
+add_header 'Access-Control-Allow-Origin' '*' always;
+add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
+add_header 'Access-Control-Allow-Credentials' 'false' always;
