@@ -18,17 +18,16 @@ server {
 
     # Maintenance page redirect location
     location @maintenance_redirect {
+        # CORS headers on maintenance redirect so browsers don't block the error
+        include /etc/nginx/conf.d/00-security-headers-mcaptcha.conf;
         return 302 https://down.yami.ski;
     }
 
     # Security headers (included from shared config to ensure inheritance in all locations)
+    # Note: CORS headers are now in 00-security-headers-mcaptcha.conf to ensure
+    # they are applied in all location blocks (nginx does not inherit server-level
+    # add_header into locations that define their own add_header)
     include /etc/nginx/conf.d/00-security-headers-mcaptcha.conf;
-
-    # CORS headers for CAPTCHA API
-    add_header 'Access-Control-Allow-Origin' '*' always;
-    add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
-    add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
-    add_header 'Access-Control-Allow-Credentials' 'false' always;
 
     # Rate limiting for CAPTCHA requests (zone defined in 00-shared.conf)
     limit_req zone=mcaptcha_limit burst=50 nodelay;
@@ -108,7 +107,7 @@ server {
     }
 
     # Static assets for mCaptcha
-    location ~* \.(css|js|woff|woff2|ttf|eot|svg|ico|png|jpg|gif)$ {
+    location ~* \.(css|js|wasm|woff|woff2|ttf|eot|svg|ico|png|jpg|gif)$ {
         proxy_pass http://mcaptcha_backend;
 
         proxy_cache static_cache;
