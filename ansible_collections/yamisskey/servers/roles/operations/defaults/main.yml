@@ -22,9 +22,7 @@ known_services:
   - cryptpad
   - matrix
   - neo-quesdon
-  - outline
   - ctfd
-  - authentik
   - mcaptcha
   - uptime
   - minecraft

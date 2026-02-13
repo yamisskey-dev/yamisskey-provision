@@ -152,20 +152,9 @@
       changed_when: false
       failed_when: false
 
-    - name: Check if assets bucket exists
-      command: /usr/local/bin/mc ls "{{ minio_alias }}/{{ minio_bucket_name_for_outline }}"
-      register: assets_bucket_check
-      changed_when: false
-      failed_when: false
-
     - name: Create files bucket if not exists
       command: /usr/local/bin/mc mb "{{ minio_alias }}/{{ minio_bucket_name_for_misskey }}"
       when: files_bucket_check.rc != 0
-      failed_when: false
-
-    - name: Create assets bucket if not exists
-      command: /usr/local/bin/mc mb "{{ minio_alias }}/{{ minio_bucket_name_for_outline }}"
-      when: assets_bucket_check.rc != 0
       failed_when: false
 
     - name: Create Misskey IAM user
@@ -231,7 +220,6 @@
       command: /usr/local/bin/mc anonymous get "{{ minio_alias }}/{{ item }}"
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
-        - "{{ minio_bucket_name_for_outline }}"
       register: bucket_anonymous_check
       changed_when: false
       failed_when: false
@@ -240,7 +228,6 @@
       command: /usr/local/bin/mc anonymous set public "{{ minio_alias }}/{{ item }}"
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
-        - "{{ minio_bucket_name_for_outline }}"
       register: bucket_policy_result
       changed_when: bucket_policy_result.rc == 0
       failed_when: false
@@ -250,7 +237,6 @@
       command: /usr/local/bin/mc admin policy info "{{ minio_alias }}" bucket-policy-{{ item }}
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
-        - "{{ minio_bucket_name_for_outline }}"
       register: advanced_policy_check
       changed_when: false
       failed_when: false
@@ -259,7 +245,6 @@
       command: /usr/local/bin/mc admin policy create "{{ minio_alias }}" bucket-policy-{{ item }} /tmp/minio_bucket_policy.json
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
-        - "{{ minio_bucket_name_for_outline }}"
       register: advanced_policy_result
       changed_when: advanced_policy_result.rc == 0
       failed_when: false
@@ -270,7 +255,6 @@
       command: /usr/local/bin/mc encrypt info "{{ minio_alias }}/{{ item }}"
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
-        - "{{ minio_bucket_name_for_outline }}"
       register: encryption_check
       changed_when: false
       failed_when: false
@@ -279,7 +263,6 @@
       command: /usr/local/bin/mc encrypt set sse-s3 "{{ minio_alias }}/{{ item }}"
       loop:
         - "{{ minio_bucket_name_for_misskey }}"
-        - "{{ minio_bucket_name_for_outline }}"
       register: encryption_result
       failed_when: false
       changed_when: encryption_result.rc == 0
@@ -292,7 +275,7 @@
           MinIO Essential Security Configuration Complete
           ==============================================
           ✅ Web UI disabled (CLI management only)
-          ✅ Buckets: {{ minio_bucket_name_for_misskey }}, {{ minio_bucket_name_for_outline }}
+          ✅ Buckets: {{ minio_bucket_name_for_misskey }}
           ✅ IAM User: {{ misskey_s3_access_key }} (auto-generated, restricted permissions)
           ✅ Server-Side Encryption enabled with KMS (privacy protection)
           ✅ KMS Master Key: {{ minio_kms_master_key }} (auto-generated)
@@ -307,12 +290,6 @@
           S3_ACCESS_KEY={{ misskey_s3_access_key }}
           S3_SECRET_KEY={{ misskey_s3_secret_key }}
           S3_BASE_URL=https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_misskey }}
-
-          🔑 Outline Configuration:
-          AWS_ACCESS_KEY_ID={{ misskey_s3_access_key }}
-          AWS_SECRET_ACCESS_KEY={{ misskey_s3_secret_key }}
-          AWS_S3_UPLOAD_BUCKET_NAME={{ minio_bucket_name_for_outline }}
-          AWS_S3_UPLOAD_BUCKET_URL=https://{{ minio_api_server_name }}/{{ minio_bucket_name_for_outline }}
 
           Testing Steps:
           1. ✅ Tailscale connectivity

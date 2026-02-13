@@ -1,5 +1,0 @@
-- name: Setup Authentik
-  hosts: all
-  become: true
-  roles:
-    - yamisskey.servers.authentik

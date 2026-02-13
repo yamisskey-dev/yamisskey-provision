@@ -122,12 +122,10 @@
         target_minio_alias: "test-target"
         migration_temp_dir: "/tmp/test-migration"
         minio_bucket_name_for_misskey: "test-files"
-        minio_bucket_name_for_outline: "test-assets"
 
         # Migration bucket configuration
         buckets_to_migrate:
           - "test-files"
-          - "test-assets"
 
         # Mock MinIO secrets
         minio:

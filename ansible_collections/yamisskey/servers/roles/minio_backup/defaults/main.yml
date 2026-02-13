@@ -19,7 +19,7 @@ minio_backup_rsync_opts: "-avz --delete --progress"
 minio_backup_bandwidth_limit: ""  # e.g., "10000" for 10MB/s, empty for unlimited
 
 # Schedule (systemd timer)
-minio_backup_schedule: "*-*-* 03:00:00"  # Daily at 3 AM
+minio_backup_schedule: "*-*-* 04:30:00"  # Daily at 4:30 AM (after misskey-backup at 3 AM)
 minio_backup_schedule_randomized_delay: "1h"
 
 # Retention (handled by TrueNAS ZFS snapshots, not this role)

@@ -29,12 +29,10 @@ migration_poll_interval: 10  # seconds
 
 # ===== Bucket Configuration =====
 minio_bucket_name_for_misskey: "files"
-minio_bucket_name_for_outline: "assets"
 
 # Use migration_buckets from playbook or default buckets
 buckets_to_migrate:
   - "{{ minio_bucket_name_for_misskey }}"
-  - "{{ minio_bucket_name_for_outline }}"
 
 # Allow override from playbook
 migration_buckets: "{{ migration_buckets | default(buckets_to_migrate) }}"
@@ -73,7 +71,6 @@ critical_services:
 # Expected buckets for validation
 expected_buckets:
   - "{{ minio_bucket_name_for_misskey }}"
-  - "{{ minio_bucket_name_for_outline }}"
 
 # ===== Safety and Error Handling =====
 require_confirmation: true

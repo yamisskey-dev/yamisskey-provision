@@ -73,7 +73,7 @@ server {
         }
 
         # Allow ActivityPub federation platforms
-        if ($http_user_agent ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed|outline|axios|curl|wget|python-requests|go-fed)") {
+        if ($http_user_agent ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed|axios|curl|wget|python-requests|go-fed)") {
             set $allowed_client 1;
         }
 
@@ -150,7 +150,7 @@ server {
         }
 
         # Allow ActivityPub federation platforms
-        if ($http_user_agent ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed|outline|axios|curl|wget|python-requests|go-fed)") {
+        if ($http_user_agent ~* "(misskey|mastodon|pleroma|firefish|calckey|foundkey|akkoma|sharkey|iceshrimp|gotosocial|pixelfed|axios|curl|wget|python-requests|go-fed)") {
             set $allowed_client 1;
         }
 

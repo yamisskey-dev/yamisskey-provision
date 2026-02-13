@@ -24,10 +24,9 @@ This role deploys a production-ready MinIO instance with enhanced security featu
 - **URL Preservation**: Maintains existing `https://drive.yami.ski/files` URLs
 - **Cloudflare Integration**: CDN and DDoS protection
 
-### 📦 Multi-Application Support
+### 📦 Application Support
 - **Misskey Integration**: File storage for social media platform
-- **Outline Integration**: Asset storage for wiki/documentation
-- **Multiple Buckets**: Automatic creation of `files` and `assets` buckets
+- **Automatic Bucket Creation**: Creates `files` bucket
 
 ## Architecture
 
@@ -64,7 +63,7 @@ Internet → Cloudflare → Nginx (Port 8080) → MinIO (Port 9000)
 #### Layer 2: IAM (User Level)
 - **Dedicated User**: Auto-generated user with minimal permissions
 - **Restricted Policy**: Only `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`
-- **Bucket Scope**: Access limited to `files` and `assets` buckets only
+- **Bucket Scope**: Access limited to `files` bucket only
 
 #### Layer 3: Bucket Policies (Resource Level)
 - **Conditional Access**: ActivityPub platforms with User-Agent verification
@@ -105,18 +104,6 @@ S3_USE_SSL=false
 S3_FORCE_PATH_STYLE=true
 # Public URL for federation (via Cloudflare)
 S3_BASE_URL=https://drive.yami.ski/files
-```
-
-#### Outline Configuration
-Add to Outline's `.env` file:
-```env
-# S3/MinIO Configuration for Outline
-AWS_S3_UPLOAD_BUCKET_NAME=assets
-AWS_S3_UPLOAD_BUCKET_URL=https://drive.yami.ski/assets
-AWS_S3_UPLOAD_MAX_SIZE=104857600
-AWS_REGION=ap-northeast-3
-AWS_ACCESS_KEY_ID=raspberry-1733364727    # Misskeyと同じ自動生成値
-AWS_SECRET_ACCESS_KEY=k3mB7xN9qZ8wR4yT2vS6h...  # Misskeyと同じ自動生成値
 ```
 
 ## Management
@@ -196,11 +183,9 @@ curl http://localhost:9000/minio/health/live
 
 # Check bucket policies
 mc stat yaminio/files
-mc stat yaminio/assets
 
 # Verify encryption (should show KMS encryption enabled)
 mc encrypt info yaminio/files
-mc encrypt info yaminio/assets
 
 # Check KMS configuration
 mc admin config get yaminio kms
@@ -249,6 +234,6 @@ This configuration specifically addresses the MinIO Web UI removal issue while m
 - ✅ **URL Preservation**: Existing `https://drive.yami.ski/files` URLs continue working
 - ✅ **Federation Compatibility**: All ActivityPub platforms can access content
 - ✅ **Security Enhancement**: Improved security posture with CLI-only management
-- ✅ **Application Support**: Both Misskey and Outline integration
+- ✅ **Application Support**: Misskey integration
 
 The deployment is production-ready and provides enterprise-grade security for ActivityPub federation environments.

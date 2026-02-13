@@ -194,7 +194,6 @@ verbose_logging: false
         migrate_target: "{{ migrate_target }}"
         buckets_to_migrate:
           - "{{ minio_bucket_name_for_misskey }}"
-          - "{{ minio_bucket_name_for_outline }}"
 ```
 
 ## 移行プロセス

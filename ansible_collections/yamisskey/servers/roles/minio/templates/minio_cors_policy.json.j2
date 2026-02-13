@@ -26,8 +26,7 @@
         "s3:GetObject"
       ],
       "Resource": [
-        "arn:aws:s3:::{{ minio_bucket_name_for_misskey }}/*",
-        "arn:aws:s3:::{{ minio_bucket_name_for_outline }}/*"
+        "arn:aws:s3:::{{ minio_bucket_name_for_misskey }}/*"
       ],
       "Condition": {
         "StringLike": {
@@ -43,7 +42,6 @@
             "*iceshrimp*", "*Iceshrimp*",
             "*gotosocial*", "*GoToSocial*",
             "*pixelfed*", "*Pixelfed*",
-            "*outline*", "*Outline*",
             "*notion*", "*Notion*",
             "*activitypub*", "*ActivityPub*",
             "*federation*", "*fediverse*",

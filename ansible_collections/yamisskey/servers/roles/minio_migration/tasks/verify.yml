@@ -206,13 +206,6 @@
       S3_SECRET_KEY={{ target_secrets.minio.root_password if target_secrets is defined else 'UPDATE_ME' }}
       ```
 
-      📝 Outline Configuration:
-      ```
-      AWS_ACCESS_KEY_ID={{ target_secrets.minio.root_user if target_secrets is defined else 'UPDATE_ME' }}
-      AWS_SECRET_ACCESS_KEY={{ target_secrets.minio.root_password if target_secrets is defined else 'UPDATE_ME' }}
-      AWS_S3_UPLOAD_BUCKET_URL=http://{{ ansible_default_ipv4.address }}:{{ target_minio_port }}
-      ```
-
       🌐 DNS Update (if applicable):
       drive.yami.ski → {{ ansible_default_ipv4.address }}
   tags: ['verify', 'config', 'info']

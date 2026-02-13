@@ -13,7 +13,6 @@ minio_console_port: "{{ host_services[inventory_hostname].minio_console | defaul
 
 # Default bucket configuration
 minio_bucket_name_for_misskey: 'files'
-minio_bucket_name_for_outline: 'assets'
 
 # Docker configuration
 minio_image_tag: 'latest'

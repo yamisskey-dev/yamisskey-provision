@@ -84,9 +84,7 @@ ansible-playbook -i inventory playbooks/operations.yml -e op=logs -e service=min
 - `cryptpad` - CryptPad
 - `matrix` - Matrix
 - `neo-quesdon` - Neo-Quesdon
-- `outline` - Outline
 - `ctfd` - CTFd
-- `authentik` - Authentik
 - `mcaptcha` - mCaptcha
 - `uptime` - Uptime Kuma
 - `minecraft` - Minecraft

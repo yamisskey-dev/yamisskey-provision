@@ -6,7 +6,6 @@
 minio_alias: yaminio
 minio_api_server_name: "drive.{{ domain }}"
 minio_bucket_name_for_misskey: "files"
-minio_bucket_name_for_outline: "assets"
 ```
 
 上書き例（`group_vars/all/main.yml` など）:
