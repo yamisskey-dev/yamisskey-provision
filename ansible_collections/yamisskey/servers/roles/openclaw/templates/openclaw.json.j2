@@ -8,6 +8,9 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }}
+      },
+      "model": {
+        "primary": "{{ openclaw_default_model | default('moonshot/kimi-k2.5') }}"
       }
     }
   },
