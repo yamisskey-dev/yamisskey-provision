@@ -1,0 +1,6 @@
+---
+- name: Deploy OpenClaw
+  hosts: openclaw
+  become: true
+  roles:
+    - yamisskey.servers.openclaw

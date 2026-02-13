@@ -1,0 +1,29 @@
+services:
+  openclaw-gateway:
+    image: {{ openclaw_image }}
+    restart: unless-stopped
+    init: true
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+    env_file:
+      - .env-docker-compose
+    volumes:
+      - {{ openclaw_dir }}/config:/home/node/.openclaw
+      - {{ openclaw_dir }}/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "127.0.0.1:{{ openclaw_gateway_port }}:18789"
+    command:
+      - "node"
+      - "dist/index.js"
+      - "gateway"
+      - "--bind"
+      - "{{ openclaw_gateway_bind }}"
+      - "--port"
+      - "18789"
+    networks:
+      - external_network
+
+networks:
+  external_network:
+    external: true

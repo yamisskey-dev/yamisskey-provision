@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "lastTouchedVersion": "{{ openclaw_version | default('2026.2.9') }}"
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "/home/node/.openclaw/workspace",
+      "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
+      "subagents": {
+        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }}
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "gateway": {
+    "mode": "{{ openclaw_gateway_mode | default('local') }}",
+    "controlUi": {
+      "enabled": true,
+      "allowInsecureAuth": true
+    }
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "moonshot": {
+        "baseUrl": "{{ openclaw_moonshot_base_url | default('https://api.moonshot.ai/v1') }}",
+        "apiKey": "${KIMI_API_KEY}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "kimi-k2.5",
+            "name": "Kimi K2.5",
+            "contextWindow": 256000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  }
+}

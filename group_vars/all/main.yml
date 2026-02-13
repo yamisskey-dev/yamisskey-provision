@@ -61,6 +61,11 @@ host_services:
     ssh: 64295                 # T-Pot SSH (management)
     cockpit: 64294             # Cockpit (system management)
 
+  openclaw:
+    # OpenClaw AI Assistant Server
+    openclaw_gateway: 18789    # OpenClaw Gateway/Web UI
+    openclaw_bridge: 18790     # OpenClaw Bridge
+
 # Cloudflared ingress mapping
 cloudflared_ingress:
   balthasar:

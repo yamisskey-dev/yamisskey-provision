@@ -295,6 +295,7 @@ tasks:
           IP_RASPBERRY=$(tailscale ip -4 raspberrypi 2>/dev/null)
           IP_CTFD=$(tailscale ip -4 ctfd 2>/dev/null)
           IP_TPOT=$(tailscale ip -4 tpot 2>/dev/null)
+          IP_OPENCLAW=$(tailscale ip -4 openclaw 2>/dev/null)
           if [ -z "$IP_BALTHASAR" ] || [ -z "$IP_CASPAR" ] || [ -z "$IP_LINODE" ]; then
             echo "❌ Failed to resolve required Tailscale IPs. Check 'tailscale status'"
             exit 1
@@ -316,6 +317,10 @@ tasks:
             echo "⚠️ tpot not found in Tailscale (optional Proxmox VM)"
             IP_TPOT="100.x.x.x"
           fi
+          if [ -z "$IP_OPENCLAW" ]; then
+            echo "⚠️ openclaw not found in Tailscale (optional)"
+            IP_OPENCLAW="100.x.x.x"
+          fi
           # Use sed for variable substitution (no envsubst dependency)
           sed -e "s|\${HOSTNAME}|$CURRENT_HOST|g" \
               -e "s|\${USER}|$CURRENT_USER|g" \
@@ -328,6 +333,7 @@ tasks:
               -e "s|\${IP_RASPBERRY}|$IP_RASPBERRY|g" \
               -e "s|\${IP_CTFD}|$IP_CTFD|g" \
               -e "s|\${IP_TPOT}|$IP_TPOT|g" \
+              -e "s|\${IP_OPENCLAW}|$IP_OPENCLAW|g" \
               "$TEMPLATE_PATH" > "$INV_PATH"
           # Create symlinks for host_vars and group_vars if they don't exist
           [ ! -e "$INV_DIR/host_vars" ] && ln -s ../host_vars "$INV_DIR/host_vars" 2>/dev/null || true
