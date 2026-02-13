@@ -12,6 +12,8 @@ services:
     volumes:
       - {{ openclaw_dir }}/config:/home/node/.openclaw
       - {{ openclaw_dir }}/workspace:/home/node/.openclaw/workspace
+      - /usr/bin/tailscale:/usr/bin/tailscale:ro
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
     command:
       - "node"
       - "dist/index.js"

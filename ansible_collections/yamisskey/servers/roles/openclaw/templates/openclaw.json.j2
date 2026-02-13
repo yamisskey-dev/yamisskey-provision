@@ -23,7 +23,13 @@
   },
   "gateway": {
     "mode": "{{ openclaw_gateway_mode | default('local') }}",
-    "trustedProxies": ["127.0.0.1/8", "{{ openclaw_trusted_proxies | default('172.16.0.0/12') }}"],
+    "trustedProxies": ["127.0.0.1"],
+    "tailscale": {
+      "mode": "serve"
+    },
+    "auth": {
+      "allowTailscale": true
+    },
     "controlUi": {
       "enabled": true,
       "allowInsecureAuth": true
