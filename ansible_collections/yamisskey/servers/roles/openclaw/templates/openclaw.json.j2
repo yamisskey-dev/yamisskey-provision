@@ -4,7 +4,9 @@
   },
   "agents": {
     "defaults": {
-      "model": "{{ openclaw_default_model | default('moonshot/kimi-k2.5') }}",
+      "model": {
+        "id": "{{ openclaw_default_model | default('moonshot/kimi-k2.5') }}"
+      },
       "workspace": "/home/node/.openclaw/workspace",
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
@@ -21,7 +23,7 @@
   },
   "gateway": {
     "mode": "{{ openclaw_gateway_mode | default('local') }}",
-    "trustedProxies": "{{ openclaw_trusted_proxies | default('172.16.0.0/12') }}",
+    "trustedProxies": ["{{ openclaw_trusted_proxies | default('172.16.0.0/12') }}"],
     "controlUi": {
       "enabled": true,
       "allowInsecureAuth": true
