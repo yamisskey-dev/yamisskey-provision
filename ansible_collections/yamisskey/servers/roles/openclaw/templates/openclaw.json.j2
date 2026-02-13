@@ -18,6 +18,21 @@
     "native": "auto",
     "nativeSkills": "auto"
   },
+  "channels": {
+    "discord": {
+      "enabled": true,
+      "token": "${DISCORD_BOT_TOKEN}",
+      "groupPolicy": "open",
+      "dm": {
+        "policy": "disabled"
+      },
+      "historyLimit": 20,
+      "replyToMode": "off",
+      "commands": {
+        "native": "auto"
+      }
+    }
+  },
   "messages": {
     "ackReactionScope": "group-mentions"
   },
@@ -33,6 +48,13 @@
     "controlUi": {
       "enabled": true,
       "allowInsecureAuth": true
+    }
+  },
+  "plugins": {
+    "entries": {
+      "discord": {
+        "enabled": true
+      }
     }
   },
   "models": {
