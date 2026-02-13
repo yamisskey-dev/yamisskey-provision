@@ -4,11 +4,13 @@
   },
   "agents": {
     "defaults": {
-      "model": "{{ openclaw_default_model | default('moonshot/kimi-k2.5') }}",
       "workspace": "/home/node/.openclaw/workspace",
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }}
+      },
+      "model": {
+        "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}"
       }
     }
   },
@@ -21,7 +23,13 @@
   },
   "gateway": {
     "mode": "{{ openclaw_gateway_mode | default('local') }}",
-    "trustedProxies": "{{ openclaw_trusted_proxies | default('172.16.0.0/12') }}",
+    "trustedProxies": ["127.0.0.1"],
+    "tailscale": {
+      "mode": "serve"
+    },
+    "auth": {
+      "allowTailscale": true
+    },
     "controlUi": {
       "enabled": true,
       "allowInsecureAuth": true
@@ -30,15 +38,18 @@
   "models": {
     "mode": "merge",
     "providers": {
-      "moonshot": {
-        "baseUrl": "{{ openclaw_moonshot_base_url | default('https://api.moonshot.ai/v1') }}",
+      "kimi": {
+        "baseUrl": "{{ openclaw_kimi_base_url | default('https://api.kimi.com/coding/v1') }}",
         "apiKey": "${KIMI_API_KEY}",
         "api": "openai-completions",
+        "headers": {
+          "User-Agent": "claude-code/1.0"
+        },
         "models": [
           {
-            "id": "kimi-k2.5",
-            "name": "Kimi K2.5",
-            "contextWindow": 256000,
+            "id": "kimi-for-coding",
+            "name": "Kimi For Coding",
+            "contextWindow": 262144,
             "maxTokens": 8192
           }
         ]

@@ -47,6 +47,7 @@
     mode: '0644'
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+  register: openclaw_compose_config_result
 
 - name: Deploy OpenClaw configuration
   template:
@@ -57,10 +58,12 @@
     group: "{{ ansible_user }}"
   register: openclaw_config_result
 
-- name: Ensure external Docker network exists
-  community.docker.docker_network:
-    name: external_network
-    state: present
+- name: Set Tailscale operator for non-root access
+  ansible.builtin.command:
+    cmd: tailscale set --operator={{ ansible_user }}
+  register: tailscale_operator_result
+  changed_when: tailscale_operator_result.rc == 0
+  failed_when: false
 
 - name: Start OpenClaw services
   community.docker.docker_compose_v2:
@@ -77,12 +80,13 @@
     project_src: "{{ openclaw_dir }}"
     state: present
     recreate: always
-  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false))
+  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false)) or (openclaw_compose_config_result.changed | default(false))
   failed_when: false
 
-- name: Expose OpenClaw via Tailscale Serve (HTTPS)
+- name: Expose OpenClaw via Tailscale Serve (HTTPS fallback)
   ansible.builtin.command:
     cmd: tailscale serve --bg --https={{ openclaw_tailscale_https_port | default(443) }} http://127.0.0.1:{{ openclaw_gateway_port }}
   register: tailscale_serve_result
   changed_when: "'started' in tailscale_serve_result.stdout or 'already' not in tailscale_serve_result.stderr"
   failed_when: false
+  when: openclaw_compose_result is failed
