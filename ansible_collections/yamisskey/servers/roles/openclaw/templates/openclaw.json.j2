@@ -4,9 +4,6 @@
   },
   "agents": {
     "defaults": {
-      "model": {
-        "id": "{{ openclaw_default_model | default('moonshot/kimi-k2.5') }}"
-      },
       "workspace": "/home/node/.openclaw/workspace",
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
