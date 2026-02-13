@@ -18,6 +18,13 @@
     "native": "auto",
     "nativeSkills": "auto"
   },
+  "channels": {
+    "discord": {
+      "botToken": "${DISCORD_BOT_TOKEN}",
+      "guildId": "{{ openclaw_discord_guild_id | default('1471727994501464167') }}",
+      "adminUsers": ["{{ openclaw_discord_admin_user_id | default('711585272197939230') }}"]
+    }
+  },
   "messages": {
     "ackReactionScope": "group-mentions"
   },
