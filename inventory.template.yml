@@ -146,6 +146,18 @@ all:
             tpot:
               ansible_host: ${IP_TPOT}  # Tailscale IP (Proxmox host: mary)
 
+        ai_servers:
+          vars:
+            egress_route: direct
+            host_roles:
+              - ai_assistant
+            service_priority: medium
+            security_level: medium
+            modsecurity_enabled: false
+          hosts:
+            openclaw:
+              ansible_host: ${IP_OPENCLAW}
+
     # === Development/Testing ===
     development:
       vars:
