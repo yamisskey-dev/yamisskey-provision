@@ -47,6 +47,7 @@
     mode: '0644'
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+  register: openclaw_compose_config_result
 
 - name: Deploy OpenClaw configuration
   template:
@@ -72,7 +73,7 @@
     project_src: "{{ openclaw_dir }}"
     state: present
     recreate: always
-  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false))
+  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false)) or (openclaw_compose_config_result.changed | default(false))
   failed_when: false
 
 - name: Expose OpenClaw via Tailscale Serve (HTTPS)
