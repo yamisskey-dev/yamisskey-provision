@@ -9,6 +9,7 @@
       - openclaw_inventory_secrets | length > 0
       - openclaw_inventory_secrets.gateway_token is defined
       - openclaw_inventory_secrets.kimi_api_key is defined
+      - openclaw_inventory_secrets.discord_webhook_url is defined
     fail_msg: >-
       Missing OpenClaw secrets for host {{ inventory_hostname }}. Define the values under
       "openclaw" in deploy/servers/host_vars/{{ inventory_hostname }}/secrets.yml.
@@ -18,6 +19,7 @@
   set_fact:
     openclaw_gateway_token: "{{ openclaw_inventory_secrets.gateway_token }}"
     openclaw_kimi_api_key: "{{ openclaw_inventory_secrets.kimi_api_key }}"
+    openclaw_discord_webhook_url: "{{ openclaw_inventory_secrets.discord_webhook_url }}"
 
 - name: Create OpenClaw directories
   file:
