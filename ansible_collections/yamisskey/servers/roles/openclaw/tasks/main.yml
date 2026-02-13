@@ -57,11 +57,6 @@
     group: "{{ ansible_user }}"
   register: openclaw_config_result
 
-- name: Ensure external Docker network exists
-  community.docker.docker_network:
-    name: external_network
-    state: present
-
 - name: Start OpenClaw services
   community.docker.docker_compose_v2:
     project_src: "{{ openclaw_dir }}"
