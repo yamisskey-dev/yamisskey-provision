@@ -31,6 +31,19 @@
       "commands": {
         "native": "auto"
       }
+    },
+    "matrix": {
+      "enabled": true,
+      "homeserver": "{{ openclaw_matrix_homeserver }}",
+      "userId": "@openclaw:matrix.{{ domain }}",
+      "password": "${MATRIX_PASSWORD}",
+      "encryption": true,
+      "deviceName": "OpenClaw Gateway",
+      "dm": {
+        "policy": "pairing"
+      },
+      "groupPolicy": "open",
+      "autoJoin": true
     }
   },
   "messages": {
@@ -53,6 +66,9 @@
   "plugins": {
     "entries": {
       "discord": {
+        "enabled": true
+      },
+      "matrix": {
         "enabled": true
       }
     }

@@ -1,6 +1,8 @@
 services:
   openclaw-gateway:
-    image: {{ openclaw_image }}
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     init: true
     network_mode: host

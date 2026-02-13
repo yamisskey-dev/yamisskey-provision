@@ -11,6 +11,7 @@
       - openclaw_inventory_secrets.kimi_api_key is defined
       - openclaw_inventory_secrets.discord_webhook_url is defined
       - openclaw_inventory_secrets.discord_bot_token is defined
+      - openclaw_inventory_secrets.matrix_password is defined
     fail_msg: >-
       Missing OpenClaw secrets for host {{ inventory_hostname }}. Define the values under
       "openclaw" in deploy/servers/host_vars/{{ inventory_hostname }}/secrets.yml.
@@ -22,6 +23,7 @@
     openclaw_kimi_api_key: "{{ openclaw_inventory_secrets.kimi_api_key }}"
     openclaw_discord_webhook_url: "{{ openclaw_inventory_secrets.discord_webhook_url }}"
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
+    openclaw_matrix_password: "{{ openclaw_inventory_secrets.matrix_password }}"
 
 - name: Create OpenClaw directories
   file:
@@ -43,6 +45,15 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
   register: openclaw_env_result
+
+- name: Deploy Dockerfile
+  template:
+    src: openclaw.Dockerfile.j2
+    dest: "{{ openclaw_dir }}/Dockerfile"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  register: openclaw_dockerfile_result
 
 - name: Copy docker-compose configuration
   template:
@@ -69,12 +80,12 @@
   changed_when: tailscale_operator_result.rc == 0
   failed_when: false
 
-- name: Start OpenClaw services
+- name: Build OpenClaw image
   community.docker.docker_compose_v2:
     project_src: "{{ openclaw_dir }}"
-    pull: "{{ 'never' if ansible_env.MOLECULE_SCENARIO_NAME is not defined else 'missing' }}"
-    recreate: never
+    build: always
     state: present
+    recreate: never
   failed_when: false
   register: openclaw_compose_result
   changed_when: false
@@ -84,7 +95,7 @@
     project_src: "{{ openclaw_dir }}"
     state: present
     recreate: always
-  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false)) or (openclaw_compose_config_result.changed | default(false))
+  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false)) or (openclaw_compose_config_result.changed | default(false)) or (openclaw_dockerfile_result.changed | default(false))
   failed_when: false
 
 - name: Expose OpenClaw via Tailscale Serve (HTTPS fallback)
