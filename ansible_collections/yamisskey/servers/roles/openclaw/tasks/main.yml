@@ -11,6 +11,8 @@
       - openclaw_inventory_secrets.kimi_api_key is defined
       - openclaw_inventory_secrets.discord_webhook_url is defined
       - openclaw_inventory_secrets.discord_bot_token is defined
+      - openclaw_inventory_secrets.discord_guild_id is defined
+      - openclaw_inventory_secrets.discord_admin_user_id is defined
     fail_msg: >-
       Missing OpenClaw secrets for host {{ inventory_hostname }}. Define the values under
       "openclaw" in deploy/servers/host_vars/{{ inventory_hostname }}/secrets.yml.
@@ -22,6 +24,8 @@
     openclaw_kimi_api_key: "{{ openclaw_inventory_secrets.kimi_api_key }}"
     openclaw_discord_webhook_url: "{{ openclaw_inventory_secrets.discord_webhook_url }}"
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
+    openclaw_discord_guild_id: "{{ openclaw_inventory_secrets.discord_guild_id }}"
+    openclaw_discord_admin_user_id: "{{ openclaw_inventory_secrets.discord_admin_user_id }}"
 
 - name: Create OpenClaw directories
   file:
