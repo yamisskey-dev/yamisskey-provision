@@ -17,7 +17,6 @@
   set_fact:
     # Migration configuration with defaults
     minio_bucket_name_for_misskey: "{{ minio_bucket_name_for_misskey | default('files') }}"
-    minio_bucket_name_for_outline: "{{ minio_bucket_name_for_outline | default('assets') }}"
     source_minio_port: "{{ source_minio_port | default(9000) }}"
     target_minio_port: "{{ target_minio_port | default(9000) }}"
     migration_temp_dir: "{{ migration_temp_dir | default('/tmp/minio-migration') }}"
@@ -25,7 +24,7 @@
     source_minio_alias: "{{ source_minio_alias | default('source_' + ansible_date_time.epoch) }}"
     target_minio_alias: "{{ target_minio_alias | default('target_' + ansible_date_time.epoch) }}"
     # Bucket list
-    buckets_to_migrate: "{{ buckets_to_migrate | default([minio_bucket_name_for_misskey, minio_bucket_name_for_outline]) }}"
+    buckets_to_migrate: "{{ buckets_to_migrate | default([minio_bucket_name_for_misskey]) }}"
   tags: ['setup']
 
 - name: Get source host IP address from dynamic inventory

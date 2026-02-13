@@ -1,7 +1,0 @@
----
-- name: Restart nostr
-  community.docker.docker_compose_v2:
-    project_src: "{{ nostr_dir }}"
-    state: restarted
-  when:
-    - ansible_virtualization_type | default('') not in ['docker', 'container']

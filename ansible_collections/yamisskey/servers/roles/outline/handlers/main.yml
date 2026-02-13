@@ -1,8 +1,0 @@
----
-- name: Restart Outline
-  community.docker.docker_compose_v2:
-    project_src: "{{ outline_dir }}"
-    state: restarted
-  when:
-    - (ansible_env.MOLECULE_SCENARIO_NAME | default('')) == ''
-    - ansible_virtualization_type | default('') not in ['docker', 'container']

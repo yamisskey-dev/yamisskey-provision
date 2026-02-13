@@ -110,7 +110,6 @@
         # Test-specific configuration
         minio_alias: "testminio"
         minio_bucket_name_for_misskey: "test-misskey-files"
-        minio_bucket_name_for_outline: "test-outline-assets"
         minio_api_server_name: "test.example.com"
 
         # Mock host services for testing

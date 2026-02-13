@@ -44,10 +44,8 @@ provisioner:
 
         # Bucket configuration
         minio_bucket_name_for_misskey: "test-files"
-        minio_bucket_name_for_outline: "test-assets"
         buckets_to_migrate:
           - "test-files"
-          - "test-assets"
 
         # Test-specific overrides
         test_environment: true

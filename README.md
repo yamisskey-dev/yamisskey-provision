@@ -4,8 +4,8 @@ Linux server infrastructure management with Ansible and SOPS secrets management.
 
 ## Managed Servers
 
-- **balthasar** - Production services (Misskey, Matrix, Outline, CryptPad)
-- **caspar** - Monitoring & Auth (Prometheus, Grafana, Authentik, mCaptcha)
+- **balthasar** - Production services (Misskey, Matrix, CryptPad)
+- **caspar** - Monitoring & Auth (Prometheus, Grafana, mCaptcha)
 - **linode_prox** - External proxy (Squid, MediaProxy, Summaly)
 - **raspberrypi** - Game server (Minecraft) - Raspberry Pi OS
 

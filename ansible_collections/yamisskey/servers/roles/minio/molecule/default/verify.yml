@@ -193,6 +193,6 @@
 
           Configuration Details:
           - Secrets Path: host_vars → minio.*
-          - Test Buckets: test-misskey-files, test-outline-assets
+          - Test Buckets: test-misskey-files
           - MinIO Alias: testminio
           - Health Endpoint: http://localhost:9000/minio/health/live

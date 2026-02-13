@@ -9,13 +9,12 @@
 - Docker 起動: Compose v2 で MinIO を起動、`external_network` 作成
 - ヘルスチェック: `/minio/health/live` を確認
 - MinIO Client `mc` 導入・エイリアス設定
-- バケット/IAM 作成: Misskey/Outline 用バケットとユーザ、ポリシー作成、SSE-S3 有効化
+- バケット/IAM 作成: Misskey 用バケットとユーザ、ポリシー作成、SSE-S3 有効化
 
 代表変数（例: `group_vars`/`host_vars` で上書き）:
 ```yaml
 minio_alias: yaminio
 minio_bucket_name_for_misskey: files
-minio_bucket_name_for_outline: assets
 ```
 
 SOPS シークレット例（`deploy/servers/host_vars/<host>/secrets.yml`）:
