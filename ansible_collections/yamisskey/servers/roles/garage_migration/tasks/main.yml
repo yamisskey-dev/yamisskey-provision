@@ -1,0 +1,131 @@
+---
+# === SETUP PHASE ===
+- name: Check if rclone is installed
+  command: which rclone
+  register: rclone_check
+  changed_when: false
+  failed_when: false
+  tags: ['setup']
+
+- name: Install rclone
+  apt:
+    name: rclone
+    state: present
+  when: rclone_check.rc != 0
+  tags: ['setup']
+
+- name: Create rclone config directory
+  file:
+    path: "{{ garage_migration_rclone_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  tags: ['setup']
+
+- name: Deploy rclone configuration
+  copy:
+    dest: "{{ garage_migration_rclone_config_dir }}/rclone.conf"
+    owner: root
+    group: root
+    mode: '0600'
+    content: |
+      [minio]
+      type = s3
+      provider = Minio
+      access_key_id = {{ minio.root_user }}
+      secret_access_key = {{ minio.root_password }}
+      endpoint = http://127.0.0.1:{{ host_services.balthasar.minio_api | default(9000) }}
+      region = ap-northeast-3
+      force_path_style = true
+
+      [garage]
+      type = s3
+      provider = Other
+      access_key_id = {{ garage.s3_access_key }}
+      secret_access_key = {{ garage.s3_secret_key }}
+      endpoint = http://127.0.0.1:{{ host_services.balthasar.garage_api | default(3900) }}
+      force_path_style = true
+      region = ap-northeast-3
+  no_log: true
+  tags: ['setup']
+
+# === VALIDATE PHASE ===
+- name: Verify MinIO source bucket is accessible
+  command: rclone ls minio:{{ garage_migration_bucket_name }} --max-depth 1
+  register: minio_check
+  changed_when: false
+  failed_when: false
+  tags: ['validate']
+
+- name: Display MinIO bucket status
+  debug:
+    msg: "MinIO bucket '{{ garage_migration_bucket_name }}': {{ 'accessible' if minio_check.rc == 0 else 'NOT accessible - ' + minio_check.stderr }}"
+  tags: ['validate']
+
+- name: Count files in MinIO source bucket
+  shell: rclone size minio:{{ garage_migration_bucket_name }} --json 2>/dev/null || echo '{"count":0,"bytes":0}'
+  register: minio_size
+  changed_when: false
+  tags: ['validate']
+
+- name: Display MinIO bucket size
+  debug:
+    msg: "MinIO source: {{ (minio_size.stdout | from_json).count }} files, {{ ((minio_size.stdout | from_json).bytes / 1024 / 1024) | round(1) }} MB"
+  tags: ['validate']
+
+- name: Verify Garage destination bucket is accessible
+  command: rclone ls garage:{{ garage_migration_bucket_name }} --max-depth 1
+  register: garage_check
+  changed_when: false
+  failed_when: false
+  tags: ['validate']
+
+- name: Display Garage bucket status
+  debug:
+    msg: "Garage bucket '{{ garage_migration_bucket_name }}': {{ 'accessible' if garage_check.rc == 0 else 'NOT accessible - ' + garage_check.stderr }}"
+  tags: ['validate']
+
+# === MIGRATE PHASE ===
+- name: Migrate data from MinIO to Garage
+  command: >
+    rclone copy minio:{{ garage_migration_bucket_name }} garage:{{ garage_migration_bucket_name }}
+    --progress
+    --transfers {{ garage_migration_transfers }}
+    --checkers {{ garage_migration_checkers }}
+    --s3-chunk-size {{ garage_migration_chunk_size }}
+    --no-update-modtime
+    --ignore-existing
+    -v
+  register: migration_result
+  tags: ['migrate']
+
+- name: Display migration result
+  debug:
+    msg: "{{ migration_result.stderr_lines | default([]) }}"
+  when: migration_result is defined
+  tags: ['migrate']
+
+# === VERIFY PHASE ===
+- name: Count files in Garage after migration
+  shell: rclone size garage:{{ garage_migration_bucket_name }} --json 2>/dev/null || echo '{"count":0,"bytes":0}'
+  register: garage_size
+  changed_when: false
+  tags: ['verify']
+
+- name: Display verification summary
+  debug:
+    msg: |
+      ==============================================
+      Migration Verification
+      ==============================================
+      Garage destination: {{ (garage_size.stdout | from_json).count }} files, {{ ((garage_size.stdout | from_json).bytes / 1024 / 1024) | round(1) }} MB
+      ==============================================
+  tags: ['verify']
+
+# === CLEANUP PHASE ===
+- name: Cleanup rclone config
+  file:
+    path: "{{ garage_migration_rclone_config_dir }}/rclone.conf"
+    state: absent
+  tags: ['cleanup']

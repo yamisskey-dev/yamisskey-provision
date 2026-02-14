@@ -1,0 +1,6 @@
+- name: Setup Garage
+  hosts: all
+  become: true
+  roles:
+    - role: yamisskey.servers.garage
+      tags: ['garage']

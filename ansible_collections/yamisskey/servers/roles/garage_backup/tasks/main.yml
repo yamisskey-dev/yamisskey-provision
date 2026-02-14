@@ -1,0 +1,48 @@
+---
+- name: Create backup directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+  loop:
+    - "{{ garage_backup_dir }}"
+    - "{{ garage_backup_log_dir }}"
+
+- name: Deploy backup script
+  template:
+    src: garage-backup.sh.j2
+    dest: "{{ garage_backup_dir }}/garage-backup.sh"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: "0755"
+
+- name: Deploy systemd service
+  template:
+    src: garage-backup.service.j2
+    dest: /etc/systemd/system/garage-backup.service
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Reload systemd
+
+- name: Deploy systemd timer
+  template:
+    src: garage-backup.timer.j2
+    dest: /etc/systemd/system/garage-backup.timer
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify:
+    - Reload systemd
+    - Enable garage-backup timer
+
+- name: Ensure TrueNAS host key is known
+  known_hosts:
+    name: "{{ garage_backup_truenas_host }}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 ' + garage_backup_truenas_host + ' 2>/dev/null') }}"
+    state: present
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined

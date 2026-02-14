@@ -1,0 +1,27 @@
+---
+# Garage Backup to TrueNAS configuration
+
+# Source (Garage data on balthasar)
+garage_backup_data_dir: "/mnt/storage/garage/data"
+garage_backup_meta_dir: "/mnt/storage/garage/meta"
+
+# Destination (TrueNAS)
+garage_backup_truenas_host: "192.168.1.7"
+garage_backup_truenas_user: "truenas_admin"
+garage_backup_truenas_dest: "/mnt/tank/garage_backup"
+garage_backup_ssh_key: "~/.ssh/id_ed25519_truenas"
+
+# Backup settings
+garage_backup_dir: "/opt/garage-backup"
+garage_backup_log_dir: "/var/log/garage-backup"
+
+# rsync options
+garage_backup_rsync_opts: "-avz --delete --progress"
+garage_backup_bandwidth_limit: ""  # e.g., "10000" for 10MB/s, empty for unlimited
+
+# Schedule (systemd timer)
+garage_backup_schedule: "*-*-* 04:30:00"  # Daily at 4:30 AM (after misskey-backup at 3 AM)
+garage_backup_schedule_randomized_delay: "1h"
+
+# Discord notification (optional)
+garage_backup_discord_webhook_url: ""

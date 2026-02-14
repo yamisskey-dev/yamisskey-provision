@@ -1,0 +1,16 @@
+[Unit]
+Description=Garage Backup to TrueNAS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={{ ansible_user }}
+Group={{ ansible_user }}
+ExecStart={{ garage_backup_dir }}/garage-backup.sh
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits
+Nice=19
+IOSchedulingClass=idle

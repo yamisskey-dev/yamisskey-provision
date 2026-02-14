@@ -1,0 +1,286 @@
+---
+# === SETUP PHASE ===
+- name: Set dynamic Garage server names
+  set_fact:
+    garage_api_server_name: "drive.{{ domain | default('test.example.com') }}"
+    garage_s3_api_port: "3900"
+  tags: ['garage', 'setup']
+
+- name: Load Garage secrets from inventory
+  set_fact:
+    garage_inventory_secrets: "{{ garage | default({}) }}"
+  tags: ['garage', 'setup']
+
+- name: Prepare Garage secret values
+  set_fact:
+    garage_rpc_secret: "{{ garage_inventory_secrets.rpc_secret | default('CHANGE_ME_GARAGE_RPC_SECRET') }}"
+    garage_admin_token: "{{ garage_inventory_secrets.admin_token | default('CHANGE_ME_GARAGE_ADMIN_TOKEN') }}"
+    garage_s3_access_key: "{{ garage_inventory_secrets.s3_access_key | default('CHANGE_ME_GARAGE_S3_ACCESS_KEY') }}"
+    garage_s3_secret_key: "{{ garage_inventory_secrets.s3_secret_key | default('CHANGE_ME_GARAGE_S3_SECRET_KEY') }}"
+  tags: ['garage', 'setup']
+
+- name: Warn about placeholder Garage secrets
+  debug:
+    msg: >-
+      Garage secret '{{ item.key }}' is using a placeholder value. Update
+      host_vars/{{ inventory_hostname }}/secrets.sops.yml -> garage.{{ item.key }}.
+  loop:
+    - { key: rpc_secret, value: "{{ garage_rpc_secret }}" }
+    - { key: admin_token, value: "{{ garage_admin_token }}" }
+    - { key: s3_access_key, value: "{{ garage_s3_access_key }}" }
+    - { key: s3_secret_key, value: "{{ garage_s3_secret_key }}" }
+  when: item.value is string and item.value is search('^CHANGE_ME_')
+  tags: ['garage', 'setup']
+
+# === DIRECTORY AND CONFIG PHASE ===
+- name: Create required directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ garage_dir }}"
+    - "{{ garage_data_dir }}"
+    - "{{ garage_meta_dir }}"
+  tags: ['garage', 'setup']
+
+- name: Deploy Garage configuration file
+  template:
+    src: "{{ role_path }}/templates/garage.toml.j2"
+    dest: "{{ garage_dir }}/garage.toml"
+    owner: root
+    group: root
+    mode: '0600'
+  register: garage_config_result
+  tags: ['garage', 'setup', 'config']
+
+- name: Deploy Docker Compose file for Garage
+  template:
+    src: "{{ role_path }}/templates/garage_docker-compose.yml.j2"
+    dest: "{{ garage_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: '0644'
+  tags: ['garage', 'setup', 'config']
+
+# === DOCKER PHASE ===
+- name: Create Docker network if not exists
+  community.docker.docker_network:
+    name: external_network
+  tags: ['garage', 'setup', 'docker']
+
+- name: Start Garage using Docker Compose v2
+  community.docker.docker_compose_v2:
+    project_src: "{{ garage_dir }}"
+    pull: "{{ 'never' if (ansible_env.MOLECULE_SCENARIO_NAME | default('')) != '' else 'missing' }}"
+    remove_orphans: true
+  register: garage_start_result
+  retries: 3
+  delay: 5
+  until: garage_start_result is succeeded
+  failed_when: false
+  changed_when: garage_start_result.changed | default(false)
+  when:
+    - (ansible_env.MOLECULE_SCENARIO_NAME | default('')) == ''
+    - ansible_virtualization_type | default('') not in ['docker', 'container']
+  tags: ['garage', 'deploy', 'docker']
+
+- name: Restart Garage to apply config changes
+  community.docker.docker_compose_v2:
+    project_src: "{{ garage_dir }}"
+    state: restarted
+  when:
+    - garage_config_result is changed
+    - (ansible_env.MOLECULE_SCENARIO_NAME | default('')) == ''
+    - ansible_virtualization_type | default('') not in ['docker', 'container']
+  tags: ['garage', 'deploy', 'docker']
+
+- name: Start Garage using Docker Compose v2 (test environment)
+  community.docker.docker_compose_v2:
+    project_src: "{{ garage_dir }}"
+    pull: never
+    remove_orphans: true
+  register: garage_start_test_result
+  retries: 3
+  delay: 5
+  until: garage_start_test_result is succeeded
+  failed_when: false
+  changed_when: false
+  when: (ansible_env.MOLECULE_SCENARIO_NAME | default('')) != ''
+
+# === SECURITY PHASE ===
+- name: Allow Garage S3 API access from Tailscale network
+  ansible.builtin.command: ufw allow from 100.64.0.0/10 to any port {{ garage_s3_api_port }} proto tcp
+  changed_when: false
+  become: true
+  when:
+    - ansible_env.MOLECULE_SCENARIO_NAME is undefined
+    - ansible_virtualization_type is not defined or ansible_virtualization_type not in ['docker', 'container']
+  failed_when: false
+  tags: ['garage', 'security']
+
+# === WAIT FOR ADMIN API TO ACCEPT CONNECTIONS ===
+- name: Wait for Garage admin API to respond
+  uri:
+    url: "http://127.0.0.1:{{ garage_admin_port }}/health"
+    method: GET
+    status_code: [200, 503]
+  register: garage_admin_up
+  retries: 12
+  delay: 5
+  until: garage_admin_up.status in [200, 503]
+  failed_when: false
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  tags: ['garage', 'deploy']
+
+# === CLUSTER LAYOUT PHASE (must happen BEFORE health is 200) ===
+- name: Setup Garage cluster layout
+  shell: |
+    set -euo pipefail
+
+    LAYOUT=$(docker exec garage /garage layout show 2>&1)
+    echo "$LAYOUT"
+
+    # If nodes already have roles in the current layout, nothing to do
+    if ! echo "$LAYOUT" | grep -q "No nodes currently have a role"; then
+      echo "RESULT: layout already configured"
+      exit 0
+    fi
+
+    # Get node ID
+    NODE_ID=$(docker exec garage /garage node id -q)
+    echo "Node ID: $NODE_ID"
+
+    # Revert any stale staged changes before assigning
+    docker exec garage /garage layout revert --yes 2>&1 || true
+
+    # Assign node to layout
+    echo "Assigning node to layout..."
+    docker exec garage /garage layout assign "$NODE_ID" \
+      --zone dc1 --capacity 1T 2>&1
+
+    # Get current version and apply with version+1
+    VERSION=$(echo "$LAYOUT" | grep -oP 'Current cluster layout version: \K[0-9]+' || echo "0")
+    NEXT_VERSION=$((VERSION + 1))
+    echo "Applying layout version $NEXT_VERSION..."
+    docker exec garage /garage layout apply --version "$NEXT_VERSION" 2>&1
+
+    echo "RESULT: layout applied (version $NEXT_VERSION)"
+  args:
+    executable: /bin/bash
+  register: garage_layout_result
+  changed_when: "'layout applied' in garage_layout_result.stdout"
+  failed_when:
+    - garage_layout_result.rc != 0
+    - "'layout already configured' not in garage_layout_result.stdout"
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  tags: ['garage', 'config']
+
+- name: Show layout setup output
+  debug:
+    var: garage_layout_result.stdout_lines
+  when:
+    - ansible_env.MOLECULE_SCENARIO_NAME is not defined
+    - garage_layout_result is defined
+  tags: ['garage', 'config']
+
+# === WAIT FOR HEALTHY (after layout is applied) ===
+- name: Wait for Garage to be healthy
+  uri:
+    url: "http://127.0.0.1:{{ garage_admin_port }}/health"
+    method: GET
+    status_code: 200
+  register: garage_health
+  retries: 12
+  delay: 5
+  until: garage_health.status == 200
+  failed_when: false
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  tags: ['garage', 'deploy']
+
+# === BUCKET AND KEY CONFIGURATION PHASE ===
+- name: Create and configure Garage bucket and API key
+  block:
+    - name: Check if files bucket exists
+      command: docker exec garage /garage bucket list
+      register: garage_bucket_list
+      changed_when: false
+      failed_when: false
+
+    - name: Create files bucket if not exists
+      command: docker exec garage /garage bucket create {{ garage_bucket_name_for_misskey }}
+      when: garage_bucket_name_for_misskey not in (garage_bucket_list.stdout | default(''))
+      failed_when: false
+
+    - name: Enable website access for bucket (public read)
+      command: docker exec garage /garage bucket website --allow {{ garage_bucket_name_for_misskey }}
+      register: garage_website_result
+      changed_when: garage_website_result.rc == 0
+      failed_when: false
+
+    - name: Check if API key already exists
+      command: docker exec garage /garage key info {{ garage_s3_access_key }}
+      register: garage_key_info
+      changed_when: false
+      failed_when: false
+
+    - name: Delete existing API key before re-import
+      command: docker exec garage /garage key delete {{ garage_s3_access_key }} --yes
+      failed_when: false
+      changed_when: false
+      no_log: true
+      when: garage_key_info.rc == 0
+
+    - name: Import API key for Misskey
+      command: >
+        docker exec garage /garage key import
+        {{ garage_s3_access_key }} {{ garage_s3_secret_key }}
+        --yes
+      register: garage_key_import
+      changed_when: garage_key_import.rc == 0
+      failed_when: false
+      no_log: true
+
+    - name: Rename imported key to misskey-key
+      command: >
+        docker exec garage /garage key rename
+        {{ garage_s3_access_key }} misskey-key
+      changed_when: true
+      failed_when: false
+      when: garage_key_import.rc == 0
+
+    - name: Allow key read/write access to bucket
+      command: >
+        docker exec garage /garage bucket allow
+        --read --write --owner
+        {{ garage_bucket_name_for_misskey }}
+        --key {{ garage_s3_access_key }}
+      register: garage_bucket_allow
+      changed_when: garage_bucket_allow.rc == 0
+      failed_when: false
+
+    - name: Display essential configuration summary
+      debug:
+        msg: |
+          ==============================================
+          Garage Essential Configuration Complete
+          ==============================================
+          Buckets: {{ garage_bucket_name_for_misskey }}
+          API Key: misskey-key (read/write/owner)
+          S3 Region: {{ garage_s3_region }}
+          Website Access: enabled (public read for federation)
+          Tailscale network access: enabled
+
+          Misskey Configuration
+          S3_BUCKET={{ garage_bucket_name_for_misskey }}
+          S3_ENDPOINT=http://[TAILSCALE_BALTHASAR_IP]:{{ garage_s3_api_port }}
+          S3_ACCESS_KEY={{ garage_s3_access_key }}
+          S3_SECRET_KEY=(set in secrets)
+          S3_REGION={{ garage_s3_region }}
+          S3_FORCE_PATH_STYLE=true
+          S3_BASE_URL=https://{{ garage_api_server_name }}/{{ garage_bucket_name_for_misskey }}
+          ==============================================
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  tags: ['garage', 'buckets', 'security']

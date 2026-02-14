@@ -1,0 +1,39 @@
+services:
+  garage:
+    image: {{ garage_image }}:{{ garage_image_tag }}
+    container_name: garage
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: '2.0'
+        reservations:
+          memory: 256m
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "/garage", "node", "id", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    ports:
+      - "{{ garage_s3_api_port }}:{{ garage_s3_api_port }}"
+      - "{{ garage_web_port }}:{{ garage_web_port }}"
+      - "{{ garage_admin_port }}:{{ garage_admin_port }}"
+      - "{{ garage_rpc_port }}:{{ garage_rpc_port }}"
+    volumes:
+      - {{ garage_dir }}/garage.toml:/etc/garage.toml:ro
+      - {{ garage_meta_dir }}:/var/lib/garage/meta
+      - {{ garage_data_dir }}:/var/lib/garage/data
+    networks:
+      - external_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+networks:
+  external_network:
+    external: true

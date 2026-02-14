@@ -1,0 +1,8 @@
+---
+- name: Setup Garage backup to TrueNAS
+  hosts: balthasar
+  become: true
+  vars:
+    garage_backup_discord_webhook_url: "{{ garage_backup.discord_webhook_url }}"
+  roles:
+    - yamisskey.servers.garage_backup

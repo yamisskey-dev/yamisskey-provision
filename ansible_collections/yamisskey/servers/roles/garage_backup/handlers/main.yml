@@ -1,0 +1,12 @@
+---
+- name: Reload systemd
+  systemd:
+    daemon_reload: true
+  become: true
+
+- name: Enable garage-backup timer
+  systemd:
+    name: garage-backup.timer
+    enabled: true
+    state: started
+  become: true

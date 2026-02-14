@@ -1,0 +1,10 @@
+[Unit]
+Description=Garage Backup Timer
+
+[Timer]
+OnCalendar={{ garage_backup_schedule }}
+RandomizedDelaySec={{ garage_backup_schedule_randomized_delay }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
