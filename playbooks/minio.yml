@@ -1,6 +1,0 @@
-- name: Setup Minio
-  hosts: all
-  become: true
-  roles:
-    - role: yamisskey.servers.minio
-      tags: ['minio']
