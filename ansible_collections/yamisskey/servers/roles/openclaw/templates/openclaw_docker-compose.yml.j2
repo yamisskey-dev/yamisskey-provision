@@ -6,18 +6,35 @@ services:
     restart: unless-stopped
     init: true
     network_mode: host
+    read_only: true
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    stop_grace_period: 30s
     environment:
       HOME: /home/node
       TERM: xterm-256color
     env_file:
       - .env-docker-compose
+    tmpfs:
+      - /tmp:size=100M
     volumes:
       - {{ openclaw_dir }}/config:/home/node/.openclaw
       - {{ openclaw_dir }}/workspace:/home/node/.openclaw/workspace
       - /usr/bin/tailscale:/usr/bin/tailscale:ro
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ openclaw_gateway_port }}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     command:
       - "node"
       - "dist/index.js"
