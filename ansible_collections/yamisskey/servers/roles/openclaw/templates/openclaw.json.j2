@@ -16,7 +16,8 @@
       "workspace": "/home/node/.openclaw/workspace",
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
-        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }}
+        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }},
+        "model": "{{ openclaw_subagents_model | default('openai/gpt-4o') }}"
       },
       "model": {
         "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}",
@@ -57,7 +58,8 @@
         "policy": "pairing"
       },
       "groupPolicy": "open",
-      "autoJoin": true
+      "autoJoin": true,
+      "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
     }
   },
   "messages": {
