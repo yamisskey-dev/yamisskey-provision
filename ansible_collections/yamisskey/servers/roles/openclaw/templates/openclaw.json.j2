@@ -3,6 +3,15 @@
     "lastTouchedVersion": "{{ openclaw_version | default('2026.2.9') }}"
   },
   "agents": {
+    "list": [
+      {
+        "id": "main",
+        "identity": {
+          "emoji": "🧸",
+          "avatar": "openclaw_avatar.png"
+        }
+      }
+    ],
     "defaults": {
       "workspace": "/home/node/.openclaw/workspace",
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},

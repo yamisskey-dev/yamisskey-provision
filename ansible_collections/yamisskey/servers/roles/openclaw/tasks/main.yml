@@ -66,6 +66,14 @@
     group: "{{ ansible_user }}"
   register: openclaw_compose_config_result
 
+- name: Deploy OpenClaw avatar
+  copy:
+    src: "{{ role_path }}/templates/openclaw_avatar.png"
+    dest: "{{ openclaw_dir }}/workspace/openclaw_avatar.png"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
 - name: Deploy OpenClaw configuration
   template:
     src: openclaw.json.j2
