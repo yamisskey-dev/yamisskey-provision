@@ -7,8 +7,8 @@ minio_backup_source_dir: "/mnt/storage/minio/data"
 # Destination (TrueNAS)
 minio_backup_truenas_host: "192.168.1.7"
 minio_backup_truenas_user: "truenas_admin"
-minio_backup_truenas_dest: "/mnt/tank/minio_backup"
-minio_backup_ssh_key: "~/.ssh/id_ed25519_truenas"
+minio_backup_truenas_dest: "/mnt/tank/storage_backup"
+minio_backup_ssh_key: "/home/taka/.ssh/id_ed25519_truenas"
 
 # Backup settings
 minio_backup_dir: "/opt/minio-backup"
