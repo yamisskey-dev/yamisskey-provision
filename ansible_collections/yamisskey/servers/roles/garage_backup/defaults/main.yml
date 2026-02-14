@@ -8,7 +8,7 @@ garage_backup_meta_dir: "/mnt/storage/garage/meta"
 # Destination (TrueNAS)
 garage_backup_truenas_host: "192.168.1.7"
 garage_backup_truenas_user: "truenas_admin"
-garage_backup_truenas_dest: "/mnt/tank/garage_backup"
+garage_backup_truenas_dest: "/mnt/tank/storage_backup"
 garage_backup_ssh_key: "~/.ssh/id_ed25519_truenas"
 
 # Backup settings
