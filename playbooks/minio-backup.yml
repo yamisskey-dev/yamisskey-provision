@@ -1,8 +1,0 @@
----
-- name: Setup MinIO backup to TrueNAS
-  hosts: balthasar
-  become: true
-  vars:
-    minio_backup_discord_webhook_url: "{{ minio_backup.discord_webhook_url }}"
-  roles:
-    - yamisskey.servers.minio_backup

@@ -1,2 +1,0 @@
----
-# MinIO specific variables moved to defaults/main.yml for better variable scope
