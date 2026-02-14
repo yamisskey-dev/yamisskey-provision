@@ -6,6 +6,7 @@
     "list": [
       {
         "id": "main",
+        "default": true,
         "identity": {
           "emoji": "🧸",
           "avatar": "openclaw_avatar.png"
@@ -26,6 +27,18 @@
       "memorySearch": {
         "enabled": true,
         "provider": "openai"
+      },
+      "contextPruning": {
+        "mode": "{{ openclaw_context_pruning_mode | default('cache-ttl') }}",
+        "ttl": "{{ openclaw_context_pruning_ttl | default('6h') }}",
+        "keepLastAssistants": {{ openclaw_context_pruning_keep | default(3) }}
+      },
+      "compaction": {
+        "mode": "{{ openclaw_compaction_mode | default('default') }}",
+        "memoryFlush": {
+          "enabled": true,
+          "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(40000) }}
+        }
       }
     }
   },
@@ -90,6 +103,7 @@
     }
   },
   "plugins": {
+    "allow": ["discord", "matrix"],
     "entries": {
       "discord": {
         "enabled": true
