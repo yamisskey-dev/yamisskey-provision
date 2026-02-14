@@ -16,6 +16,6 @@ modsecurity_nginx_services:
   - "misskey"
   - "synapse"
   - "element"
-  - "minio"
+  - "garage"
   - "cryptpad"
   - "neo_quesdon"

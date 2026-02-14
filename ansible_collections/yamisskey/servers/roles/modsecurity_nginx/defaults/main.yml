@@ -139,6 +139,7 @@ modsecurity_services_default:
   - "ctfd"
   - "grafana"
   - "minio"
+  - "garage"
   - "cryptpad"
   - "uptime"
   - "mcaptcha"

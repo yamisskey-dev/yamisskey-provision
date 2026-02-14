@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  author: yamisskey-dev
+  description: Garage S3-compatible object storage deployment for Misskey
+  company: yamisskey
+  license: MIT
+  min_ansible_version: "2.10"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+  galaxy_tags:
+    - storage
+    - garage
+    - object-storage
+    - docker
+    - s3
+
+collections:
+  - community.docker
+  - ansible.posix

@@ -1,0 +1,33 @@
+---
+# Garage role default variables
+# These values can be overridden in group_vars or host_vars
+
+# Service configuration
+garage_dir: "{{ '/mnt/storage/garage' if inventory_hostname == 'balthasar' else '/opt/garage' }}"
+garage_data_dir: "{{ garage_dir }}/data"
+garage_meta_dir: "{{ garage_dir }}/meta"
+
+# Network settings
+garage_s3_api_port: "{{ host_services[inventory_hostname].garage_api | default(3900) }}"
+garage_web_port: "{{ host_services[inventory_hostname].garage_web | default(3902) }}"
+garage_admin_port: "{{ host_services[inventory_hostname].garage_admin | default(3903) }}"
+garage_rpc_port: 3901
+
+# Default bucket configuration
+garage_bucket_name_for_misskey: 'files'
+
+# Docker configuration
+garage_image: 'dxflrs/garage'
+garage_image_tag: 'v2.2.0'
+
+# Networking
+garage_external_network: 'external_network'
+
+# Garage-specific configuration
+garage_replication_factor: 1
+garage_db_engine: 'lmdb'
+garage_s3_region: 'ap-northeast-3'
+garage_compression_level: 1
+
+# Server names - resolved at task execution time
+garage_api_server_name: "drive.{{ domain | default('test.example.com') }}"

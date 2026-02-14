@@ -1,0 +1,7 @@
+---
+- name: Migrate data from MinIO to Garage
+  hosts: balthasar
+  become: true
+  gather_facts: true
+  roles:
+    - yamisskey.servers.garage_migration
