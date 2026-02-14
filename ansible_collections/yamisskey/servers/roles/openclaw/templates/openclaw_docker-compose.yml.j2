@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     init: true
     network_mode: host
+    security_opt:
+      - no-new-privileges:true
     environment:
       HOME: /home/node
       TERM: xterm-256color
@@ -15,7 +17,7 @@ services:
       - {{ openclaw_dir }}/config:/home/node/.openclaw
       - {{ openclaw_dir }}/workspace:/home/node/.openclaw/workspace
       - /usr/bin/tailscale:/usr/bin/tailscale:ro
-      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
     command:
       - "node"
       - "dist/index.js"

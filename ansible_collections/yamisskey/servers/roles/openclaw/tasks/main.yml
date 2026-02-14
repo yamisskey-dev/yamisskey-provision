@@ -29,15 +29,15 @@
 
 - name: Create OpenClaw directories
   file:
-    path: "{{ item }}"
+    path: "{{ item.path }}"
     state: directory
-    mode: '0755'
+    mode: "{{ item.mode }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
   loop:
-    - "{{ openclaw_dir }}"
-    - "{{ openclaw_dir }}/config"
-    - "{{ openclaw_dir }}/workspace"
+    - { path: "{{ openclaw_dir }}", mode: '0755' }
+    - { path: "{{ openclaw_dir }}/config", mode: '0700' }
+    - { path: "{{ openclaw_dir }}/workspace", mode: '0755' }
 
 - name: Configure OpenClaw environment
   template:
@@ -78,7 +78,7 @@
   template:
     src: openclaw.json.j2
     dest: "{{ openclaw_dir }}/config/openclaw.json"
-    mode: '0644'
+    mode: '0600'
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
   register: openclaw_config_result
