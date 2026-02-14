@@ -35,6 +35,14 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '{{ openclaw_cpu_limit | default("4") }}'
+          memory: {{ openclaw_memory_limit | default("4G") }}
+        reservations:
+          cpus: '{{ openclaw_cpu_reservation | default("1") }}'
+          memory: {{ openclaw_memory_reservation | default("1G") }}
     command:
       - "node"
       - "dist/index.js"
