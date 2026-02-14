@@ -16,10 +16,12 @@
       "workspace": "/home/node/.openclaw/workspace",
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
-        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }}
+        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }},
+        "model": "{{ openclaw_subagents_model | default('openai/gpt-4o') }}"
       },
       "model": {
-        "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}"
+        "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}",
+        "fallbacks": {{ openclaw_model_fallbacks | default('["openai/gpt-4o"]') }}
       },
       "memorySearch": {
         "enabled": true,
@@ -56,11 +58,22 @@
         "policy": "pairing"
       },
       "groupPolicy": "open",
-      "autoJoin": true
+      "autoJoin": true,
+      "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
     }
   },
   "messages": {
     "ackReactionScope": "group-mentions"
+  },
+  "session": {
+    "dmScope": "{{ openclaw_session_dm_scope | default('per-channel-peer') }}",
+    "reset": {
+      "mode": "{{ openclaw_session_reset_mode | default('idle') }}",
+      "idleMinutes": {{ openclaw_session_idle_minutes | default(1440) }}
+    }
+  },
+  "logging": {
+    "redactSensitive": "{{ openclaw_logging_redact | default('tools') }}"
   },
   "gateway": {
     "mode": "{{ openclaw_gateway_mode | default('local') }}",
