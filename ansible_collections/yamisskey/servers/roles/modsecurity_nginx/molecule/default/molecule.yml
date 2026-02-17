@@ -53,6 +53,7 @@ provisioner:
         synapse_server_name: "matrix.test.example.com"
         element_server_name: "chat.test.example.com"
         ctfd_server_name: "ctf.test.example.com"
+        garage_api_server_name: "garage.test.example.com"
 
         # Docker test configuration
         modsecurity_nginx_name: "modsecurity-nginx-test"

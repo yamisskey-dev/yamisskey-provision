@@ -4,7 +4,7 @@ dependency:
 driver:
   name: docker
 platforms:
-  - name: db-backup-test
+  - name: openclaw-test-instance
     image: geerlingguy/docker-ubuntu2204-ansible:latest
     pre_build_image: true
     privileged: true
@@ -29,12 +29,25 @@ provisioner:
     ANSIBLE_REMOTE_TMP: /tmp/.ansible-tmp
   inventory:
     host_vars:
-      db-backup-test:
-        ansible_user: root
-        db_backup_databases:
-          - name: testdb
-            container: test-db
-            database: testdb
+      openclaw-test-instance:
+        ansible_user: "root"
+        # Mock secrets required by tasks/main.yml assertions
+        openclaw:
+          gateway_token: "test-gateway-token"
+          kimi_api_key: "test-kimi-key"
+          anthropic_api_key: "test-anthropic-key"
+          openai_api_key: "test-openai-key"
+          discord_webhook_url: "https://discord.com/api/webhooks/test"
+          discord_bot_token: "test-discord-token"
+          matrix_password: "test-matrix-password"
+        # Required by vars/main.yml
+        host_services:
+          openclaw-test-instance:
+            openclaw_gateway: 18789
+            openclaw_bridge: 18790
+          balthasar:
+            synapse: 8008
+        domain: "test.example.com"
 verifier:
   name: ansible
 scenario:
