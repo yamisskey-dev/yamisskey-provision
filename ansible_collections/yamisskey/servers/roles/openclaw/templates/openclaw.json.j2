@@ -32,13 +32,13 @@
         "model": "{{ openclaw_subagents_model | default('anthropic/claude-opus-4-6') }}"
       },
       "model": {
-        "primary": "{{ openclaw_default_model | default('openrouter/glm-5') }}",
+        "primary": "{{ openclaw_default_model | default('openrouter/z-ai/glm-5') }}",
         "fallbacks": {{ openclaw_model_fallbacks | default('["anthropic/claude-opus-4-6", "openai/gpt-4o"]') }}
       },
       "models": {
         "anthropic/claude-opus-4-6": { "alias": "opus" },
         "anthropic/claude-sonnet-4-5": { "alias": "sonnet" },
-        "openrouter/glm-5": { "alias": "glm" }
+        "openrouter/z-ai/glm-5": { "alias": "glm" }
       },
       "memorySearch": {
         "enabled": true,
@@ -146,7 +146,7 @@
         "api": "openai-completions",
         "models": [
           {
-            "id": "glm-5",
+            "id": "z-ai/glm-5",
             "name": "GLM-5",
             "contextWindow": 204800,
             "maxTokens": 131072
