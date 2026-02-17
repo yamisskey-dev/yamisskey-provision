@@ -1,25 +1,31 @@
 FROM {{ openclaw_sandbox_base_image | default('debian:bookworm-slim') }}
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # VCS
     git \
-    # Languages & runtimes
     python3 python3-pip python3-venv \
-    # Build tools
     build-essential cmake \
-    # Network
     curl wget openssh-client ca-certificates gnupg \
-    # Utilities
-    jq unzip rsync less vim-tiny tree file \
-    # Shell
+    jq unzip rsync less file \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
-# ripgrep + fd for fast file search
-RUN curl -fsSL https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_$(dpkg --print-architecture).deb -o /tmp/rg.deb \
-    && dpkg -i /tmp/rg.deb && rm /tmp/rg.deb
-RUN curl -fsSL https://github.com/sharkdp/fd/releases/download/v10.2.0/fd_10.2.0_$(dpkg --print-architecture).deb -o /tmp/fd.deb \
-    && dpkg -i /tmp/fd.deb && rm /tmp/fd.deb
+# Modern CLI tools
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_${ARCH}.deb" -o /tmp/rg.deb \
+    && curl -fsSL "https://github.com/sharkdp/fd/releases/download/v10.2.0/fd_10.2.0_${ARCH}.deb" -o /tmp/fd.deb \
+    && curl -fsSL "https://github.com/sharkdp/bat/releases/download/v0.24.0/bat_0.24.0_${ARCH}.deb" -o /tmp/bat.deb \
+    && curl -fsSL "https://github.com/dandavison/delta/releases/download/0.18.2/git-delta_0.18.2_${ARCH}.deb" -o /tmp/delta.deb \
+    && dpkg -i /tmp/*.deb && rm /tmp/*.deb
+
+# eza (modern ls + tree)
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://github.com/eza-community/eza/releases/download/v0.20.14/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
+    | tar xz -C /usr/local/bin
+
+# yq (YAML/JSON/TOML processor)
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_${ARCH}" -o /usr/local/bin/yq \
+    && chmod +x /usr/local/bin/yq
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -32,7 +38,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_{{ openclaw_node_version | defau
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Docker CLI (for container orchestration from sandbox)
+# Docker CLI (for DooD container orchestration)
 RUN install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list \
