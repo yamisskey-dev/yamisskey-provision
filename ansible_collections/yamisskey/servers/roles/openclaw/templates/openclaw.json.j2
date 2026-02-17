@@ -18,7 +18,6 @@
           "docker": {
             "image": "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}:latest",
             "network": "{{ openclaw_sandbox_network | default('bridge') }}",
-            "binds": ["{{ openclaw_dir }}/workspace:/workspace:rw"],
             "pidsLimit": {{ openclaw_sandbox_pids_limit | default(512) }},
             "memory": "{{ openclaw_sandbox_memory | default('2g') }}"
           }
