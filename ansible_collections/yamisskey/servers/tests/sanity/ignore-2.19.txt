@@ -1,2 +1,3 @@
-roles/minio_migration/templates/minio_migration_script.sh.j2 shebang  # template shell script, not a module
 roles/modsecurity_nginx/templates/monitor-modsecurity.sh.j2 shebang  # template shell script, not a module
+roles/db_backup/templates/db-backup.sh.j2 shebang  # template shell script, not a module
+roles/garage_backup/templates/garage-backup.sh.j2 shebang  # template shell script, not a module
