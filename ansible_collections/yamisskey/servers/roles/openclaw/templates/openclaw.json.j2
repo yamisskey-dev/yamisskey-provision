@@ -19,7 +19,7 @@
           }
         },
         "tools": {
-          "deny": {{ openclaw_agent_tools_deny | default('["browser"]') }}
+          "deny": {{ openclaw_agent_tools_deny | default('[]') }}
         }
       }
     ],
@@ -67,7 +67,7 @@
       "enabled": true,
       "token": "${DISCORD_BOT_TOKEN}",
       "groupPolicy": "open",
-      "dmPolicy": "disabled",
+      "dmPolicy": "pairing",
       "historyLimit": 20,
       "replyToMode": "off",
       "commands": {
