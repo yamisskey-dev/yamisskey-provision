@@ -8,7 +8,7 @@
         "id": "main",
         "default": true,
         "sandbox": {
-          "mode": "{{ openclaw_agent_sandbox_mode | default('all') }}",
+          "mode": "{{ openclaw_agent_sandbox_mode | default('non-main') }}",
           "scope": "agent",
           "workspaceAccess": "{{ openclaw_agent_workspace_access | default('rw') }}",
           "docker": {
