@@ -1,31 +1,36 @@
 FROM {{ openclaw_sandbox_base_image | default('debian:bookworm-slim') }}
 
+# System packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     python3 python3-pip python3-venv \
-    build-essential cmake \
+    build-essential cmake pkg-config \
     curl wget openssh-client ca-certificates gnupg \
-    jq unzip rsync less file \
+    jq unzip zip xz-utils rsync less file patch \
+    sqlite3 dnsutils socat netcat-openbsd procps \
+    strace shellcheck \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
-# Modern CLI tools
+# Modern CLI tools (.deb)
 RUN ARCH=$(dpkg --print-architecture) \
     && curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/14.1.1/ripgrep_14.1.1-1_${ARCH}.deb" -o /tmp/rg.deb \
     && curl -fsSL "https://github.com/sharkdp/fd/releases/download/v10.2.0/fd_10.2.0_${ARCH}.deb" -o /tmp/fd.deb \
     && curl -fsSL "https://github.com/sharkdp/bat/releases/download/v0.24.0/bat_0.24.0_${ARCH}.deb" -o /tmp/bat.deb \
     && curl -fsSL "https://github.com/dandavison/delta/releases/download/0.18.2/git-delta_0.18.2_${ARCH}.deb" -o /tmp/delta.deb \
+    && curl -fsSL "https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine_1.18.0_${ARCH}.deb" -o /tmp/hyperfine.deb \
     && dpkg -i /tmp/*.deb && rm /tmp/*.deb
 
-# eza (modern ls + tree)
+# Modern CLI tools (binary)
 RUN ARCH=$(uname -m) \
     && curl -fsSL "https://github.com/eza-community/eza/releases/download/v0.20.14/eza_${ARCH}-unknown-linux-gnu.tar.gz" \
     | tar xz -C /usr/local/bin
-
-# yq (YAML/JSON/TOML processor)
 RUN ARCH=$(dpkg --print-architecture) \
     && curl -fsSL "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_${ARCH}" -o /usr/local/bin/yq \
     && chmod +x /usr/local/bin/yq
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://github.com/ducaale/xh/releases/download/v0.23.1/xh-v0.23.1-${ARCH}-unknown-linux-musl.tar.gz" \
+    | tar xz --strip-components=1 -C /usr/local/bin "xh-v0.23.1-${ARCH}-unknown-linux-musl/xh"
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -33,10 +38,21 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
     && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# Node.js via NodeSource
+# Go
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL "https://go.dev/dl/go1.23.6.linux-${ARCH}.tar.gz" | tar xz -C /usr/local
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+# Node.js + pnpm via corepack
 RUN curl -fsSL https://deb.nodesource.com/setup_{{ openclaw_node_version | default('22') }}.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && corepack enable
+
+# Deno
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://dl.deno.land/release/v2.1.9/deno-${ARCH}-unknown-linux-gnu.zip" -o /tmp/deno.zip \
+    && unzip -o /tmp/deno.zip -d /usr/local/bin && rm /tmp/deno.zip
 
 # Docker CLI (for DooD container orchestration)
 RUN install -m 0755 -d /etc/apt/keyrings \
@@ -48,4 +64,6 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 # Non-root user
 RUN useradd -m -s /bin/bash claw
 USER claw
+ENV GOPATH="/home/claw/go"
+ENV PATH="${GOPATH}/bin:${PATH}"
 WORKDIR /home/claw/workspace
