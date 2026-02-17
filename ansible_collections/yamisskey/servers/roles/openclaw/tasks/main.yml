@@ -101,14 +101,6 @@
     force_source: "{{ openclaw_sandbox_dockerfile_result.changed | default(false) }}"
   become: true
 
-- name: Deploy OpenClaw avatar
-  copy:
-    src: "{{ role_path }}/templates/openclaw_avatar.png"
-    dest: "{{ openclaw_dir }}/config/openclaw_avatar.png"
-    mode: '0644'
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-
 - name: Deploy OpenClaw configuration
   template:
     src: openclaw.json.j2
