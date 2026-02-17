@@ -29,6 +29,10 @@
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
     openclaw_matrix_password: "{{ openclaw_inventory_secrets.matrix_password }}"
 
+- name: Install development tools
+  include_tasks: devtools.yml
+  tags: [devtools]
+
 - name: Get Docker group GID
   command: getent group docker
   register: docker_group_result
