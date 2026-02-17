@@ -26,6 +26,7 @@ exclude_paths:
   - "**/*secrets.yml"
   - backups/
   - .ansible/
+  - "**/*.png"
 
 # Enable more strict checking for production
 warn_list:
