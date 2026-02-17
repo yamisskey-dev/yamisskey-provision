@@ -115,7 +115,7 @@
     "controlUi": {
       "enabled": true,
       "allowInsecureAuth": false,
-      "dangerouslyDisableDeviceAuth": false
+      "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default('true') | lower }}
     }
   },
   "discovery": {
