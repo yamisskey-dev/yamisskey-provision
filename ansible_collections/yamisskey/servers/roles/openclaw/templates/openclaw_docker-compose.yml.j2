@@ -11,6 +11,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    group_add:
+      - "{{ openclaw_docker_gid | default('docker') }}"
     stop_grace_period: 30s
     environment:
       HOME: /home/node
@@ -20,10 +22,12 @@ services:
     tmpfs:
       - /tmp:size=100M
     volumes:
-      - {{ openclaw_dir }}/config:/home/node/.openclaw
-      - {{ openclaw_dir }}/workspace:/home/node/.openclaw/workspace
+      - {{ openclaw_home }}:{{ openclaw_home }}
+      - {{ openclaw_home }}/workspace:{{ openclaw_home }}/workspace
       - /usr/bin/tailscale:/usr/bin/tailscale:ro
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{{ openclaw_gateway_port }}/health"]
       interval: 30s

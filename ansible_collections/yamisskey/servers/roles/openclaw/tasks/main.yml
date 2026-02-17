@@ -8,7 +8,7 @@
     that:
       - openclaw_inventory_secrets | length > 0
       - openclaw_inventory_secrets.gateway_token is defined
-      - openclaw_inventory_secrets.kimi_api_key is defined
+      - openclaw_inventory_secrets.openrouter_api_key is defined
       - openclaw_inventory_secrets.anthropic_api_key is defined
       - openclaw_inventory_secrets.openai_api_key is defined
       - openclaw_inventory_secrets.discord_webhook_url is defined
@@ -22,12 +22,25 @@
 - name: Apply OpenClaw secrets to role variables
   set_fact:
     openclaw_gateway_token: "{{ openclaw_inventory_secrets.gateway_token }}"
-    openclaw_kimi_api_key: "{{ openclaw_inventory_secrets.kimi_api_key }}"
+    openclaw_openrouter_api_key: "{{ openclaw_inventory_secrets.openrouter_api_key }}"
     openclaw_anthropic_api_key: "{{ openclaw_inventory_secrets.anthropic_api_key }}"
     openclaw_openai_api_key: "{{ openclaw_inventory_secrets.openai_api_key }}"
     openclaw_discord_webhook_url: "{{ openclaw_inventory_secrets.discord_webhook_url }}"
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
     openclaw_matrix_password: "{{ openclaw_inventory_secrets.matrix_password }}"
+
+- name: Install development tools
+  include_tasks: devtools.yml
+  tags: [devtools]
+
+- name: Get Docker group GID
+  command: getent group docker
+  register: docker_group_result
+  changed_when: false
+
+- name: Set Docker GID fact
+  set_fact:
+    openclaw_docker_gid: "{{ docker_group_result.stdout.split(':')[2] }}"
 
 - name: Create OpenClaw directories
   file:
@@ -38,8 +51,8 @@
     group: "{{ ansible_user }}"
   loop:
     - { path: "{{ openclaw_dir }}", mode: '0755' }
-    - { path: "{{ openclaw_dir }}/config", mode: '0700' }
-    - { path: "{{ openclaw_dir }}/workspace", mode: '0755' }
+    - { path: "{{ openclaw_home }}", mode: '0700' }
+    - { path: "{{ openclaw_home }}/workspace", mode: '0755' }
 
 - name: Configure OpenClaw environment
   template:
@@ -68,18 +81,30 @@
     group: "{{ ansible_user }}"
   register: openclaw_compose_config_result
 
-- name: Deploy OpenClaw avatar
-  copy:
-    src: "{{ role_path }}/templates/openclaw_avatar.png"
-    dest: "{{ openclaw_dir }}/workspace/openclaw_avatar.png"
+- name: Deploy sandbox Dockerfile
+  template:
+    src: openclaw-sandbox.Dockerfile.j2
+    dest: "{{ openclaw_dir }}/Dockerfile.sandbox"
     mode: '0644'
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
+  register: openclaw_sandbox_dockerfile_result
+
+- name: Build sandbox image
+  community.docker.docker_image:
+    name: "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}"
+    tag: latest
+    source: build
+    build:
+      path: "{{ openclaw_dir }}"
+      dockerfile: Dockerfile.sandbox
+    force_source: "{{ openclaw_sandbox_dockerfile_result.changed | default(false) }}"
+  become: true
 
 - name: Deploy OpenClaw configuration
   template:
     src: openclaw.json.j2
-    dest: "{{ openclaw_dir }}/config/openclaw.json"
+    dest: "{{ openclaw_home }}/openclaw.json"
     mode: '0600'
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"

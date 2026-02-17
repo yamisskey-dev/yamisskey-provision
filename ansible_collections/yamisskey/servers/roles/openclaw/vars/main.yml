@@ -1,6 +1,8 @@
 ---
 # OpenClaw specific variables
 openclaw_dir: '/opt/openclaw'
+# Must match container-internal path for DooD sandbox path resolution
+openclaw_home: '/home/node/.openclaw'
 openclaw_image: 'ghcr.io/openclaw/openclaw:latest'
 openclaw_gateway_port: "{{ host_services[inventory_hostname].openclaw_gateway | default(18789) }}"
 openclaw_bridge_port: "{{ host_services[inventory_hostname].openclaw_bridge | default(18790) }}"
