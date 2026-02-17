@@ -81,6 +81,26 @@
     group: "{{ ansible_user }}"
   register: openclaw_compose_config_result
 
+- name: Deploy sandbox Dockerfile
+  template:
+    src: openclaw-sandbox.Dockerfile.j2
+    dest: "{{ openclaw_dir }}/Dockerfile.sandbox"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  register: openclaw_sandbox_dockerfile_result
+
+- name: Build sandbox image
+  community.docker.docker_image:
+    name: "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}"
+    tag: latest
+    source: build
+    build:
+      path: "{{ openclaw_dir }}"
+      dockerfile: Dockerfile.sandbox
+    force_source: "{{ openclaw_sandbox_dockerfile_result.changed | default(false) }}"
+  become: true
+
 - name: Deploy OpenClaw avatar
   copy:
     src: "{{ role_path }}/templates/openclaw_avatar.png"

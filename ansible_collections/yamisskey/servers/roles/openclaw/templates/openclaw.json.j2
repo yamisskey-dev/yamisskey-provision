@@ -14,7 +14,11 @@
         "sandbox": {
           "mode": "{{ openclaw_agent_sandbox_mode | default('all') }}",
           "scope": "agent",
-          "workspaceAccess": "{{ openclaw_agent_workspace_access | default('rw') }}"
+          "workspaceAccess": "{{ openclaw_agent_workspace_access | default('rw') }}",
+          "docker": {
+            "image": "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}:latest",
+            "networkMode": "{{ openclaw_sandbox_network | default('bridge') }}"
+          }
         },
         "tools": {
           "deny": {{ openclaw_agent_tools_deny | default('["browser"]') }}
