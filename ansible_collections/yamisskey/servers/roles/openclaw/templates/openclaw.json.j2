@@ -26,10 +26,7 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }},
-        "model": "{{ openclaw_subagents_model | default('anthropic/claude-opus-4-6') }}",
-        "tools": {
-          "deny": {{ openclaw_subagent_tools_deny | default('["browser"]') }}
-        }
+        "model": "{{ openclaw_subagents_model | default('anthropic/claude-opus-4-6') }}"
       },
       "model": {
         "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}",
@@ -58,10 +55,7 @@
       }
     }
   },
-  "skills": {
-    "allowExternal": false,
-    "sources": ["local"]
-  },
+  "skills": {},
   "commands": {
     "native": "auto",
     "nativeSkills": "auto"
@@ -71,10 +65,7 @@
       "enabled": true,
       "token": "${DISCORD_BOT_TOKEN}",
       "groupPolicy": "open",
-      "requireMention": true,
-      "dm": {
-        "policy": "disabled"
-      },
+      "dmPolicy": "disabled",
       "historyLimit": 20,
       "replyToMode": "off",
       "commands": {
@@ -88,11 +79,8 @@
       "password": "${MATRIX_PASSWORD}",
       "encryption": true,
       "deviceName": "OpenClaw Gateway",
-      "dm": {
-        "policy": "pairing"
-      },
+      "dmPolicy": "pairing",
       "groupPolicy": "open",
-      "requireMention": true,
       "autoJoin": true,
       "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
     }
@@ -105,13 +93,6 @@
     "reset": {
       "mode": "{{ openclaw_session_reset_mode | default('idle') }}",
       "idleMinutes": {{ openclaw_session_idle_minutes | default(1440) }}
-    }
-  },
-  "sandbox": {
-    "mode": "{{ openclaw_sandbox_mode | default('docker') }}",
-    "docker": {
-      "image": "{{ openclaw_sandbox_image | default('openclaw/sandbox:latest') }}",
-      "networkMode": "{{ openclaw_sandbox_network | default('bridge') }}"
     }
   },
   "logging": {
@@ -175,7 +156,6 @@
       "anthropic": {
         "baseUrl": "{{ openclaw_anthropic_base_url | default('https://api.anthropic.com/v1') }}",
         "apiKey": "${ANTHROPIC_API_KEY}",
-        "api": "anthropic",
         "models": [
           {
             "id": "claude-opus-4-6",
