@@ -17,7 +17,7 @@
           "workspaceAccess": "{{ openclaw_agent_workspace_access | default('ro') }}"
         },
         "tools": {
-          "deny": {{ openclaw_agent_tools_deny | default('["process"]') }}
+          "deny": {{ openclaw_agent_tools_deny | default('["exec", "process", "browser"]') }}
         }
       }
     ],
@@ -26,7 +26,10 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }},
-        "model": "{{ openclaw_subagents_model | default('openai/gpt-4o') }}"
+        "model": "{{ openclaw_subagents_model | default('openai/gpt-4o') }}",
+        "tools": {
+          "deny": {{ openclaw_subagent_tools_deny | default('["exec", "process", "browser"]') }}
+        }
       },
       "model": {
         "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}",
@@ -101,8 +104,10 @@
   },
   "sandbox": {
     "mode": "{{ openclaw_sandbox_mode | default('docker') }}",
+    "locked": true,
     "docker": {
-      "image": "{{ openclaw_sandbox_image | default('openclaw/sandbox:latest') }}"
+      "image": "{{ openclaw_sandbox_image | default('openclaw/sandbox:latest') }}",
+      "networkMode": "{{ openclaw_sandbox_network | default('none') }}"
     }
   },
   "logging": {
