@@ -10,6 +10,14 @@
         "identity": {
           "emoji": "🧸",
           "avatar": "openclaw_avatar.png"
+        },
+        "sandbox": {
+          "mode": "{{ openclaw_agent_sandbox_mode | default('all') }}",
+          "scope": "agent",
+          "workspaceAccess": "{{ openclaw_agent_workspace_access | default('ro') }}"
+        },
+        "tools": {
+          "deny": {{ openclaw_agent_tools_deny | default('["process"]') }}
         }
       }
     ],
@@ -98,10 +106,13 @@
     }
   },
   "logging": {
-    "redactSensitive": "{{ openclaw_logging_redact | default('tools') }}"
+    "redactSensitive": "{{ openclaw_logging_redact | default('tools') }}",
+    "redactPatterns": {{ openclaw_logging_redact_patterns | default('["token:", "password:", "apiKey:", "secret:", "Authorization:"]') }}
   },
   "gateway": {
     "mode": "{{ openclaw_gateway_mode | default('local') }}",
+    "bind": "{{ openclaw_gateway_bind | default('loopback') }}",
+    "port": {{ openclaw_gateway_port | default(18789) }},
     "trustedProxies": ["127.0.0.1", "::1", "::ffff:127.0.0.1"],
     "tailscale": {
       "mode": "serve"
@@ -112,7 +123,14 @@
       "allowTailscale": true
     },
     "controlUi": {
-      "enabled": true
+      "enabled": true,
+      "allowInsecureAuth": false,
+      "dangerouslyDisableDeviceAuth": false
+    }
+  },
+  "discovery": {
+    "mdns": {
+      "mode": "{{ openclaw_mdns_mode | default('off') }}"
     }
   },
   "plugins": {
