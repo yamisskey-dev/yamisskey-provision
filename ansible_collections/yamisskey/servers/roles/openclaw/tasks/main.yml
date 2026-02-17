@@ -54,6 +54,20 @@
     - { path: "{{ openclaw_dir }}/config", mode: '0700' }
     - { path: "{{ openclaw_dir }}/workspace", mode: '0755' }
 
+- name: Remove stale workspace dir inside config (if not a symlink)
+  file:
+    path: "{{ openclaw_dir }}/config/workspace"
+    state: absent
+  when: not (openclaw_dir + '/config/workspace') is link
+
+- name: Symlink config/workspace to actual workspace for DooD path resolution
+  file:
+    src: "{{ openclaw_dir }}/workspace"
+    dest: "{{ openclaw_dir }}/config/workspace"
+    state: link
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
 - name: Configure OpenClaw environment
   template:
     src: openclaw.env-docker-compose.j2
