@@ -4,11 +4,12 @@ FROM {{ openclaw_sandbox_base_image | default('debian:bookworm-slim') }}
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     python3 python3-pip python3-venv \
-    build-essential cmake pkg-config \
+    build-essential cmake pkg-config autoconf automake \
     curl wget openssh-client ca-certificates gnupg \
     jq unzip zip xz-utils rsync less file patch \
     sqlite3 dnsutils socat netcat-openbsd procps \
     strace shellcheck \
+    tmux fzf bc aria2 pandoc universal-ctags \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
@@ -19,6 +20,7 @@ RUN ARCH=$(dpkg --print-architecture) \
     && curl -fsSL "https://github.com/sharkdp/bat/releases/download/v0.24.0/bat_0.24.0_${ARCH}.deb" -o /tmp/bat.deb \
     && curl -fsSL "https://github.com/dandavison/delta/releases/download/0.18.2/git-delta_0.18.2_${ARCH}.deb" -o /tmp/delta.deb \
     && curl -fsSL "https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine_1.18.0_${ARCH}.deb" -o /tmp/hyperfine.deb \
+    && curl -fsSL "https://github.com/charmbracelet/glow/releases/download/v2.0.0/glow_2.0.0_${ARCH}.deb" -o /tmp/glow.deb \
     && dpkg -i /tmp/*.deb && rm /tmp/*.deb
 
 # Modern CLI tools (binary)
@@ -31,6 +33,30 @@ RUN ARCH=$(dpkg --print-architecture) \
 RUN ARCH=$(uname -m) \
     && curl -fsSL "https://github.com/ducaale/xh/releases/download/v0.23.1/xh-v0.23.1-${ARCH}-unknown-linux-musl.tar.gz" \
     | tar xz --strip-components=1 -C /usr/local/bin "xh-v0.23.1-${ARCH}-unknown-linux-musl/xh"
+
+# lazygit
+RUN ARCH=$(uname -m) \
+    && LG_ARCH=$([ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "arm64") \
+    && curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v0.44.1/lazygit_0.44.1_Linux_${LG_ARCH}.tar.gz" \
+    | tar xz -C /usr/local/bin lazygit
+
+# tokei (code statistics)
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://github.com/XAMPPRocky/tokei/releases/download/v12.1.2/tokei-${ARCH}-unknown-linux-musl.tar.gz" \
+    | tar xz -C /usr/local/bin
+
+# tealdeer (tldr)
+RUN ARCH=$(uname -m) \
+    && TLDR_ARCH=$([ "$ARCH" = "x86_64" ] && echo "x86_64" || echo "aarch64") \
+    && curl -fsSL "https://github.com/tealdeer-rs/tealdeer/releases/download/v1.7.1/tealdeer-linux-${TLDR_ARCH}-musl" -o /usr/local/bin/tldr \
+    && chmod +x /usr/local/bin/tldr
+
+# uv + ruff (Python tooling)
+RUN ARCH=$(uname -m) \
+    && curl -fsSL "https://github.com/astral-sh/uv/releases/download/0.5.24/uv-${ARCH}-unknown-linux-musl.tar.gz" \
+    | tar xz --strip-components=1 -C /usr/local/bin "uv-${ARCH}-unknown-linux-musl/uv" "uv-${ARCH}-unknown-linux-musl/uvx" \
+    && curl -fsSL "https://github.com/astral-sh/ruff/releases/download/0.9.6/ruff-${ARCH}-unknown-linux-musl.tar.gz" \
+    | tar xz -C /usr/local/bin
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -48,6 +74,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_{{ openclaw_node_version | defau
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable
+
+# Bun
+RUN ARCH=$(uname -m) \
+    && BUN_ARCH=$([ "$ARCH" = "x86_64" ] && echo "x64" || echo "aarch64") \
+    && curl -fsSL "https://github.com/oven-sh/bun/releases/download/bun-v1.1.43/bun-linux-${BUN_ARCH}.zip" -o /tmp/bun.zip \
+    && unzip -o /tmp/bun.zip -d /tmp && mv /tmp/bun-linux-${BUN_ARCH}/bun /usr/local/bin/ && rm -rf /tmp/bun*
 
 # Deno
 RUN ARCH=$(uname -m) \
