@@ -10,6 +10,14 @@
         "identity": {
           "emoji": "🧸",
           "avatar": "openclaw_avatar.png"
+        },
+        "sandbox": {
+          "mode": "{{ openclaw_agent_sandbox_mode | default('all') }}",
+          "scope": "agent",
+          "workspaceAccess": "{{ openclaw_agent_workspace_access | default('rw') }}"
+        },
+        "tools": {
+          "deny": {{ openclaw_agent_tools_deny | default('["browser"]') }}
         }
       }
     ],
@@ -18,11 +26,16 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }},
-        "model": "{{ openclaw_subagents_model | default('openai/gpt-4o') }}"
+        "model": "{{ openclaw_subagents_model | default('anthropic/claude-opus-4-6') }}"
       },
       "model": {
         "primary": "{{ openclaw_default_model | default('kimi/kimi-for-coding') }}",
-        "fallbacks": {{ openclaw_model_fallbacks | default('["openai/gpt-4o"]') }}
+        "fallbacks": {{ openclaw_model_fallbacks | default('["anthropic/claude-opus-4-6", "openai/gpt-4o"]') }}
+      },
+      "models": {
+        "anthropic/claude-opus-4-6": { "alias": "opus" },
+        "anthropic/claude-sonnet-4-5": { "alias": "sonnet" },
+        "kimi/kimi-for-coding": { "alias": "kimi" }
       },
       "memorySearch": {
         "enabled": true,
@@ -42,6 +55,7 @@
       }
     }
   },
+  "skills": {},
   "commands": {
     "native": "auto",
     "nativeSkills": "auto"
@@ -51,9 +65,7 @@
       "enabled": true,
       "token": "${DISCORD_BOT_TOKEN}",
       "groupPolicy": "open",
-      "dm": {
-        "policy": "disabled"
-      },
+      "dmPolicy": "disabled",
       "historyLimit": 20,
       "replyToMode": "off",
       "commands": {
@@ -67,9 +79,7 @@
       "password": "${MATRIX_PASSWORD}",
       "encryption": true,
       "deviceName": "OpenClaw Gateway",
-      "dm": {
-        "policy": "pairing"
-      },
+      "dmPolicy": "pairing",
       "groupPolicy": "open",
       "autoJoin": true,
       "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
@@ -86,20 +96,31 @@
     }
   },
   "logging": {
-    "redactSensitive": "{{ openclaw_logging_redact | default('tools') }}"
+    "redactSensitive": "{{ openclaw_logging_redact | default('tools') }}",
+    "redactPatterns": {{ openclaw_logging_redact_patterns | default('["token:", "password:", "apiKey:", "secret:", "Authorization:"]') }}
   },
   "gateway": {
     "mode": "{{ openclaw_gateway_mode | default('local') }}",
+    "bind": "{{ openclaw_gateway_bind | default('loopback') }}",
+    "port": {{ openclaw_gateway_port | default(18789) }},
     "trustedProxies": ["127.0.0.1", "::1", "::ffff:127.0.0.1"],
     "tailscale": {
       "mode": "serve"
     },
     "auth": {
+      "mode": "{{ openclaw_gateway_auth_mode | default('token') }}",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}",
       "allowTailscale": true
     },
     "controlUi": {
       "enabled": true,
-      "allowInsecureAuth": true
+      "allowInsecureAuth": false,
+      "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default('true') | lower }}
+    }
+  },
+  "discovery": {
+    "mdns": {
+      "mode": "{{ openclaw_mdns_mode | default('off') }}"
     }
   },
   "plugins": {
@@ -129,6 +150,24 @@
             "name": "Kimi For Coding",
             "contextWindow": 262144,
             "maxTokens": 8192
+          }
+        ]
+      },
+      "anthropic": {
+        "baseUrl": "{{ openclaw_anthropic_base_url | default('https://api.anthropic.com/v1') }}",
+        "apiKey": "${ANTHROPIC_API_KEY}",
+        "models": [
+          {
+            "id": "claude-opus-4-6",
+            "name": "Claude Opus 4.6",
+            "contextWindow": 200000,
+            "maxTokens": 32768
+          },
+          {
+            "id": "claude-sonnet-4-5",
+            "name": "Claude Sonnet 4.5",
+            "contextWindow": 200000,
+            "maxTokens": 16384
           }
         ]
       },

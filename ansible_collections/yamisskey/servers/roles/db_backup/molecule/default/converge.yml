@@ -1,7 +1,10 @@
 ---
-- name: Converge
+- name: Converge db_backup role
   hosts: all
+  become: true
+  gather_facts: true
+
   tasks:
     - name: Include db_backup role
       ansible.builtin.include_role:
-        name: db_backup
+        name: yamisskey.servers.db_backup

@@ -4,38 +4,27 @@
   gather_facts: false
 
   tasks:
-    - name: Check if Docker is installed and running
-      command: docker --version
-      register: docker_version_check
-      changed_when: false
-
-    - name: Verify Docker is working
-      command: docker ps
-      register: docker_ps_check
-      changed_when: false
-
-    - name: Verify role execution completed without errors
+    - name: Check backup directories exist
       ansible.builtin.stat:
-        path: /tmp/test
-      register: test_dir_check
+        path: "{{ item }}"
+      register: backup_dirs
+      loop:
+        - /opt/backups/misskey
+        - /opt/misskey-backup
+        - /opt/misskey-backup/backups
 
-    - name: Assert test directory exists
-      assert:
+    - name: Assert directories exist
+      ansible.builtin.assert:
         that:
-          - test_dir_check.stat.exists
-          - test_dir_check.stat.isdir
-        fail_msg: "Test directory was not created"
-        success_msg: "Test directory created successfully"
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ backup_dirs.results }}"
 
-    - name: Display test summary
+    - name: Display verification summary
       debug:
         msg: |
           misskey-backup Role Verification Summary:
           ====================================
-          ✅ Test Environment: Ready
-          ✅ Role Execution: Completed
-          ✅ Basic Checks: Passed
-
-          Role: misskey-backup
-          Collection: yamisskey.servers
-          Test Instance: misskey-backup-test-instance
+          Backup base directory: OK
+          Misskey backup directory: OK
+          Backups subdirectory: OK

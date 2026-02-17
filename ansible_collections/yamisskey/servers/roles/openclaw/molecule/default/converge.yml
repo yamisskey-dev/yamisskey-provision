@@ -1,0 +1,51 @@
+---
+- name: Converge openclaw role
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      retries: 3
+      delay: 10
+      failed_when: false
+
+    - name: Install curl for healthcheck
+      ansible.builtin.apt:
+        name: curl
+        state: present
+      failed_when: false
+
+    - name: Mock tailscale binary
+      ansible.builtin.copy:
+        dest: /usr/bin/tailscale
+        content: |
+          #!/bin/bash
+          echo "mock tailscale: $*"
+          exit 0
+        mode: '0755'
+
+    - name: Create mock tailscale socket directory
+      ansible.builtin.file:
+        path: /var/run/tailscale
+        state: directory
+        mode: '0755'
+
+    - name: Create mock tailscale socket
+      ansible.builtin.file:
+        path: /var/run/tailscale/tailscaled.sock
+        state: touch
+        mode: '0666'
+
+    - name: Set balthasar ansible_host for matrix homeserver resolution
+      ansible.builtin.add_host:
+        name: balthasar
+        ansible_host: "127.0.0.1"
+
+  tasks:
+    - name: Apply openclaw role
+      include_role:
+        name: yamisskey.servers.openclaw

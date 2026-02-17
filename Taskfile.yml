@@ -12,7 +12,7 @@ env:
   BACKUP_DIR: '{{.USER_WORKING_DIR}}/backups'
 
   # Ansible configuration
-  ANSIBLE_COLLECTIONS_PATH: '{{.GALAXY_DIR}}:{{.REPO_ROOT}}:{{.HOME}}/.ansible/collections'
+  ANSIBLE_COLLECTIONS_PATH: '{{.REPO_ROOT}}:{{.GALAXY_DIR}}:{{.HOME}}/.ansible/collections'
   ANSIBLE_HOST_KEY_CHECKING: 'false'
   ANSIBLE_CACHE_PLUGIN: 'memory'
   ANSIBLE_FORCE_HANDLERS: 'true'

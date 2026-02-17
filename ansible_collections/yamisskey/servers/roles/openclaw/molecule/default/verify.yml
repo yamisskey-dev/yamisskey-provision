@@ -1,0 +1,74 @@
+---
+- name: Verify openclaw deployment
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Check OpenClaw directories exist
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: openclaw_dirs
+      loop:
+        - /opt/openclaw
+        - /opt/openclaw/config
+        - /opt/openclaw/workspace
+
+    - name: Assert directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ openclaw_dirs.results }}"
+
+    - name: Check OpenClaw config file
+      ansible.builtin.stat:
+        path: /opt/openclaw/config/openclaw.json
+      register: openclaw_config
+
+    - name: Assert config file exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - openclaw_config.stat.exists
+          - openclaw_config.stat.mode == '0600'
+
+    - name: Check environment file
+      ansible.builtin.stat:
+        path: /opt/openclaw/.env-docker-compose
+      register: openclaw_env
+
+    - name: Assert environment file exists with correct permissions
+      ansible.builtin.assert:
+        that:
+          - openclaw_env.stat.exists
+          - openclaw_env.stat.mode == '0600'
+
+    - name: Check docker-compose file
+      ansible.builtin.stat:
+        path: /opt/openclaw/docker-compose.yml
+      register: openclaw_compose
+
+    - name: Assert docker-compose file exists
+      ansible.builtin.assert:
+        that:
+          - openclaw_compose.stat.exists
+
+    - name: Check Dockerfile
+      ansible.builtin.stat:
+        path: /opt/openclaw/Dockerfile
+      register: openclaw_dockerfile
+
+    - name: Assert Dockerfile exists
+      ansible.builtin.assert:
+        that:
+          - openclaw_dockerfile.stat.exists
+
+    - name: Display verification summary
+      debug:
+        msg: |
+          OpenClaw Role Verification Summary:
+          ====================================
+          Directories: OK
+          Config (openclaw.json): OK
+          Environment (.env-docker-compose): OK
+          Docker Compose: OK
+          Dockerfile: OK

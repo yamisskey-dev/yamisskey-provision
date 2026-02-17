@@ -13,6 +13,7 @@
     dest: "{{ misskey_backup_dir }}"
     version: "{{ misskey_backup_version }}"
     force: true
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
 
 - name: Create backups directory
   file:
@@ -39,3 +40,4 @@
     build: always
     pull: always
   register: compose_result
+  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined

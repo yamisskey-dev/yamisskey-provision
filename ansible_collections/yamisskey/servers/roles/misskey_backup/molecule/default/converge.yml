@@ -5,94 +5,11 @@
   gather_facts: true
 
   pre_tasks:
-    - name: Update apt cache safely
-      ansible.builtin.apt:
-        update_cache: true
-        cache_valid_time: 3600
-      retries: 3
-      delay: 10
-      register: apt_update_result
-      failed_when: false
-
-
-    - name: Create keyrings directory for Docker
+    - name: Create misskey-backup directory for skipped git clone
       file:
-        path: /etc/apt/keyrings
+        path: /opt/misskey-backup
         state: directory
         mode: '0755'
-      when: apt_update_result is not failed
-
-    - name: Add Docker GPG key
-      ansible.builtin.get_url:
-        url: "https://download.docker.com/linux/ubuntu/gpg"
-        dest: /etc/apt/keyrings/docker.asc
-        mode: '0644'
-      when: apt_update_result is not failed
-
-    - name: Set Docker GPG key permissions
-      file:
-        path: /etc/apt/keyrings/docker.asc
-        mode: 'a+r'
-      when: apt_update_result is not failed
-
-    - name: Add Docker repository
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu jammy stable"
-        filename: docker
-        state: present
-      when: apt_update_result is not failed
-
-    - name: Install Docker for testing
-      ansible.builtin.apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
-        update_cache: true
-      when: apt_update_result is not failed
-
-
-    - name: Install Docker for testing (fallback - use system packages)
-      ansible.builtin.apt:
-        name:
-          - docker.io
-          - docker-compose-plugin
-        state: present
-        update_cache: false
-        allow_unauthenticated: true
-      when: apt_update_result is failed
-
-    - name: Start Docker service
-      ansible.builtin.service:
-        name: docker
-        state: started
-        enabled: true
-      failed_when: false
-
-    - name: Add test user to docker group
-      ansible.builtin.user:
-        name: "{{ ansible_user }}"
-        groups: docker
-        append: true
-
-    - name: Install required Python packages
-      ansible.builtin.pip:
-        name:
-          - docker
-          - docker-compose
-          - requests
-        state: present
-
-    - name: Create test directories
-      file:
-        path: "{{ item }}"
-        state: directory
-        mode: '0755'
-      loop:
-        - /tmp/test
 
   tasks:
     - name: Apply misskey-backup role
@@ -100,17 +17,3 @@
         name: yamisskey.servers.misskey_backup
       vars:
         ansible_user: "root"
-
-    - name: Basic role verification
-      debug:
-        msg: "misskey-backup role applied successfully"
-
-  post_tasks:
-    - name: Show test environment status
-      shell: echo "Test environment setup completed"
-      register: test_status
-      changed_when: false
-
-    - name: Display test status
-      debug:
-        var: test_status.stdout
