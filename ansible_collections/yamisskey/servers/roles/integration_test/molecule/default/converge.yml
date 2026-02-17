@@ -108,7 +108,7 @@
           security: true
         application_tests:
           misskey_api: false
-          minio_health: false
+          garage_health: false
           web_interface: false
           database_connectivity: false
         infrastructure_tests:

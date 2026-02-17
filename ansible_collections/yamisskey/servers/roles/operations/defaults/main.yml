@@ -13,7 +13,7 @@ export_logs: "{{ export_logs | default(false) }}"
 # Service directories based on existing deployment structure
 known_services:
   - misskey
-  - minio
+  - garage
   - modsecurity-nginx
   - cloudflared
   - monitor

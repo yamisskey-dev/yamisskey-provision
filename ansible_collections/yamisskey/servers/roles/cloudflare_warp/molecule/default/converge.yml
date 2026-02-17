@@ -153,7 +153,7 @@
         warp_excluded_hosts:
           - region1.v2.argotunnel.com
           - region2.v2.argotunnel.com
-          - "{{ minio_api_server_name }}"
+          - "{{ garage_api_server_name }}"
         warp_verify_timeout: 10
         # Test environment flags
         test_mode: true

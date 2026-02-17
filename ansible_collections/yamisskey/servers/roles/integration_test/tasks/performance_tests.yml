@@ -14,7 +14,7 @@
   failed_when: false
   loop:
     - { url: "http://localhost:3000/api/ping", method: "POST", headers: {"Content-Type": "application/json"}, body: "{}", format: "json" }
-    - { url: "http://localhost:9000/minio/health/live", method: "GET" }
+    - { url: "http://localhost:3900/health", method: "GET" }
     - { url: "http://localhost/", method: "GET" }
   when: performance_thresholds.response_time_ms is defined
   tags: ['perf', 'response', 'api']

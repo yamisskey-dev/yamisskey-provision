@@ -1,6 +1,6 @@
 ---
 # Default values for Cloudflared
-cloudflared_tunnel_name: "raspberrypi-yaminio"
+cloudflared_tunnel_name: "raspberrypi-garage"
 cloudflared_hostname: "drive.yami.ski"
 
 # These will be set by the playbook or user

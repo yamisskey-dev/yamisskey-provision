@@ -2,9 +2,9 @@
 # Minecraft specific variables
 minecraft_dir: '/opt/minecraft'
 
-# Raspberry Pi 5 (8GB) でMinioを考慮した設定
+# Raspberry Pi 5 (8GB) でGarageを考慮した設定
 # 統一リソース設定（全プラットフォーム共通）
-minecraft_memory: "4G"                                        # Raspberry Pi 5 (8GB) でMinio
+minecraft_memory: "4G"                                        # Raspberry Pi 5 (8GB) でGarage
 minecraft_motd: "PaperMC + Geyser/Floodgate Cross-Platform Server"
 minecraft_server_name: "Yamisskey Minecraft"
 minecraft_max_players: 20                                     # 全プラットフォーム統一

@@ -43,7 +43,7 @@ infrastructure_tests:
 # Application test settings
 application_tests:
   misskey_api: true
-  minio_health: true
+  garage_health: true
   web_interface: true
   database_connectivity: true
 
@@ -82,7 +82,7 @@ test_retries:
 # Expected services for testing
 expected_services:
   - docker
-  - minio
+  - garage
   - misskey
   - nginx
 

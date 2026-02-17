@@ -36,8 +36,8 @@
         name: yamisskey.servers.migration_validator
       vars:
         validation_phase: pre_migration
-        source_minio_host: "{{ inventory_hostname }}"
-        target_minio_host: "{{ inventory_hostname }}"
+        source_garage_host: "{{ inventory_hostname }}"
+        target_garage_host: "{{ inventory_hostname }}"
       register: migration_validation_test
       failed_when: false
 

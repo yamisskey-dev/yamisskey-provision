@@ -20,9 +20,7 @@ host_services:
     synapse: 8008              # Matrix Synapse
     cryptpad: 3003             # CryptPad (main) 3333 (websocket)
     cadvisor: 8085             # cAdvisor
-    minio_api: 9000            # MinIO API (moved from raspberrypi)
-    minio_console: 9001        # MinIO Console (moved from raspberrypi)
-    garage_api: 3900           # Garage S3 API (MinIO replacement)
+    garage_api: 3900           # Garage S3 API
     garage_web: 3902           # Garage Web endpoint
     garage_admin: 3903         # Garage Admin API
     # All public services route through modsecurity_nginx:8080
@@ -125,6 +123,5 @@ cryptpad_server_name: "pad.{{ domain }}"
 uptime_server_name: "uptime.{{ domain }}"
 mcaptcha_server_name: "captcha.{{ domain }}"
 neo_quesdon_server_name: "neo-quesdon.{{ domain }}"
-minio_api_server_name: "drive.{{ domain }}"
 garage_api_server_name: "drive.{{ domain }}"
 yamix_server_name: "mix.{{ domain }}"

@@ -103,11 +103,10 @@ cryptpad_server_name: "cryptpad.example.com"
 uptime_server_name: "uptime.example.com"
 mcaptcha_server_name: "mcaptcha.example.com"
 neo_quesdon_server_name: "neo-quesdon.example.com"
-minio_api_server_name: "minio.example.com"
 garage_api_server_name: "garage.example.com"
 
-# MinIO configuration
-minio_bucket_name_for_misskey: "misskey-files"
+# Garage configuration
+garage_bucket_name_for_misskey: "misskey-files"
 
 # Service configuration
 modsecurity_enabled: true
@@ -139,7 +138,6 @@ modsecurity_services_default:
   - "element"
   - "ctfd"
   - "grafana"
-  - "minio"
   - "garage"
   - "cryptpad"
   - "uptime"

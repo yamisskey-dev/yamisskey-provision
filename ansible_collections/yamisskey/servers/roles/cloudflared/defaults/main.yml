@@ -1,6 +1,6 @@
 ---
 # Default Cloudflared configuration
-cloudflared_app_name: "yaminio"
+cloudflared_app_name: "garage"
 cloudflared_tunnel_name: "{{ ansible_hostname }}-{{ cloudflared_app_name }}"
 cloudflared_hostname: "drive.yami.ski"
 cloudflared_service_port: 8080

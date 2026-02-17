@@ -15,10 +15,10 @@
         name: yamisskey.servers.security
       tags: security
 
-    - name: Test minio role
+    - name: Test garage role
       ansible.builtin.include_role:
-        name: yamisskey.servers.minio
-      tags: minio
+        name: yamisskey.servers.garage
+      tags: garage
 
     - name: Test misskey role
       ansible.builtin.include_role:
@@ -32,7 +32,7 @@
           ✅ Core Infrastructure Test Results:
           - Common role: {{ ansible_check_mode | ternary('SYNTAX OK', 'EXECUTED') }}
           - Security role: {{ ansible_check_mode | ternary('SYNTAX OK', 'EXECUTED') }}
-          - MinIO role: {{ ansible_check_mode | ternary('SYNTAX OK', 'EXECUTED') }}
+          - Garage role: {{ ansible_check_mode | ternary('SYNTAX OK', 'EXECUTED') }}
           - Misskey role: {{ ansible_check_mode | ternary('SYNTAX OK', 'EXECUTED') }}
 
           🎯 yamisskey.servers Collection v1.0.0

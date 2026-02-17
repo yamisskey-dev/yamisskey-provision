@@ -14,7 +14,11 @@
     - role: yamisskey.servers.security
       tags: [security, hardening]
 
+    - role: yamisskey.servers.garage
+      tags: [garage, storage]
+      when: "'storage' in group_names or inventory_hostname in groups.get('garage', [])"
+
   post_tasks:
     - name: Display deployment summary
       ansible.builtin.debug:
-        msg: "Core Infrastructure Deployment Complete (common + security)"
+        msg: "Core Infrastructure Deployment Complete (common + security + garage)"

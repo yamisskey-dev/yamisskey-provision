@@ -18,7 +18,7 @@
 Internet → Nginx(ModSecurity) → Misskey(Node.js) → PostgreSQL
                               ↘ Redis (Cache)
                               ↘ Squid (Proxy)
-                              ↘ MinIO (Object Storage)
+                              ↘ Garage (Object Storage)
 ```
 
 ## 📁 ロール構造
@@ -113,7 +113,7 @@ make run PLAYBOOK=misskey-proxy
 make run PLAYBOOK=misskey
 
 # 5. ストレージ設定（オプション）
-make run PLAYBOOK=minio
+make run PLAYBOOK=garage
 ```
 
 ## 🔧 テンプレートファイル
@@ -127,7 +127,7 @@ make run PLAYBOOK=minio
 ### 環境設定 (`docker_example.env.j2`)
 - データベース接続情報
 - Redis接続設定
-- MinIO（オブジェクトストレージ）設定
+- Garage（オブジェクトストレージ）設定
 - セキュリティ関連変数
 
 ### PostgreSQL設定 (`misskey_postgresql.conf.j2`)
@@ -146,7 +146,7 @@ make run PLAYBOOK=minio
 - **PostgreSQL**: メインデータベース
 - **Redis**: セッション・キャッシュストレージ
 - **Nginx**: リバースプロキシ・SSL終端
-- **MinIO**: メディアファイルストレージ（オプション）
+- **Garage**: メディアファイルストレージ（オプション）
 
 ## 🔒 セキュリティ設定
 
@@ -170,7 +170,7 @@ MISSKEY_ENV=development make run PLAYBOOK=misskey
 ### 本番環境デプロイメント
 ```bash
 # フルスタックデプロイメント
-make deploy PLAYBOOKS='common security modsecurity-nginx misskey-proxy misskey minio'
+make deploy PLAYBOOKS='common security modsecurity-nginx misskey-proxy misskey garage'
 
 # 段階的デプロイメント
 make run PLAYBOOK=common
@@ -265,7 +265,7 @@ sudo journalctl -u docker -f
 # データベースバックアップ
 sudo -u postgres pg_dump example_misskey_db > misskey_backup.sql
 
-# メディアファイルバックアップ（MinIO使用時）
+# メディアファイルバックアップ（Garage使用時）
 make run PLAYBOOK=misskey-backup
 ```
 

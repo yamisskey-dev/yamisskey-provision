@@ -1,6 +1,6 @@
 # yamisskey.servers Ansible Collection
 
-Enterprise-grade server infrastructure automation collection for Misskey, MinIO, monitoring, and supporting services. Optimized for Linux server environments with Docker-based deployments.
+Enterprise-grade server infrastructure automation collection for Misskey, Garage, monitoring, and supporting services. Optimized for Linux server environments with Docker-based deployments.
 
 ## 🚀 Install & Use (Quick)
 ```bash
@@ -40,7 +40,7 @@ ansible-galaxy collection install -r requirements.yml
 ### Core Infrastructure
 - **`common`** - Base system packages and essential tools
 - **`security`** - Security hardening and monitoring setup
-- **`minio`** - S3-compatible object storage service
+- **`garage`** - S3-compatible object storage service
 - **`compat`** - Docker Compose compatibility layer
 
 ### Services & Applications
@@ -59,7 +59,7 @@ ansible-galaxy collection install -r requirements.yml
   roles:
     - yamisskey.servers.common
     - yamisskey.servers.security
-    - yamisskey.servers.minio
+    - yamisskey.servers.garage
 ```
 
 ### Complete Misskey Stack
@@ -71,7 +71,7 @@ ansible-galaxy collection install -r requirements.yml
   roles:
     - yamisskey.servers.common
     - yamisskey.servers.security
-    - yamisskey.servers.minio
+    - yamisskey.servers.garage
     - yamisskey.servers.misskey
     - yamisskey.servers.monitor
 ```
@@ -104,8 +104,8 @@ This collection automatically manages the following dependencies:
 enable_monitoring: true
 enable_backup: true
 
-# MinIO configuration
-minio_root_user: "admin"
+# Garage configuration
+garage_root_user: "admin"
 
 # Misskey configuration
 misskey_domain: "example.social"
@@ -153,7 +153,7 @@ Roles support granular execution via tags:
 ansible-playbook playbook.yml --tags security
 
 # Storage setup only
-ansible-playbook playbook.yml --tags minio,storage
+ansible-playbook playbook.yml --tags garage,storage
 
 # Monitoring setup only
 ansible-playbook playbook.yml --tags monitoring

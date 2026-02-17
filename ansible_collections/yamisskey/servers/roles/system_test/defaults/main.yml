@@ -12,7 +12,7 @@ system_test_optional_tools:
 
 # サービスエンドポイント設定
 system_test_service_endpoints:
-  - { port: "{{ host_services[inventory_hostname].minio_api | default(9000) }}", path: "/minio/health/live", name: "MinIO", required: false }
+  - { port: "{{ host_services[inventory_hostname].garage_api | default(3900) }}", path: "/health", name: "Garage", required: false }
   - { port: "{{ host_services[inventory_hostname].misskey | default(3000) }}", path: "/api/ping", name: "Misskey", required: false }
   - { port: "{{ host_services[inventory_hostname].prometheus | default(9090) }}", path: "/-/healthy", name: "Prometheus", required: false }
   - { port: "{{ host_services[inventory_hostname].grafana | default(3000) }}", path: "/api/health", name: "Grafana", required: false }

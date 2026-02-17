@@ -63,7 +63,7 @@
       =============================================================
 
       ✅ Configuration: {{ cloudflared_config_dir }}/config.yml
-      ✅ MinIO routing: {{ cloudflared_hostname }} → localhost:{{ cloudflared_service_port }}
+      ✅ Garage routing: {{ cloudflared_hostname }} → localhost:{{ cloudflared_service_port }}
       {% if tunnel_uuid is defined %}
       ✅ Tunnel: {{ cloudflared_tunnel_name }} ({{ tunnel_uuid }})
       ✅ DNS: {{ cloudflared_hostname }} → {{ tunnel_uuid }}.cfargotunnel.com

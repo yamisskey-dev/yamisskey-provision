@@ -7,7 +7,7 @@ readme: README.md
 authors:
   - yamisskey-dev <https://github.com/yamisskey-dev>
 description: >-
-  Enterprise-grade server infrastructure automation collection for Misskey, MinIO,
+  Enterprise-grade server infrastructure automation collection for Misskey, Garage,
   monitoring, and supporting services. Optimized for Linux server environments
   with Docker-based deployments.
 
@@ -20,7 +20,7 @@ tags:
   - infrastructure
   - servers
   - misskey
-  - minio
+  - garage
   - docker
   - security
   - monitor

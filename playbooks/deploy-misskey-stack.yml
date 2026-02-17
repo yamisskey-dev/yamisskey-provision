@@ -15,9 +15,9 @@
     - role: yamisskey.servers.security
       tags: [security, hardening]
 
-    - role: yamisskey.servers.minio
-      tags: [minio, storage]
-      when: "'storage' in group_names or inventory_hostname in groups.get('minio', [])"
+    - role: yamisskey.servers.garage
+      tags: [garage, storage]
+      when: "'storage' in group_names or inventory_hostname in groups.get('garage', [])"
 
     - role: yamisskey.servers.misskey
       tags: [misskey, social]
@@ -34,13 +34,13 @@
 
           📦 Deployed Services:
           - ✅ Core system packages and security hardening
-          - ✅ MinIO object storage backend
+          - ✅ Garage object storage backend
           - ✅ Misskey social media platform
           - ✅ Prometheus monitoring stack
 
           🌐 Service Endpoints:
           - Misskey: https://{{ ansible_fqdn }}
-          - MinIO Console: https://{{ ansible_fqdn }}:9001
+          - Garage Admin: https://{{ ansible_fqdn }}:3903
           - Grafana Dashboard: https://{{ ansible_fqdn }}:3000
 
           🔐 Security Features:
