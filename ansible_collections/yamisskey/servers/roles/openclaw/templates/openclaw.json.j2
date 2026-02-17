@@ -42,6 +42,10 @@
       }
     }
   },
+  "skills": {
+    "allowExternal": false,
+    "sources": ["local"]
+  },
   "commands": {
     "native": "auto",
     "nativeSkills": "auto"
@@ -51,6 +55,7 @@
       "enabled": true,
       "token": "${DISCORD_BOT_TOKEN}",
       "groupPolicy": "open",
+      "requireMention": true,
       "dm": {
         "policy": "disabled"
       },
@@ -71,6 +76,7 @@
         "policy": "pairing"
       },
       "groupPolicy": "open",
+      "requireMention": true,
       "autoJoin": true,
       "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
     }
@@ -85,6 +91,12 @@
       "idleMinutes": {{ openclaw_session_idle_minutes | default(1440) }}
     }
   },
+  "sandbox": {
+    "mode": "{{ openclaw_sandbox_mode | default('docker') }}",
+    "docker": {
+      "image": "{{ openclaw_sandbox_image | default('openclaw/sandbox:latest') }}"
+    }
+  },
   "logging": {
     "redactSensitive": "{{ openclaw_logging_redact | default('tools') }}"
   },
@@ -95,11 +107,12 @@
       "mode": "serve"
     },
     "auth": {
+      "mode": "{{ openclaw_gateway_auth_mode | default('token') }}",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}",
       "allowTailscale": true
     },
     "controlUi": {
-      "enabled": true,
-      "allowInsecureAuth": true
+      "enabled": true
     }
   },
   "plugins": {
