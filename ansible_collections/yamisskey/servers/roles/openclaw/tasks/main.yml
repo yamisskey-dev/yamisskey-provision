@@ -51,8 +51,8 @@
     group: "{{ ansible_user }}"
   loop:
     - { path: "{{ openclaw_dir }}", mode: '0755' }
-    - { path: "{{ openclaw_dir }}/config", mode: '0700' }
-    - { path: "{{ openclaw_dir }}/config/workspace", mode: '0755' }
+    - { path: "{{ openclaw_home }}", mode: '0700' }
+    - { path: "{{ openclaw_home }}/workspace", mode: '0755' }
 
 - name: Configure OpenClaw environment
   template:
@@ -104,7 +104,7 @@
 - name: Deploy OpenClaw configuration
   template:
     src: openclaw.json.j2
-    dest: "{{ openclaw_dir }}/config/openclaw.json"
+    dest: "{{ openclaw_home }}/openclaw.json"
     mode: '0600'
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"

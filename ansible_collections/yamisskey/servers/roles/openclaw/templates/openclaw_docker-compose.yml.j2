@@ -22,8 +22,8 @@ services:
     tmpfs:
       - /tmp:size=100M
     volumes:
-      - {{ openclaw_dir }}/config:/home/node/.openclaw
-      - {{ openclaw_dir }}/config/workspace:/home/node/.openclaw/workspace
+      - {{ openclaw_home }}:{{ openclaw_home }}
+      - {{ openclaw_home }}/workspace:{{ openclaw_home }}/workspace
       - /usr/bin/tailscale:/usr/bin/tailscale:ro
       - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
       - /var/run/docker.sock:/var/run/docker.sock
