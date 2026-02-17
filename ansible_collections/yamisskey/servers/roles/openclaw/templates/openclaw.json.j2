@@ -54,10 +54,6 @@
           "enabled": true,
           "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(80000) }}
         }
-      },
-      "heartbeat": {
-        "enabled": {{ openclaw_heartbeat_enabled | default('true') | lower }},
-        "intervalMinutes": {{ openclaw_heartbeat_interval | default(30) }}
       }
     }
   },
