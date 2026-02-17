@@ -16,8 +16,7 @@
           "scope": "agent",
           "workspaceAccess": "{{ openclaw_agent_workspace_access | default('rw') }}",
           "docker": {
-            "image": "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}:latest",
-            "networkMode": "{{ openclaw_sandbox_network | default('bridge') }}"
+            "image": "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}:latest"
           }
         },
         "tools": {
