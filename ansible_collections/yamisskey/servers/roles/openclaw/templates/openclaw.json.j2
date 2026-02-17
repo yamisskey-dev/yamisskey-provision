@@ -14,8 +14,8 @@
           "docker": {
             "image": "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}:latest",
             "network": "{{ openclaw_sandbox_network | default('bridge') }}",
-            "pidsLimit": {{ openclaw_sandbox_pids_limit | default(512) }},
-            "memory": "{{ openclaw_sandbox_memory | default('2g') }}"
+            "pidsLimit": {{ openclaw_sandbox_pids_limit | default(1024) }},
+            "memory": "{{ openclaw_sandbox_memory | default('4g') }}"
           }
         },
         "tools": {
@@ -25,9 +25,9 @@
     ],
     "defaults": {
       "workspace": "/home/node/.openclaw/workspace",
-      "maxConcurrent": {{ openclaw_max_concurrent | default(4) }},
+      "maxConcurrent": {{ openclaw_max_concurrent | default(8) }},
       "subagents": {
-        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(8) }},
+        "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(16) }},
         "model": "{{ openclaw_subagents_model | default('anthropic/claude-opus-4-6') }}"
       },
       "model": {
@@ -45,14 +45,14 @@
       },
       "contextPruning": {
         "mode": "{{ openclaw_context_pruning_mode | default('cache-ttl') }}",
-        "ttl": "{{ openclaw_context_pruning_ttl | default('6h') }}",
-        "keepLastAssistants": {{ openclaw_context_pruning_keep | default(3) }}
+        "ttl": "{{ openclaw_context_pruning_ttl | default('24h') }}",
+        "keepLastAssistants": {{ openclaw_context_pruning_keep | default(5) }}
       },
       "compaction": {
         "mode": "{{ openclaw_compaction_mode | default('default') }}",
         "memoryFlush": {
           "enabled": true,
-          "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(40000) }}
+          "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(80000) }}
         }
       },
       "heartbeat": {
@@ -72,7 +72,7 @@
       "token": "${DISCORD_BOT_TOKEN}",
       "groupPolicy": "open",
       "dmPolicy": "pairing",
-      "historyLimit": 20,
+      "historyLimit": 50,
       "replyToMode": "off",
       "commands": {
         "native": "auto"
