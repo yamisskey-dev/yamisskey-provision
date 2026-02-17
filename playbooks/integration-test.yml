@@ -20,7 +20,7 @@
 
           📋 Available Test Categories:
           - infrastructure: Docker, disk, memory, network tests
-          - application: Misskey, MinIO, web interface tests
+          - application: Misskey, Garage, web interface tests
           - service: Container status, logs, backup tests
           - performance: Response time, resource usage tests
           - security: SSL, ports, permissions tests

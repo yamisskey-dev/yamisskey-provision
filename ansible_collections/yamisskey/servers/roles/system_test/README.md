@@ -53,7 +53,7 @@ optional_tools:
 #### サービスエンドポイント設定
 ```yaml
 service_endpoints:
-  - { port: "9000", path: "/minio/health/live", name: "MinIO", required: false }
+  - { port: "3900", path: "/health", name: "Garage", required: false }
   - { port: "3000", path: "/api/ping", name: "Misskey", required: false }
   - { port: "9090", path: "/-/healthy", name: "Prometheus", required: false }
   - { port: "3000", path: "/api/health", name: "Grafana", required: false }
@@ -66,7 +66,7 @@ service_endpoints:
 ```yaml
 host_services:
   hostname:
-    minio_api: 9000
+    garage_api: 3900
     misskey: 3000
     prometheus: 9090
     grafana: 3000

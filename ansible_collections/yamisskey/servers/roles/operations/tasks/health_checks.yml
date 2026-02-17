@@ -5,17 +5,17 @@
   register: docker_health
   become: true
 
-- name: Check MinIO health endpoint
+- name: Check Garage health endpoint
   uri:
-    url: "http://localhost:{{ host_services[inventory_hostname].minio_api | default(9000) }}/minio/health/live"
+    url: "http://localhost:{{ host_services[inventory_hostname].garage_api | default(3900) }}/health"
     method: GET
     timeout: 5
-  register: minio_health
+  register: garage_health
   failed_when: false
   when:
-    - (target_service in ['minio', 'all'])
+    - (target_service in ['garage', 'all'])
     - inventory_hostname in host_services
-    - minio_api in host_services[inventory_hostname]
+    - garage_api in host_services[inventory_hostname]
 
 - name: Check Misskey health endpoint
   uri:
@@ -74,8 +74,8 @@
     msg: |
       🏥 Health Check Results for {{ inventory_hostname }}:
       🐳 Docker Service: {{ 'Running' if docker_health.status.ActiveState == 'active' else 'Not Running' }}
-      {% if minio_health is defined %}
-      💾 MinIO: {{ 'OK' if minio_health.status == 200 else 'Failed (' + (minio_health.status | string) + ')' }}
+      {% if garage_health is defined %}
+      💾 Garage: {{ 'OK' if garage_health.status == 200 else 'Failed (' + (garage_health.status | string) + ')' }}
       {% endif %}
       {% if misskey_health is defined %}
       🐦 Misskey: {{ 'OK' if misskey_health.status == 200 else 'Failed (' + (misskey_health.status | string) + ')' }}
@@ -94,7 +94,7 @@
 
       ℹ️ Only services configured for this host ({{ inventory_hostname }}) are checked.
 
-      {% set total_checks = [docker_health] + ([minio_health] if minio_health is defined else []) + ([misskey_health] if misskey_health is defined else []) + ([prometheus_health] if prometheus_health is defined else []) + ([grafana_health] if grafana_health is defined else []) + (custom_health_results.results if custom_health_results is defined else []) %}
+      {% set total_checks = [docker_health] + ([garage_health] if garage_health is defined else []) + ([misskey_health] if misskey_health is defined else []) + ([prometheus_health] if prometheus_health is defined else []) + ([grafana_health] if grafana_health is defined else []) + (custom_health_results.results if custom_health_results is defined else []) %}
       {% set healthy_checks = total_checks | selectattr('status', 'defined') | selectattr('status', 'equalto', 200) | list %}
       {% set docker_healthy = 1 if docker_health.status.ActiveState == 'active' else 0 %}
       📊 Overall Health: {{ (healthy_checks | length + docker_healthy) }}/{{ total_checks | length }} services healthy
@@ -106,7 +106,7 @@
       services_checked: >-
         {{
           ([] +
-           (['minio'] if minio_health is defined else []) +
+           (['garage'] if garage_health is defined else []) +
            (['misskey'] if misskey_health is defined else []) +
            (['prometheus'] if prometheus_health is defined else []) +
            (['grafana'] if grafana_health is defined else []) +
@@ -116,7 +116,7 @@
       healthy_services: >-
         {{
           ([] +
-           (['minio'] if minio_health is defined and minio_health.status == 200 else []) +
+           (['garage'] if garage_health is defined and garage_health.status == 200 else []) +
            (['misskey'] if misskey_health is defined and misskey_health.status == 200 else []) +
            (['prometheus'] if prometheus_health is defined and prometheus_health.status == 200 else []) +
            (['grafana'] if grafana_health is defined and grafana_health.status == 200 else []) +

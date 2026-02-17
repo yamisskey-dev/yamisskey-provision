@@ -1,13 +1,13 @@
 # yamisskey.servers role: cloudflared
 
-MinIO用のCloudflare Tunnel設定を管理するAnsibleロールです。
+Garage用のCloudflare Tunnel設定を管理するAnsibleロールです。
 
 ## 概要
 
 このロールは以下を実行します：
 
 1. **設定ファイルの作成** - `config.yml.j2`Jinjaテンプレートを使用
-2. **MinIO用ルーティング** - drive.yami.ski → Nginx(8080) → MinIO(9000)
+2. **Garage用ルーティング** - drive.yami.ski → Nginx(8080) → Garage(3900)
 
 ## 重要な注意点
 
@@ -42,8 +42,8 @@ make inventory
 cloudflared tunnel login
 
 # トンネル作成
-cloudflared tunnel create raspberrypi-yaminio
-cloudflared tunnel route dns raspberrypi-yaminio drive.yami.ski
+cloudflared tunnel create raspberrypi-garage
+cloudflared tunnel route dns raspberrypi-garage drive.yami.ski
 
 # 設定ファイル更新
 # /home/taka/.cloudflared/config.yml の <Tunnel-UUID> を実際の値に変更
@@ -60,16 +60,16 @@ sudo systemctl start cloudflared
 
 ### アーキテクチャ
 ```
-Internet → Cloudflare → Cloudflared → Nginx(8080) → MinIO(9000)
+Internet → Cloudflare → Cloudflared → Nginx(8080) → Garage(3900)
 ```
 
 ### 生成されるファイル
 - `/home/taka/.cloudflared/config.yml` - Cloudflared設定ファイル
 
-### MinIO設定
+### Garage設定
 - **ホスト名**: `drive.yami.ski`
 - **プロキシ先**: `http://localhost:8080` (Nginx)
-- **最終宛先**: MinIO (localhost:9000)
+- **最終宛先**: Garage (localhost:3900)
 
 ## Misskeyオブジェクトストレージ設定
 
@@ -82,7 +82,7 @@ Internet → Cloudflare → Cloudflared → Nginx(8080) → MinIO(9000)
 
 ## 依存関係
 
-- **MinIOロール**: MinIOサービスが動作中
+- **Garageロール**: Garageサービスが動作中
 - **ModSecurity-Nginxロール**: Nginxプロキシが設定済み
 - **make install**: Cloudflaredバイナリインストール済み
 

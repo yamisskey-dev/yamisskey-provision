@@ -8,7 +8,7 @@
 
 1. [セキュリティアーキテクチャ概要](#セキュリティアーキテクチャ概要)
 2. [SOPS 秘密情報管理](#sops-秘密情報管理)
-3. [MinIO KMS キー管理](#minio-kms-キー管理)
+3. [Garage キー管理](#garage-キー管理)
 4. [Cloudflare セキュリティ](#cloudflare-セキュリティ)
 5. [災害復旧（DR）手順](#災害復旧dr手順)
 6. [セキュリティインシデント対応](#セキュリティインシデント対応)
@@ -28,7 +28,7 @@
 ├─────────────────────────────────────────────────────────┤
 │ Layer 3: UFW (Host-based Firewall)                     │
 ├─────────────────────────────────────────────────────────┤
-│ Layer 4: Encrypted Storage (MinIO KMS + Age)           │
+│ Layer 4: Encrypted Storage (Garage + Age)               │
 ├─────────────────────────────────────────────────────────┤
 │ Layer 5: Secure Backup (R2 + Filen with encryption)    │
 └─────────────────────────────────────────────────────────┘
@@ -39,7 +39,7 @@
 | コンポーネント | 暗号化 | アクセス制御 | バックアップ | モニタリング |
 |-------------|-------|-----------|-----------|------------|
 | SOPS | ✅ AES256-GCM | 🔐 Age Keys | ✅ Git + 分離保管 | ✅ Commit hooks |
-| MinIO KMS | ✅ AES256-GCM | 🔐 IAM Policy | ✅ Cross-region | ✅ Audit logs |
+| Garage | ✅ AES256-GCM | 🔐 IAM Policy | ✅ Cross-region | ✅ Audit logs |
 | Cloudflare | ✅ TLS 1.3 | 🔐 Zero Trust | ✅ Config backup | ✅ Security events |
 | Database | ✅ At-rest + TLS | 🔐 User roles | ✅ Point-in-time | ✅ Query logs |
 
@@ -118,15 +118,15 @@ SOPS_AGE_KEY_FILE=age-key.txt sops deploy/servers/host_vars/balthasar/secrets.ym
 
 ---
 
-## MinIO KMS キー管理
+## Garage キー管理
 
-### KMS アーキテクチャ
+### アーキテクチャ
 
-MinIO は KMS-managed keys と server-side encryption を使用:
+Garage は S3-compatible object storage として server-side encryption を使用:
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│   Client    │───▶│    MinIO     │───▶│ KMS Master  │
+│   Client    │───▶│    Garage    │───▶│  Encryption │
 │ (App/User)  │    │  (Gateway)   │    │    Key      │
 └─────────────┘    └──────────────┘    └─────────────┘
                           │
@@ -137,7 +137,7 @@ MinIO は KMS-managed keys と server-side encryption を使用:
                    └──────────────┘
 ```
 
-### KMS キー回転手順
+### キー回転手順
 
 **実行頻度**: 3ヶ月に1回、または年次セキュリティレビュー時
 
@@ -145,78 +145,70 @@ MinIO は KMS-managed keys と server-side encryption を使用:
 
 ```bash
 # 現在のキー状態確認
-mc admin kms key status minio
+garage key list
 
 # バケット一覧とサイズ確認
-mc ls --summarize minio --recursive
+garage bucket list
 
-# 現在のKMS設定バックアップ
-kubectl get secret minio-kms-config -o yaml > kms-config-backup-$(date +%Y%m%d).yaml
+# 現在の設定バックアップ
+cp /etc/garage.toml garage-config-backup-$(date +%Y%m%d).toml
 ```
 
 #### 2. 新キー生成
 
 ```bash
 # 新しいマスターキーを生成（32文字）
-NEW_KMS_KEY=$(openssl rand -base64 32)
-echo "Generated new KMS key: $NEW_KMS_KEY"
+NEW_KEY=$(openssl rand -base64 32)
+echo "Generated new key: $NEW_KEY"
 
 # SOPS に新キーを追加（例）
 make secrets OPERATION=edit TARGET=servers
-# minio_kms_secret_key_new: "new-key-here"
+# garage_secret_key_new: "new-key-here"
 ```
 
 #### 3. 二重キー許容期間の開始
 
 ```bash
-# MinIO に新キーを追加（既存キーと並行稼働）
-mc admin kms key create minio yamisskey-key-v2
+# Garage に新キーを追加（既存キーと並行稼働）
+garage key create yamisskey-key-v2
 
 # 両キーが利用可能なことを確認
-mc admin kms key list minio
+garage key list
 ```
 
 #### 4. 新キーでの暗号化開始
 
 ```bash
-# 新しいオブジェクトは新キーで暗号化
-mc encrypt set SSE-KMS yamisskey-key-v2 minio/files
-mc encrypt set SSE-KMS yamisskey-key-v2 minio/assets
+# 新しいキーにバケットアクセス権を付与
+garage bucket allow --read --write --owner yamisskey-key-v2 --bucket files
+garage bucket allow --read --write --owner yamisskey-key-v2 --bucket assets
 
 # 設定確認
-mc encrypt info minio/files
-mc encrypt info minio/assets
+garage bucket info files
+garage bucket info assets
 ```
 
 #### 5. 既存データの再暗号化
 
 ```bash
 # 段階的再暗号化（大容量の場合は分割実行）
-# Phase 1: 最新30日のデータ
-mc cp --encrypt-with-new-key --newer-than 30d minio/files minio/files-temp/
-mc mirror minio/files-temp/ minio/files/ --overwrite
-mc rm --recursive minio/files-temp/
-
-# Phase 2: 残りのデータ（夜間・週末実行推奨）
-mc cp --encrypt-with-new-key minio/files minio/files-temp/
-mc mirror minio/files-temp/ minio/files/ --overwrite
-mc rm --recursive minio/files-temp/
+# Garage は内部でデータの再バランスを自動管理
+# 必要に応じて S3 API 経由でオブジェクトのコピーを実施
 ```
 
 #### 6. 検証とクリーンアップ
 
 ```bash
 # データ整合性検証
-mc admin heal minio --recursive --dry-run
+garage repair --yes blocks
 
 # 新キーでのアクセステスト
 curl -I https://drive.yami.ski/files/test-object
 
 # 旧キー無効化（慎重に！）
-mc admin kms key disable minio yamisskey-key-v1
+garage key delete yamisskey-key-v1
 
-# 7日間様子見後、旧キー削除
-# mc admin kms key delete minio yamisskey-key-v1
+# 7日間様子見後、完全削除
 ```
 
 ### キー緊急回転手順（セキュリティインシデント時）
@@ -225,15 +217,15 @@ mc admin kms key disable minio yamisskey-key-v1
 
 ```bash
 # 1. 既存キーの緊急無効化
-mc admin kms key disable minio yamisskey-key-current
+garage key delete yamisskey-key-current
 
 # 2. 新キー即座生成・適用
 EMERGENCY_KEY=$(openssl rand -base64 32)
-mc admin kms key create minio emergency-key-$(date +%Y%m%d)
+garage key create emergency-key-$(date +%Y%m%d)
 
-# 3. バケットアクセス一時制限
-mc policy set none minio/files
-mc policy set none minio/assets
+# 3. バケットアクセス権の再設定
+garage bucket allow --read --write --owner emergency-key-$(date +%Y%m%d) --bucket files
+garage bucket allow --read --write --owner emergency-key-$(date +%Y%m%d) --bucket assets
 
 # 4. インシデント調査後、通常回転手順で復旧
 ```
@@ -294,14 +286,14 @@ cloudflared tunnel delete yamisskey-balthasar-v1
 |---------|------------------|-------------------|-------|
 | KMS キー紛失 | 4時間 | 0分 | Critical |
 | データベース障害 | 2時間 | 15分 | Critical |
-| MinIO ストレージ障害 | 6時間 | 1時間 | High |
+| Garage ストレージ障害 | 6時間 | 1時間 | High |
 | 全サーバ障害 | 24時間 | 4時間 | Medium |
 
 ### KMS キー災害復旧
 
 #### シナリオ: KMS マスターキーが失われた場合
 
-**影響**: MinIO データが復号できず、サービス停止
+**影響**: Garage データが復号できず、サービス停止
 
 **復旧手順**:
 
@@ -322,33 +314,29 @@ cloudflared tunnel delete yamisskey-balthasar-v1
    mc ls r2-backup/encrypted-backups/ --recursive | tail -5
 
    # Age秘密鍵で復号
-   mc cp r2-backup/encrypted-backups/latest-kms.age /tmp/
-   age --decrypt -i ~/.age/key.txt /tmp/latest-kms.age > /tmp/kms-recovery.json
+   mc cp r2-backup/encrypted-backups/latest-garage.age /tmp/
+   age --decrypt -i ~/.age/key.txt /tmp/latest-garage.age > /tmp/garage-recovery.toml
 
-   # KMS設定復元
-   kubectl create secret generic minio-kms-config \
-     --from-file=kms.json=/tmp/kms-recovery.json
+   # Garage 設定復元
+   cp /tmp/garage-recovery.toml /etc/garage.toml
    ```
 
-3. **MinIO サービス復旧**
+3. **Garage サービス復旧**
    ```bash
-   # MinIO 再起動（KMS設定読み込み）
-   yamisskey-provision run minio servers "" restart
+   # Garage 再起動（設定読み込み）
+   yamisskey-provision run garage servers "" restart
 
    # データアクセステスト
-   mc ls minio/files | head -5
+   garage bucket list
    ```
 
 4. **データ整合性検証**
    ```bash
    # ヘルスチェック実行
-   mc admin heal minio --recursive --verbose
+   garage repair --yes blocks
 
    # ランダムサンプリング検証
-   for i in {1..10}; do
-     RANDOM_FILE=$(mc ls minio/files --recursive | shuf -n1 | awk '{print $NF}')
-     mc head minio/files/$RANDOM_FILE || echo "FAILED: $RANDOM_FILE"
-   done
+   garage stats
    ```
 
 ### データベース災害復旧
@@ -391,7 +379,7 @@ yamisskey-provision run system-init servers all
 yamisskey-provision run security servers all
 
 # 3. ストレージ復旧
-yamisskey-provision run minio appliances
+yamisskey-provision run garage appliances
 
 # 4. アプリケーション復旧
 yamisskey-provision run misskey
@@ -444,7 +432,7 @@ emergency_contacts:
 | タスク | 頻度 | 実行時期 | 責任者 |
 |--------|------|----------|--------|
 | SOPS 鍵回転 | 6ヶ月 | 6月/12月 | Admin |
-| MinIO KMS キー回転 | 3ヶ月 | 四半期末 | Admin |
+| Garage キー回転 | 3ヶ月 | 四半期末 | Admin |
 | TLS証明書更新 | 自動 | Let's Encrypt | System |
 | セキュリティパッチ適用 | 週次 | 日曜深夜 | Unattended |
 | 脆弱性スキャン | 月次 | 月初 | Security |
@@ -471,9 +459,9 @@ sudo grep "Failed password" /var/log/auth.log | wc -l
 echo "3. SOPS integrity check..."
 SOPS_AGE_KEY_FILE=age-key.txt sops -d deploy/servers/group_vars/all/secrets.yml >/dev/null && echo "✅ SOPS OK"
 
-# 4. MinIO KMS 健全性
-echo "4. MinIO KMS health..."
-mc admin kms key status minio
+# 4. Garage 健全性
+echo "4. Garage health..."
+garage stats
 
 # 5. バックアップ検証
 echo "5. Backup verification..."
@@ -534,8 +522,8 @@ gpg --armor --cipher-algo AES256 --compress-algo 2 \
 SOPS_AGE_KEY_FILE=age-key.txt sops -d deploy/servers/group_vars/all/secrets.yml
 SOPS_AGE_KEY_FILE=age-key.txt sops deploy/servers/host_vars/balthasar/secrets.yml
 make secrets OPERATION=updatekeys TARGET=servers
-mc admin kms key list minio
-mc admin heal minio --recursive
+garage key list
+garage repair --yes blocks
 age --encrypt -R ~/.age/public-key.txt < secrets.txt > secrets.age
 age --decrypt -i ~/.age/key.txt secrets.age
 ```
@@ -548,7 +536,7 @@ age --decrypt -i ~/.age/key.txt secrets.age
   "event_type": "kms_key_rotation",
   "severity": "info",
   "actor": "admin@yami.ski",
-  "resource": "minio/yamisskey-key-v1",
+  "resource": "garage/yamisskey-key-v1",
   "action": "rotate",
   "result": "success",
   "metadata": {
@@ -562,7 +550,7 @@ age --decrypt -i ~/.age/key.txt secrets.age
 ### C. セキュリティ設定チェックリスト
 
 - [ ] SOPS Age 秘密鍵の保護（オフライン複製 + アクセス制御）
-- [ ] MinIO KMS キー定期回転（3ヶ月以内）
+- [ ] Garage キー定期回転（3ヶ月以内）
 - [ ] TLS 証明書有効期限（30日以上残存）
 - [ ] バックアップ暗号化検証（週次）
 - [ ] アクセスログ異常監視（日次）

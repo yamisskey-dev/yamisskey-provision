@@ -65,7 +65,7 @@ yamisskey-provision test new-role
 ### 構文チェック
 ```bash
 # 単一ロールの構文チェック
-yamisskey-provision test minio syntax
+yamisskey-provision test garage syntax
 
 # 全ロールの構文チェック
 yamisskey-provision test syntax servers
@@ -74,19 +74,19 @@ yamisskey-provision test syntax servers
 ### デプロイテスト（Converge）
 ```bash
 # ロールをデプロイしてエラーがないか確認
-yamisskey-provision test minio converge
+yamisskey-provision test garage converge
 ```
 
 ### 完全テスト
 ```bash
 # 構文チェック→デプロイ→検証→べき等性チェック
-yamisskey-provision test minio
+yamisskey-provision test garage
 ```
 
 ### クリーンアップ
 ```bash
 # テスト環境をクリーンアップ
-yamisskey-provision test minio cleanup
+yamisskey-provision test garage cleanup
 ```
 
 ## 📝 テストケースの書き方

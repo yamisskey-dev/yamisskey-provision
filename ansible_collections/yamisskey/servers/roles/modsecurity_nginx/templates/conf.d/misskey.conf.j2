@@ -107,10 +107,10 @@ server {
         add_header Cache-Control "public, immutable, max-age=2592000";
     }
 
-    # User uploaded images from MinIO
-    location ~* /{{ minio_bucket_name_for_misskey }}/.*\.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff)$ {
-        proxy_pass https://{{ minio_api_server_name }};
-        proxy_set_header Host {{ minio_api_server_name }};
+    # User uploaded images from Garage
+    location ~* /{{ garage_bucket_name_for_misskey }}/.*\.(jpg|jpeg|png|gif|ico|svg|webp|bmp|tiff)$ {
+        proxy_pass https://{{ garage_api_server_name }};
+        proxy_set_header Host {{ garage_api_server_name }};
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;

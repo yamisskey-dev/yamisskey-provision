@@ -382,8 +382,8 @@ tasks:
         echo ""
         echo "🗄️ Storage Services:"
         if command -v curl >/dev/null 2>&1; then
-          echo -n "   MinIO (drive): "
-          STATUS_CODE=$(curl -s -w "%{http_code}" -o /dev/null --max-time 10 https://drive.yami.ski/minio/health/live 2>/dev/null)
+          echo -n "   Garage (drive): "
+          STATUS_CODE=$(curl -s -w "%{http_code}" -o /dev/null --max-time 10 https://drive.yami.ski/health 2>/dev/null)
           if [ "$STATUS_CODE" = "200" ]; then echo "✅ OK"
           elif [ "$STATUS_CODE" = "403" ]; then echo "✅ OK (403 expected)"
           elif [ "$STATUS_CODE" = "000" ]; then echo "❌ NO RESPONSE"
@@ -560,7 +560,7 @@ tasks:
             ;;
           migrate-role)
             echo "🔄 Migrating all secrets in role..."
-            if [ -z "{{.ROLE}}" ]; then echo "❌ ROLE parameter required. Use: task secrets OPERATION=migrate-role ROLE=minio"; exit 1; fi
+            if [ -z "{{.ROLE}}" ]; then echo "❌ ROLE parameter required. Use: task secrets OPERATION=migrate-role ROLE=garage"; exit 1; fi
             ROLES_DIR="ansible_collections/{{.COLLECTION_NS}}/roles"
             ROLE_DIR="$ROLES_DIR/{{.ROLE}}"
             if [ ! -d "$ROLE_DIR" ]; then echo "❌ Role directory not found: $ROLE_DIR"; exit 1; fi
@@ -615,7 +615,7 @@ tasks:
         echo "📋 Environment Variables"
         echo "  TARGET     servers|appliances (default: servers)"
         echo "  FILE       Path to specific YAML file for flexible SOPS management"
-        echo "  ROLE       Role name for role-specific operations (e.g., minio, matrix)"
+        echo "  ROLE       Role name for role-specific operations (e.g., garage, matrix)"
         echo "  LIMIT      Restrict to specific hosts (e.g., caspar,balthasar)"
         echo "  TAGS       Run specific tags only (e.g., install,config)"
         echo "  PLAYBOOK   Single playbook name"
@@ -647,7 +647,7 @@ tasks:
         echo "  task secrets OPERATION=view [TARGET=servers] [FILE=secrets.yml]  View decrypted secrets"
         echo "  task secrets OPERATION=status [TARGET=servers]                   Validate secret configuration"
         echo "  task secrets OPERATION=updatekeys [TARGET=servers]               Rotate encryption recipients"
-        echo "  task secrets OPERATION=migrate-role ROLE=minio                   Migrate entire role"
+        echo "  task secrets OPERATION=migrate-role ROLE=garage                   Migrate entire role"
         echo "  task secrets OPERATION=migrate-all                               Migrate all legacy files"
         echo "  task secrets OPERATION=validate-migration                        Check migration status"
         echo ""
@@ -657,8 +657,8 @@ tasks:
         echo "  task update                          Update Galaxy collections to latest versions"
         echo ""
         echo "💡 Examples:"
-        echo "  task run PLAYBOOK=minio TARGET=servers LIMIT=balthasar TAGS=buckets"
+        echo "  task run PLAYBOOK=garage TARGET=servers LIMIT=balthasar TAGS=buckets"
         echo "  task check PLAYBOOK=security TARGET=servers"
         echo "  task secrets OPERATION=edit TARGET=servers HOST=balthasar"
-        echo "  task test ROLE=minio MODE=syntax"
-        echo "  task deploy PLAYBOOKS='common security minio' TARGET=servers LIMIT=balthasar"
+        echo "  task test ROLE=garage MODE=syntax"
+        echo "  task deploy PLAYBOOKS='common security garage' TARGET=servers LIMIT=balthasar"

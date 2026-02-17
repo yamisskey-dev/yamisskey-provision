@@ -173,7 +173,7 @@ minecraft_view_distance: 10
 ### Raspberry Pi 5でのメモリ配分 (8GB総容量)
 ```
 システム予約:        ~1GB
-Minio:               ~1GB
+Garage:              ~1GB
 Minecraft:           4GB
 その他/バッファ:      ~1.5GB
 ```

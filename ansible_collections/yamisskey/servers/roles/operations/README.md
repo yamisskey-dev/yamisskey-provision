@@ -39,7 +39,7 @@ ansible-playbook -i inventory playbooks/operations.yml -e op=status -e service=m
 ansible-playbook -i inventory playbooks/operations.yml -e op=health
 
 # ログ確認
-ansible-playbook -i inventory playbooks/operations.yml -e op=logs -e service=minio
+ansible-playbook -i inventory playbooks/operations.yml -e op=logs -e service=garage
 ```
 
 ## サポート操作
@@ -77,7 +77,7 @@ ansible-playbook -i inventory playbooks/operations.yml -e op=logs -e service=min
 ## 対応サービス
 
 - `misskey` - Misskey SNS
-- `minio` - オブジェクトストレージ
+- `garage` - オブジェクトストレージ
 - `monitor` - Prometheus/Grafana
 - `cloudflared` - Cloudflare Tunnel
 - `ai` - AI サービス

@@ -4,7 +4,7 @@
 
 - name: Test Docker container status
   shell: |
-    docker ps --format "table {{ '{{.Names}}\t{{.Status}}' }}" | grep -E "(misskey|minio|postgres|redis|nginx)" | wc -l
+    docker ps --format "table {{ '{{.Names}}\t{{.Status}}' }}" | grep -E "(misskey|garage|postgres|redis|nginx)" | wc -l
   register: container_status_test
   changed_when: false
   when: service_tests.container_status | bool
@@ -23,7 +23,7 @@
     name: "{{ item }}"
   loop:
     - misskey
-    - minio
+    - garage
     - postgres
   register: integration_log_availability_containers
   failed_when: false
@@ -100,7 +100,7 @@
 
 - name: Test persistent volume mounts
   shell: |
-    docker volume ls --format "{{ '{{.Name}}' }}" | grep -E "(misskey|minio|postgres)" | wc -l
+    docker volume ls --format "{{ '{{.Name}}' }}" | grep -E "(misskey|garage|postgres)" | wc -l
   register: volume_mount_test
   changed_when: false
   when: service_tests.container_status | bool

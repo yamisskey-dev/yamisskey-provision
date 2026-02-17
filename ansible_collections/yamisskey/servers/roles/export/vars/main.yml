@@ -4,7 +4,7 @@ docker_services_www:
 
 docker_services_opt:
   - misskey-backup
-  - minio
+  - garage
 
 docker_services_home:
   - ai

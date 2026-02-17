@@ -16,15 +16,15 @@
   when: application_tests.misskey_api | bool
   tags: ['app', 'misskey', 'api']
 
-- name: Test MinIO health endpoint
+- name: Test Garage health endpoint
   uri:
-    url: "http://localhost:9000/minio/health/live"
+    url: "http://localhost:3900/health"
     method: GET
     timeout: 10
-  register: minio_health_test
+  register: garage_health_test
   failed_when: false
-  when: application_tests.minio_health | bool
-  tags: ['app', 'minio', 'api']
+  when: application_tests.garage_health | bool
+  tags: ['app', 'garage', 'api']
 
 - name: Test web interface accessibility
   uri:
@@ -36,7 +36,7 @@
   failed_when: false
   loop:
     - { port: 3000, path: "/" }          # Misskey
-    - { port: 9001, path: "/" }          # MinIO Console
+    - { port: 3903, path: "/" }          # Garage Admin
     - { port: 80, path: "/" }            # Nginx
   when: application_tests.web_interface | bool
   tags: ['app', 'web', 'interface']
@@ -63,12 +63,12 @@
 
 - name: Test file upload functionality
   uri:
-    url: "http://localhost:9000/minio/health/ready"
+    url: "http://localhost:3900/health"
     method: GET
     timeout: 5
   register: file_upload_test
   failed_when: false
-  when: application_tests.minio_health | bool
+  when: application_tests.garage_health | bool
   tags: ['app', 'upload', 'storage']
 
 - name: Set application test results
@@ -82,10 +82,10 @@
         {% else %}
         fail
         {% endif %}
-      minio_health: >-
-        {% if not application_tests.minio_health %}
+      garage_health: >-
+        {% if not application_tests.garage_health %}
         skip
-        {% elif minio_health_test is defined and minio_health_test.status is defined and minio_health_test.status == 200 %}
+        {% elif garage_health_test is defined and garage_health_test.status is defined and garage_health_test.status == 200 %}
         pass
         {% else %}
         fail
@@ -115,7 +115,7 @@
         fail
         {% endif %}
       file_storage: >-
-        {% if not application_tests.minio_health %}
+        {% if not application_tests.garage_health %}
         skip
         {% elif file_upload_test is defined and file_upload_test.status is defined and file_upload_test.status == 200 %}
         pass

@@ -123,8 +123,8 @@
 #### ジョブ構成
 1. **prepare-inventory**: テスト用インベントリ作成・共有
 2. **servers-core-infrastructure**: [common, security, system-init]
-3. **servers-application-stack**: [misskey, minio, monitor]
-4. **appliances-truenas**: [setup, migrate-minio-truenas]
+3. **servers-application-stack**: [misskey, garage, monitor]
+4. **appliances-truenas**: [setup, migrate-garage-truenas]
 
 #### テスト戦略
 - **ドライラン**: `--check --diff`での安全な検証

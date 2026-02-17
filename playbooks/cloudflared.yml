@@ -10,7 +10,7 @@
   # Override default settings if needed:
   # vars:
   #   cloudflared_skip_install: false  # Set to false to enable automatic installation
-  #   cloudflared_app_name: "custom-app"  # Override default "yaminio"
+  #   cloudflared_app_name: "custom-app"  # Override default "garage"
   #   cloudflared_hostname: "custom.yami.ski"  # Override default hostname
 
   roles:
