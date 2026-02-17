@@ -1,11 +1,5 @@
 ---
 collections:
-  - name: yamisskey.servers
-    source: ./ansible_collections/yamisskey/servers
-    type: dir
-  - name: yamisskey.appliances
-    source: ./ansible_collections/yamisskey/appliances
-    type: dir
   - name: community.docker
     version: ">=3.0.0"
   - name: community.sops
