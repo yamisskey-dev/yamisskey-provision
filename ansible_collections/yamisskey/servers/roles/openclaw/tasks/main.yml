@@ -29,6 +29,15 @@
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
     openclaw_matrix_password: "{{ openclaw_inventory_secrets.matrix_password }}"
 
+- name: Get Docker group GID
+  command: getent group docker
+  register: docker_group_result
+  changed_when: false
+
+- name: Set Docker GID fact
+  set_fact:
+    openclaw_docker_gid: "{{ docker_group_result.stdout.split(':')[2] }}"
+
 - name: Create OpenClaw directories
   file:
     path: "{{ item.path }}"
