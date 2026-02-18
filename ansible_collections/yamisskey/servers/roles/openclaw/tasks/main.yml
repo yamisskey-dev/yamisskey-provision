@@ -29,6 +29,8 @@
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
     openclaw_matrix_password: "{{ openclaw_inventory_secrets.matrix_password }}"
     openclaw_brave_api_key: "{{ openclaw_inventory_secrets.brave_api_key | default('') }}"
+    openclaw_misskey_token: "{{ openclaw_inventory_secrets.misskey_token | default('') }}"
+    openclaw_misskey_beta_token: "{{ openclaw_inventory_secrets.misskey_beta_token | default('') }}"
 
 - name: Install development tools
   include_tasks: devtools.yml
