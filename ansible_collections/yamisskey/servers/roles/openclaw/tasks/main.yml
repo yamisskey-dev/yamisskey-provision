@@ -28,6 +28,7 @@
     openclaw_discord_webhook_url: "{{ openclaw_inventory_secrets.discord_webhook_url }}"
     openclaw_discord_bot_token: "{{ openclaw_inventory_secrets.discord_bot_token }}"
     openclaw_matrix_password: "{{ openclaw_inventory_secrets.matrix_password }}"
+    openclaw_brave_api_key: "{{ openclaw_inventory_secrets.brave_api_key | default('') }}"
 
 - name: Install development tools
   include_tasks: devtools.yml
