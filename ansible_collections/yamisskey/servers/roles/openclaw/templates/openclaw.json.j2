@@ -56,6 +56,16 @@
           "enabled": true,
           "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(80000) }}
         }
+      },
+      "heartbeat": {
+        "every": "{{ openclaw_heartbeat_every | default('2h') }}",
+        "model": "{{ openclaw_heartbeat_model | default('openai-codex/gpt-5.1-codex-mini') }}",
+        "target": "{{ openclaw_heartbeat_target | default('none') }}",
+        "activeHours": {
+          "start": {{ openclaw_heartbeat_active_start | default(9) }},
+          "end": {{ openclaw_heartbeat_active_end | default(23) }},
+          "timezone": "{{ openclaw_heartbeat_timezone | default('Asia/Tokyo') }}"
+        }
       }
     }
   },
