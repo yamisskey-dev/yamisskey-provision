@@ -56,7 +56,7 @@ RUN ARCH=$(uname -m) \
     && curl -fsSL "https://github.com/astral-sh/uv/releases/download/0.5.24/uv-${ARCH}-unknown-linux-musl.tar.gz" \
     | tar xz --strip-components=1 -C /usr/local/bin "uv-${ARCH}-unknown-linux-musl/uv" "uv-${ARCH}-unknown-linux-musl/uvx" \
     && curl -fsSL "https://github.com/astral-sh/ruff/releases/download/0.9.6/ruff-${ARCH}-unknown-linux-musl.tar.gz" \
-    | tar xz -C /usr/local/bin
+    | tar xz --strip-components=1 -C /usr/local/bin "ruff-${ARCH}-unknown-linux-musl/ruff"
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -66,7 +66,8 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
 
 # Go
 RUN ARCH=$(dpkg --print-architecture) \
-    && curl -fsSL "https://go.dev/dl/go1.23.6.linux-${ARCH}.tar.gz" | tar xz -C /usr/local
+    && curl -fsSL "https://go.dev/dl/go1.23.6.linux-${ARCH}.tar.gz" | tar xz -C /usr/local \
+    && ln -s /usr/local/go/bin/* /usr/local/bin/
 ENV PATH="/usr/local/go/bin:${PATH}"
 
 # Node.js + pnpm via corepack
