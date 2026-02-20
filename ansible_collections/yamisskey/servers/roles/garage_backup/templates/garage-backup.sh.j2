@@ -133,21 +133,39 @@ echo "Creating LMDB-safe metadata snapshot..."
 # Copy non-LMDB files (node keys, config, etc.)
 rsync -a --exclude='data.mdb' --exclude='lock.mdb' "$META_DIR/" "$SNAPSHOT_DIR/"
 
-# Hot-copy each LMDB environment
+# Hot-copy each LMDB environment (compact mode: only used pages)
 LMDB_COUNT=0
 while IFS= read -r -d '' mdb_file; do
     env_dir=$(dirname "$mdb_file")
     rel_path="${env_dir#"$META_DIR"}"
     dest_dir="$SNAPSHOT_DIR${rel_path}"
     mkdir -p "$dest_dir"
-    echo "  mdb_copy: .${rel_path:-/}"
-    if ! mdb_copy "$env_dir" "$dest_dir"; then
-        echo "ERROR: mdb_copy failed for $env_dir"
+    src_size=$(du -sh "$mdb_file" 2>/dev/null | cut -f1)
+    echo "  mdb_copy -c: .${rel_path:-/} (source: $src_size)"
+
+    # Run mdb_copy in background with progress monitoring
+    mdb_copy -c "$env_dir" "$dest_dir" &
+    MDB_PID=$!
+    while kill -0 "$MDB_PID" 2>/dev/null; do
+        dst_file="$dest_dir/data.mdb"
+        if [[ -f "$dst_file" ]]; then
+            cur_size=$(du -sh "$dst_file" 2>/dev/null | cut -f1)
+            echo "    progress: $cur_size / $src_size"
+        fi
+        sleep 5
+    done
+    wait "$MDB_PID"
+    MDB_EXIT=$?
+
+    if [[ $MDB_EXIT -ne 0 ]]; then
+        echo "ERROR: mdb_copy failed for $env_dir (exit $MDB_EXIT)"
 {% if garage_backup_discord_webhook_url %}
-        send_discord_notification "Failed" "15158332" "mdb_copy failed for $env_dir"
+        send_discord_notification "Failed" "15158332" "mdb_copy failed for $env_dir (exit $MDB_EXIT)"
 {% endif %}
         exit 1
     fi
+    dst_size=$(du -sh "$dest_dir/data.mdb" 2>/dev/null | cut -f1)
+    echo "    done: $dst_size (compact)"
     LMDB_COUNT=$((LMDB_COUNT + 1))
 done < <(find "$META_DIR" -name "data.mdb" -print0)
 
