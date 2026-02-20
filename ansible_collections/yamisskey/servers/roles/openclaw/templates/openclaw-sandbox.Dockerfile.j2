@@ -28,12 +28,6 @@ RUN ARCH=$(uname -m) \
     && curl -fsSL "https://github.com/ducaale/xh/releases/download/v0.23.1/xh-v0.23.1-${ARCH}-unknown-linux-musl.tar.gz" \
     | tar xz --strip-components=1 -C /usr/local/bin "xh-v0.23.1-${ARCH}-unknown-linux-musl/xh"
 
-# gitleaks (secret detection)
-RUN ARCH=$(uname -m) \
-    && GL_ARCH=$([ "$ARCH" = "x86_64" ] && echo "x64" || echo "arm64") \
-    && curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_${GL_ARCH}.tar.gz" \
-    | tar xz -C /usr/local/bin gitleaks
-
 # tokei (code statistics)
 RUN ARCH=$(uname -m) \
     && curl -fsSL "https://github.com/XAMPPRocky/tokei/releases/download/v12.1.2/tokei-${ARCH}-unknown-linux-musl.tar.gz" \
@@ -87,4 +81,7 @@ RUN useradd -m -s /bin/bash claw
 USER claw
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
+# Go tools (installed as claw user)
+RUN go install github.com/gitleaks/gitleaks/v8@latest
+
 WORKDIR /home/claw/workspace
