@@ -3,14 +3,12 @@ FROM {{ openclaw_sandbox_base_image | default('debian:bookworm-slim') }}
 # System packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    python3 python3-pip python3-venv \
-    build-essential \
+    python3 python3-venv \
     curl wget openssh-client ca-certificates gnupg \
     jq unzip zip xz-utils rsync file patch \
     sqlite3 dnsutils socat netcat-openbsd procps \
     traceroute whois mtr-tiny \
-    strace shellcheck \
-    pandoc \
+    shellcheck \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
@@ -61,7 +59,4 @@ RUN useradd -m -s /bin/bash claw
 USER claw
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
-# Go tools (installed as claw user)
-RUN go install github.com/gitleaks/gitleaks/v8@latest
-
 WORKDIR /home/claw/workspace
