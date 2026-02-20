@@ -1,4 +1,10 @@
 ---
+- name: Install lmdb-utils for mdb_copy
+  apt:
+    name: lmdb-utils
+    state: present
+  become: true
+
 - name: Create backup directories
   file:
     path: "{{ item }}"

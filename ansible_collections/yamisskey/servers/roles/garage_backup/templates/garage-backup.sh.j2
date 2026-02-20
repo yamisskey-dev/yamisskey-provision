@@ -120,12 +120,45 @@ if [[ $RSYNC_EXIT -ne 0 ]]; then
     exit $RSYNC_EXIT
 fi
 
-# Run rsync for metadata directory
+# Create LMDB-safe snapshot of metadata before rsync.
+# Garage writes to LMDB files continuously; rsyncing live DB files produces
+# corrupted backups and exit code 23. mdb_copy creates a consistent hot copy.
+SNAPSHOT_DIR=$(mktemp -d)
+cleanup_snapshot() { rm -rf "$SNAPSHOT_DIR"; }
+trap cleanup_snapshot EXIT
+
 echo ""
+echo "Creating LMDB-safe metadata snapshot..."
+
+# Copy non-LMDB files (node keys, config, etc.)
+rsync -a --exclude='data.mdb' --exclude='lock.mdb' "$META_DIR/" "$SNAPSHOT_DIR/"
+
+# Hot-copy each LMDB environment
+LMDB_COUNT=0
+while IFS= read -r -d '' mdb_file; do
+    env_dir=$(dirname "$mdb_file")
+    rel_path="${env_dir#"$META_DIR"}"
+    dest_dir="$SNAPSHOT_DIR${rel_path}"
+    mkdir -p "$dest_dir"
+    echo "  mdb_copy: .${rel_path:-/}"
+    if ! mdb_copy "$env_dir" "$dest_dir"; then
+        echo "ERROR: mdb_copy failed for $env_dir"
+{% if garage_backup_discord_webhook_url %}
+        send_discord_notification "Failed" "15158332" "mdb_copy failed for $env_dir"
+{% endif %}
+        exit 1
+    fi
+    LMDB_COUNT=$((LMDB_COUNT + 1))
+done < <(find "$META_DIR" -name "data.mdb" -print0)
+
+echo "  Snapshot complete ($LMDB_COUNT LMDB environments)"
+echo ""
+
+# Run rsync for metadata snapshot
 echo "Starting rsync for metadata..."
 rsync $RSYNC_OPTS \
     -e "ssh -i $SSH_KEY -o BatchMode=yes -o IdentitiesOnly=yes" \
-    "$META_DIR/" \
+    "$SNAPSHOT_DIR/" \
     "${TRUENAS_USER}@${TRUENAS_HOST}:${TRUENAS_DEST}/meta/"
 
 RSYNC_EXIT=$?
