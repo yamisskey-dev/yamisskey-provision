@@ -4,13 +4,13 @@ FROM {{ openclaw_sandbox_base_image | default('debian:bookworm-slim') }}
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     python3 python3-pip python3-venv \
-    build-essential cmake pkg-config autoconf automake \
+    build-essential \
     curl wget openssh-client ca-certificates gnupg \
     jq unzip zip xz-utils rsync file patch \
     sqlite3 dnsutils socat netcat-openbsd procps \
     traceroute whois mtr-tiny \
     strace shellcheck \
-    pandoc universal-ctags \
+    pandoc \
     bash \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,15 +24,6 @@ RUN ARCH=$(dpkg --print-architecture) \
 RUN ARCH=$(dpkg --print-architecture) \
     && curl -fsSL "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_${ARCH}" -o /usr/local/bin/yq \
     && chmod +x /usr/local/bin/yq
-RUN ARCH=$(uname -m) \
-    && curl -fsSL "https://github.com/ducaale/xh/releases/download/v0.23.1/xh-v0.23.1-${ARCH}-unknown-linux-musl.tar.gz" \
-    | tar xz --strip-components=1 -C /usr/local/bin "xh-v0.23.1-${ARCH}-unknown-linux-musl/xh"
-
-# tokei (code statistics)
-RUN ARCH=$(uname -m) \
-    && curl -fsSL "https://github.com/XAMPPRocky/tokei/releases/download/v12.1.2/tokei-${ARCH}-unknown-linux-musl.tar.gz" \
-    | tar xz -C /usr/local/bin
-
 # uv + ruff (Python tooling)
 RUN ARCH=$(uname -m) \
     && curl -fsSL "https://github.com/astral-sh/uv/releases/download/0.5.24/uv-${ARCH}-unknown-linux-musl.tar.gz" \
@@ -57,17 +48,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_{{ openclaw_node_version | defau
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable
-
-# Bun
-RUN ARCH=$(uname -m) \
-    && BUN_ARCH=$([ "$ARCH" = "x86_64" ] && echo "x64" || echo "aarch64") \
-    && curl -fsSL "https://github.com/oven-sh/bun/releases/download/bun-v1.1.43/bun-linux-${BUN_ARCH}.zip" -o /tmp/bun.zip \
-    && unzip -o /tmp/bun.zip -d /tmp && mv /tmp/bun-linux-${BUN_ARCH}/bun /usr/local/bin/ && rm -rf /tmp/bun*
-
-# Deno
-RUN ARCH=$(uname -m) \
-    && curl -fsSL "https://dl.deno.land/release/v2.1.9/deno-${ARCH}-unknown-linux-gnu.zip" -o /tmp/deno.zip \
-    && unzip -o /tmp/deno.zip -d /usr/local/bin && rm /tmp/deno.zip
 
 # Docker CLI (for DooD container orchestration)
 RUN install -m 0755 -d /etc/apt/keyrings \
