@@ -3,10 +3,10 @@ FROM {{ openclaw_sandbox_base_image | default('debian:bookworm-slim') }}
 # System packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
-    python3 python3-venv \
+    python3 \
     curl wget openssh-client ca-certificates gnupg \
-    jq unzip zip xz-utils rsync file patch \
-    sqlite3 dnsutils socat netcat-openbsd procps \
+    jq unzip zip xz-utils file \
+    sqlite3 dnsutils netcat-openbsd procps \
     traceroute whois mtr-tiny \
     shellcheck \
     bash \
