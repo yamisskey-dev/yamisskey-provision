@@ -1,4 +1,1 @@
 FROM {{ openclaw_image }}
-RUN cd /app/extensions/matrix && \
-    node -e "const p=require('./package.json'); delete p.devDependencies; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2))" && \
-    npm install --no-package-lock
