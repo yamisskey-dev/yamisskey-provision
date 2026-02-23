@@ -83,17 +83,6 @@
     "nativeSkills": "auto"
   },
   "channels": {
-    "discord": {
-      "enabled": true,
-      "token": "${DISCORD_BOT_TOKEN}",
-      "groupPolicy": "open",
-      "dmPolicy": "pairing",
-      "historyLimit": 50,
-      "replyToMode": "off",
-      "commands": {
-        "native": "auto"
-      }
-    },
     "telegram": {
       "enabled": true,
       "botToken": "${TELEGRAM_BOT_TOKEN}",
@@ -160,11 +149,8 @@
     }
   },
   "plugins": {
-    "allow": ["discord", "telegram", "matrix"],
+    "allow": ["telegram", "matrix"],
     "entries": {
-      "discord": {
-        "enabled": true
-      },
       "telegram": {
         "enabled": true
       },
