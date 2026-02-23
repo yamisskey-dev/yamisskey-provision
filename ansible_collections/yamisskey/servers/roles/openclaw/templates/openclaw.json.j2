@@ -118,7 +118,7 @@
     "port": {{ openclaw_gateway_port | default(18789) }},
     "trustedProxies": ["127.0.0.1", "::1", "::ffff:127.0.0.1"],
     "tailscale": {
-      "mode": "serve"
+      "mode": "{{ openclaw_tailscale_mode | default('serve') }}"
     },
     "auth": {
       "mode": "{{ openclaw_gateway_auth_mode | default('token') }}",
@@ -127,7 +127,7 @@
     },
     "controlUi": {
       "enabled": true,
-      "allowInsecureAuth": false,
+      "allowInsecureAuth": {{ openclaw_allow_insecure_auth | default('true') | lower }},
       "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default('true') | lower }}
     }
   },
