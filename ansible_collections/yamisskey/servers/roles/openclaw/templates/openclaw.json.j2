@@ -83,28 +83,19 @@
     "nativeSkills": "auto"
   },
   "channels": {
-    "discord": {
+    "telegram": {
       "enabled": true,
-      "token": "${DISCORD_BOT_TOKEN}",
-      "groupPolicy": "open",
+      "botToken": "${TELEGRAM_BOT_TOKEN}",
       "dmPolicy": "pairing",
-      "historyLimit": 50,
-      "replyToMode": "off",
+      "groupPolicy": "open",
       "commands": {
         "native": "auto"
+      },
+      "groups": {
+        "*": {
+          "requireMention": {{ openclaw_telegram_require_mention | default('false') | lower }}
+        }
       }
-    },
-    "matrix": {
-      "enabled": true,
-      "homeserver": "{{ openclaw_matrix_homeserver }}",
-      "userId": "@openclaw:matrix.{{ domain }}",
-      "password": "${MATRIX_PASSWORD}",
-      "encryption": true,
-      "deviceName": "OpenClaw Gateway",
-      "dmPolicy": "pairing",
-      "groupPolicy": "open",
-      "autoJoin": true,
-      "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
     }
   },
   "messages": {
@@ -127,7 +118,7 @@
     "port": {{ openclaw_gateway_port | default(18789) }},
     "trustedProxies": ["127.0.0.1", "::1", "::ffff:127.0.0.1"],
     "tailscale": {
-      "mode": "serve"
+      "mode": "{{ openclaw_tailscale_mode | default('serve') }}"
     },
     "auth": {
       "mode": "{{ openclaw_gateway_auth_mode | default('token') }}",
@@ -136,7 +127,7 @@
     },
     "controlUi": {
       "enabled": true,
-      "allowInsecureAuth": false,
+      "allowInsecureAuth": {{ openclaw_allow_insecure_auth | default('true') | lower }},
       "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default('true') | lower }}
     }
   },
@@ -146,12 +137,9 @@
     }
   },
   "plugins": {
-    "allow": ["discord", "matrix"],
+    "allow": ["telegram"],
     "entries": {
-      "discord": {
-        "enabled": true
-      },
-      "matrix": {
+      "telegram": {
         "enabled": true
       }
     }
