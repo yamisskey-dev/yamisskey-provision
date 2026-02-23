@@ -96,18 +96,6 @@
           "requireMention": {{ openclaw_telegram_require_mention | default('false') | lower }}
         }
       }
-    },
-    "matrix": {
-      "enabled": true,
-      "homeserver": "{{ openclaw_matrix_homeserver }}",
-      "userId": "@openclaw:matrix.{{ domain }}",
-      "password": "${MATRIX_PASSWORD}",
-      "encryption": true,
-      "deviceName": "OpenClaw Gateway",
-      "dmPolicy": "pairing",
-      "groupPolicy": "open",
-      "autoJoin": true,
-      "threadReplies": "{{ openclaw_matrix_thread_replies | default('inbound') }}"
     }
   },
   "messages": {
@@ -149,12 +137,9 @@
     }
   },
   "plugins": {
-    "allow": ["telegram", "matrix"],
+    "allow": ["telegram"],
     "entries": {
       "telegram": {
-        "enabled": true
-      },
-      "matrix": {
         "enabled": true
       }
     }

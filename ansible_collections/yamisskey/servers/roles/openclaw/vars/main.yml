@@ -7,5 +7,3 @@ openclaw_image: 'ghcr.io/openclaw/openclaw:latest'
 openclaw_gateway_port: "{{ host_services[inventory_hostname].openclaw_gateway | default(18789) }}"
 openclaw_bridge_port: "{{ host_services[inventory_hostname].openclaw_bridge | default(18790) }}"
 openclaw_gateway_bind: 'loopback'
-# Matrix homeserver: connect via Tailscale to bypass Cloudflare WAF
-openclaw_matrix_homeserver: "http://{{ hostvars['balthasar'].ansible_host }}:{{ host_services.balthasar.synapse }}"
