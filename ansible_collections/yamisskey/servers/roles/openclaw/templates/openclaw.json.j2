@@ -94,6 +94,20 @@
         "native": "auto"
       }
     },
+    "telegram": {
+      "enabled": true,
+      "botToken": "${TELEGRAM_BOT_TOKEN}",
+      "dmPolicy": "pairing",
+      "groupPolicy": "open",
+      "commands": {
+        "native": "auto"
+      },
+      "groups": {
+        "*": {
+          "requireMention": {{ openclaw_telegram_require_mention | default('false') | lower }}
+        }
+      }
+    },
     "matrix": {
       "enabled": true,
       "homeserver": "{{ openclaw_matrix_homeserver }}",
@@ -146,9 +160,12 @@
     }
   },
   "plugins": {
-    "allow": ["discord", "matrix"],
+    "allow": ["discord", "telegram", "matrix"],
     "entries": {
       "discord": {
+        "enabled": true
+      },
+      "telegram": {
         "enabled": true
       },
       "matrix": {
