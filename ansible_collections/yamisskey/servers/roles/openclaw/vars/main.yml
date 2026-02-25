@@ -7,3 +7,5 @@ openclaw_image: 'ghcr.io/openclaw/openclaw:latest'
 openclaw_gateway_port: "{{ host_services[inventory_hostname].openclaw_gateway | default(18789) }}"
 openclaw_bridge_port: "{{ host_services[inventory_hostname].openclaw_bridge | default(18790) }}"
 openclaw_gateway_bind: 'loopback'
+openclaw_skills:
+  - 'pskoett/self-improving-agent'
