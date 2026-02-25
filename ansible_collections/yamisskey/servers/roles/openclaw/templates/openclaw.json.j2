@@ -61,10 +61,10 @@
       "heartbeat": {
         "every": "{{ openclaw_heartbeat_every | default('30m') }}",
         "model": "{{ openclaw_heartbeat_model | default('openai-codex/gpt-5.1-codex-mini') }}",
-        "target": "{{ openclaw_heartbeat_target | default('none') }}",
+        "target": "{{ openclaw_heartbeat_target | default('telegram') }}",
         "activeHours": {
-          "start": "{{ openclaw_heartbeat_active_start | default('09:00') }}",
-          "end": "{{ openclaw_heartbeat_active_end | default('17:00') }}",
+          "start": "{{ openclaw_heartbeat_active_start | default('07:00') }}",
+          "end": "{{ openclaw_heartbeat_active_end | default('01:00') }}",
           "timezone": "{{ openclaw_heartbeat_timezone | default('Asia/Tokyo') }}"
         }
       }
@@ -106,7 +106,7 @@
     "dmScope": "{{ openclaw_session_dm_scope | default('per-channel-peer') }}",
     "reset": {
       "mode": "{{ openclaw_session_reset_mode | default('idle') }}",
-      "idleMinutes": {{ openclaw_session_idle_minutes | default(4320) }}
+      "idleMinutes": {{ openclaw_session_idle_minutes | default(10080) }}
     }
   },
   "logging": {
