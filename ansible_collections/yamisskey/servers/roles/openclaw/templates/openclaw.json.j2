@@ -25,6 +25,7 @@
     ],
     "defaults": {
       "workspace": "/home/node/.openclaw/workspace",
+      "thinkingDefault": "{{ openclaw_thinking_default | default('high') }}",
       "maxConcurrent": {{ openclaw_max_concurrent | default(8) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(16) }},
