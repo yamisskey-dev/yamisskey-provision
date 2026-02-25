@@ -62,6 +62,7 @@
         "every": "{{ openclaw_heartbeat_every | default('30m') }}",
         "model": "{{ openclaw_heartbeat_model | default('openai-codex/gpt-5.1-codex-mini') }}",
         "target": "{{ openclaw_heartbeat_target | default('telegram') }}",
+        "prompt": "{{ openclaw_heartbeat_prompt | default('Read HEARTBEAT.md if it exists. Then: (1) Review .learnings/ for recurring patterns (recurrence >= 3) and promote to project memory. (2) Check for unresolved errors and attempt safe fixes. (3) If a conversation was left mid-task, summarize status. (4) If nothing needs attention, reply HEARTBEAT_OK. If HEARTBEAT.md does not exist, create it with your own improvement checklist, then reply HEARTBEAT_OK.') }}",
         "activeHours": {
           "start": "{{ openclaw_heartbeat_active_start | default('07:00') }}",
           "end": "{{ openclaw_heartbeat_active_end | default('01:00') }}",
