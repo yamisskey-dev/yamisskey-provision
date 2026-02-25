@@ -9,3 +9,6 @@ openclaw_bridge_port: "{{ host_services[inventory_hostname].openclaw_bridge | de
 openclaw_gateway_bind: 'loopback'
 openclaw_skills:
   - 'self-improving-agent'
+  - 'clawlist'
+  - 'flaw0'
+  - 'deepwiki'
