@@ -122,6 +122,9 @@
   loop: "{{ openclaw_skills | default([]) }}"
   register: openclaw_skill_result
   changed_when: "'installed' in openclaw_skill_result.stdout"
+  failed_when:
+    - openclaw_skill_result.rc != 0
+    - "'Already installed' not in openclaw_skill_result.stderr"
 
 - name: Deploy OpenClaw configuration
   template:
