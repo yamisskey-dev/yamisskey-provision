@@ -101,10 +101,10 @@
   become: true
 
 - name: Install clawhub CLI
-  community.general.npm:
-    name: clawhub
-    global: true
-    state: present
+  command:
+    cmd: npm install -g clawhub@latest
+  register: clawhub_install_result
+  changed_when: "'added' in clawhub_install_result.stdout"
   become: true
 
 - name: Create OpenClaw skills directory
