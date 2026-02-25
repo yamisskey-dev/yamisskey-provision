@@ -48,18 +48,18 @@
       },
       "contextPruning": {
         "mode": "{{ openclaw_context_pruning_mode | default('cache-ttl') }}",
-        "ttl": "{{ openclaw_context_pruning_ttl | default('24h') }}",
-        "keepLastAssistants": {{ openclaw_context_pruning_keep | default(5) }}
+        "ttl": "{{ openclaw_context_pruning_ttl | default('12h') }}",
+        "keepLastAssistants": {{ openclaw_context_pruning_keep | default(3) }}
       },
       "compaction": {
-        "mode": "{{ openclaw_compaction_mode | default('default') }}",
+        "mode": "{{ openclaw_compaction_mode | default('structured') }}",
         "memoryFlush": {
           "enabled": true,
-          "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(80000) }}
+          "softThresholdTokens": {{ openclaw_compaction_flush_threshold | default(60000) }}
         }
       },
       "heartbeat": {
-        "every": "{{ openclaw_heartbeat_every | default('30m') }}",
+        "every": "{{ openclaw_heartbeat_every | default('55m') }}",
         "model": "{{ openclaw_heartbeat_model | default('openai-codex/gpt-5.1-codex-mini') }}",
         "target": "{{ openclaw_heartbeat_target | default('telegram') }}",
         "prompt": "{{ openclaw_heartbeat_prompt | default('Read HEARTBEAT.md if it exists. Then: (1) Review .learnings/ for recurring patterns (recurrence >= 3) and promote to project memory. (2) Check for unresolved errors and attempt safe fixes. (3) If a conversation was left mid-task, summarize status. (4) If nothing needs attention, reply HEARTBEAT_OK. If HEARTBEAT.md does not exist, create it with your own improvement checklist, then reply HEARTBEAT_OK.') }}",
