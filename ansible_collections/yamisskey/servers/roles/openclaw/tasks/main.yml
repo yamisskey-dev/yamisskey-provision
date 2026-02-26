@@ -109,7 +109,7 @@
 
 - name: Create OpenClaw skills directory
   file:
-    path: "{{ openclaw_home }}/skills"
+    path: "{{ openclaw_home }}/workspace/skills"
     state: directory
     mode: '0755'
     owner: "{{ ansible_user }}"
@@ -118,7 +118,7 @@
 - name: Install OpenClaw skills
   command:
     cmd: clawhub install {{ item }}
-    chdir: "{{ openclaw_home }}"
+    chdir: "{{ openclaw_home }}/workspace"
   loop: "{{ openclaw_skills | default([]) }}"
   register: openclaw_skill_result
   changed_when: "'installed' in openclaw_skill_result.stdout"
