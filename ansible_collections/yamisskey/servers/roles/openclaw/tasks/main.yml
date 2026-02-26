@@ -100,6 +100,32 @@
     force_source: "{{ openclaw_sandbox_dockerfile_result.changed | default(false) }}"
   become: true
 
+- name: Install clawhub CLI
+  command:
+    cmd: npm install -g clawhub@latest
+  register: clawhub_install_result
+  changed_when: "'added' in clawhub_install_result.stdout"
+  become: true
+
+- name: Create OpenClaw skills directory
+  file:
+    path: "{{ openclaw_home }}/workspace/skills"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Install OpenClaw skills
+  command:
+    cmd: clawhub install {{ item }}
+    chdir: "{{ openclaw_home }}/workspace"
+  loop: "{{ openclaw_skills | default([]) }}"
+  register: openclaw_skill_result
+  changed_when: "'installed' in openclaw_skill_result.stdout"
+  failed_when:
+    - openclaw_skill_result.rc != 0
+    - "'Already installed' not in openclaw_skill_result.stderr"
+
 - name: Deploy OpenClaw configuration
   template:
     src: openclaw.json.j2
