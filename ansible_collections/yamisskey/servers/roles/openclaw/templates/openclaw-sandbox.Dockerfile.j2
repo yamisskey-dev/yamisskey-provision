@@ -57,6 +57,11 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 # Non-root user
 RUN useradd -m -s /bin/bash claw
 USER claw
+
+# Rust (rustup)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
+ENV PATH="/home/claw/.cargo/bin:${PATH}"
+
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
 WORKDIR /home/claw/workspace
