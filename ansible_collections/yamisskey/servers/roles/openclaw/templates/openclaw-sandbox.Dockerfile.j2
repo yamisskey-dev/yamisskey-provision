@@ -56,6 +56,10 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 
 # Non-root user
 RUN useradd -m -s /bin/bash claw
+
+# Pre-create /nix for single-user install (requires root)
+RUN mkdir -m 0755 /nix && chown claw /nix
+
 USER claw
 
 # Rust (rustup)
