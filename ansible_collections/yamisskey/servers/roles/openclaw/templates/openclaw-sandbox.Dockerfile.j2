@@ -56,12 +56,28 @@ RUN install -m 0755 -d /etc/apt/keyrings \
 
 # Non-root user
 RUN useradd -m -s /bin/bash claw
+
+# Pre-create /nix for single-user install (requires root)
+RUN mkdir -m 0755 /nix && chown claw /nix
+
 USER claw
 
 # Rust (rustup)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
 ENV PATH="/home/claw/.cargo/bin:${PATH}"
 
+# Nix (single-user) + flakes
+RUN curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
+    && mkdir -p /home/claw/.config/nix \
+    && echo 'experimental-features = nix-command flakes' > /home/claw/.config/nix/nix.conf
+ENV PATH="/home/claw/.nix-profile/bin:${PATH}"
+
+# Open permissions for sandbox UID mismatch
+# All tools under /home/claw write dotfiles/caches at runtime (git, gh, go,
+# node/corepack, uv, cargo, nix, docker), so open the entire home + /nix.
+RUN chmod -R a+rwX /home/claw /nix
+
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
+RUN mkdir -p /home/claw/go/bin
 WORKDIR /home/claw/workspace
