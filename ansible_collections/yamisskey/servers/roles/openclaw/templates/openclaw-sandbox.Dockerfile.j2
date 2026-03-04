@@ -62,6 +62,12 @@ USER claw
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal
 ENV PATH="/home/claw/.cargo/bin:${PATH}"
 
+# Nix (single-user) + flakes
+RUN curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
+    && mkdir -p /home/claw/.config/nix \
+    && echo 'experimental-features = nix-command flakes' > /home/claw/.config/nix/nix.conf
+ENV PATH="/home/claw/.nix-profile/bin:${PATH}"
+
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
 WORKDIR /home/claw/workspace
