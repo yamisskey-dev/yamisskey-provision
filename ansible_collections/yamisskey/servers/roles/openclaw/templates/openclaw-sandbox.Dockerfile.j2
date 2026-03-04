@@ -73,9 +73,11 @@ RUN curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
 ENV PATH="/home/claw/.nix-profile/bin:${PATH}"
 
 # Open permissions for sandbox UID mismatch
-RUN chmod -R a+rwX /home/claw/.cargo /home/claw/.rustup \
-    /home/claw/.nix-profile /home/claw/.nix-defexpr /home/claw/.config/nix /nix
+# All tools under /home/claw write dotfiles/caches at runtime (git, gh, go,
+# node/corepack, uv, cargo, nix, docker), so open the entire home + /nix.
+RUN chmod -R a+rwX /home/claw /nix
 
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
+RUN mkdir -p /home/claw/go/bin
 WORKDIR /home/claw/workspace
