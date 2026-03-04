@@ -72,6 +72,10 @@ RUN curl -L https://nixos.org/nix/install | sh -s -- --no-daemon \
     && echo 'experimental-features = nix-command flakes' > /home/claw/.config/nix/nix.conf
 ENV PATH="/home/claw/.nix-profile/bin:${PATH}"
 
+# Open permissions for sandbox UID mismatch
+RUN chmod -R a+rwX /home/claw/.cargo /home/claw/.rustup \
+    /home/claw/.nix-profile /home/claw/.nix-defexpr /home/claw/.config/nix /nix
+
 ENV GOPATH="/home/claw/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
 WORKDIR /home/claw/workspace
