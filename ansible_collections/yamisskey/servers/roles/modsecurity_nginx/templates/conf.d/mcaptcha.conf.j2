@@ -55,6 +55,11 @@ server {
         expires 0;
     }
 
+    # Rewrite /widget to /widget/ internally (mCaptcha requires trailing slash)
+    location = /widget {
+        rewrite ^ /widget/ last;
+    }
+
     # Widget endpoints
     location /widget/ {
         proxy_pass http://mcaptcha_backend;
