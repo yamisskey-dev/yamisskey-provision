@@ -26,14 +26,14 @@
     src: rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.j2
     dest: "/etc/modsecurity-nginx/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
     mode: '0644'
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create custom rules after CRS
   template:
     src: rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.j2
     dest: "/etc/modsecurity-nginx/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
     mode: '0644'
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create conf.d directory for individual service configs
   file:
@@ -61,7 +61,7 @@
     dest: "/etc/modsecurity-nginx/lists/blocked_ips.txt"
     mode: '0644'
   when: modsecurity_blocked_ips | length > 0
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create allowed IPs list
   ansible.builtin.copy:
@@ -72,7 +72,7 @@
     dest: "/etc/modsecurity-nginx/lists/allowed_ips.txt"
     mode: '0644'
   when: modsecurity_allowed_ips | length > 0
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create maintenance IPs list
   ansible.builtin.copy:
@@ -83,7 +83,7 @@
     dest: "/etc/modsecurity-nginx/lists/maintenance_ips.txt"
     mode: '0644'
   when: modsecurity_maintenance_allowed_ips | length > 0
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create blocked user agents list
   ansible.builtin.copy:
@@ -94,7 +94,7 @@
     dest: "/etc/modsecurity-nginx/lists/blocked_user_agents.txt"
     mode: '0644'
   when: modsecurity_blocked_user_agents | length > 0
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 # Build service list: 00-shared + host-specific services (or default all services)
 - name: Set modsecurity_services_effective from host-specific config or default
@@ -115,7 +115,7 @@
   loop_control:
     label: "{{ item.path | basename }}"
   when: (item.path | basename | replace('.conf', '')) not in modsecurity_services_effective
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create security headers configuration files
   template:
@@ -128,7 +128,7 @@
     - "00-security-headers-sameorigin.conf.j2"
     - "00-security-headers-deny.conf.j2"
     - "00-security-headers-mcaptcha.conf.j2"
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create individual service nginx configurations
   template:
@@ -136,7 +136,7 @@
     dest: "/etc/modsecurity-nginx/conf.d/{{ item }}.conf"
     mode: '0644'
   loop: "{{ modsecurity_services_effective }}"
-  notify: restart modsecurity nginx
+  notify: reload modsecurity nginx
 
 - name: Create security monitoring script
   template:
