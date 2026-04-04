@@ -111,15 +111,6 @@
   when: (ansible_env.MOLECULE_SCENARIO_NAME | default('')) != ''
 
 # === SECURITY PHASE ===
-- name: Allow Garage S3 API access from Tailscale network
-  ansible.builtin.command: ufw allow from 100.64.0.0/10 to any port {{ garage_s3_api_port }} proto tcp
-  changed_when: false
-  become: true
-  when:
-    - ansible_env.MOLECULE_SCENARIO_NAME is undefined
-    - ansible_virtualization_type is not defined or ansible_virtualization_type not in ['docker', 'container']
-  failed_when: false
-  tags: ['garage', 'security']
 
 # === WAIT FOR ADMIN API TO ACCEPT CONNECTIONS ===
 - name: Wait for Garage admin API to respond
@@ -271,11 +262,10 @@
           API Key: misskey-key (read/write/owner)
           S3 Region: {{ garage_s3_region }}
           Website Access: enabled (public read for federation)
-          Tailscale network access: enabled
 
           Misskey Configuration
           S3_BUCKET={{ garage_bucket_name_for_misskey }}
-          S3_ENDPOINT=http://[TAILSCALE_BALTHASAR_IP]:{{ garage_s3_api_port }}
+          S3_ENDPOINT=https://{{ garage_api_server_name }}
           S3_ACCESS_KEY={{ garage_s3_access_key }}
           S3_SECRET_KEY=(set in secrets)
           S3_REGION={{ garage_s3_region }}

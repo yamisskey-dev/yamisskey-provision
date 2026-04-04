@@ -11,7 +11,7 @@ misskey_host: "{{ domain }}"
 misskey_tag: "2025.12.2-yami-1.9.30"
 
 # Nginx services to deploy (user-facing app services only)
-# Note: mcaptcha moved to caspar; ctfd moved to Proxmox VM
+# Note: ctfd moved to Proxmox VM
 modsecurity_nginx_services:
   - "misskey"
   - "synapse"

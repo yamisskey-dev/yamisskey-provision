@@ -23,7 +23,6 @@ known_services:
   - matrix
   - neo-quesdon
   - ctfd
-  - mcaptcha
   - uptime
   - minecraft
 

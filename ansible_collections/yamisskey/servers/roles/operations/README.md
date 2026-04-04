@@ -85,7 +85,6 @@ ansible-playbook -i inventory playbooks/operations.yml -e op=logs -e service=gar
 - `matrix` - Matrix
 - `neo-quesdon` - Neo-Quesdon
 - `ctfd` - CTFd
-- `mcaptcha` - mCaptcha
 - `uptime` - Uptime Kuma
 - `minecraft` - Minecraft
 

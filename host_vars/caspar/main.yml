@@ -20,7 +20,6 @@ modsecurity_nginx_services:
   - "grafana"
   - "uptime"
   - "misskey_beta"
-  - "mcaptcha"
   # AI Life Counseling service
   - "yamix"
 
