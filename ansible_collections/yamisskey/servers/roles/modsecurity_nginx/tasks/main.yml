@@ -127,7 +127,6 @@
     - "00-security-headers-misskey.conf.j2"
     - "00-security-headers-sameorigin.conf.j2"
     - "00-security-headers-deny.conf.j2"
-    - "00-security-headers-mcaptcha.conf.j2"
   notify: reload modsecurity nginx
 
 - name: Create individual service nginx configurations

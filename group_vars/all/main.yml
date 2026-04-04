@@ -34,7 +34,6 @@ host_services:
     blackbox_exporter: 9115    # Blackbox Exporter
     alert_manager: 9093        # AlertManager
     misskey_beta: 3002         # Misskey Beta (test environment for yamisskey-dev)
-    mcaptcha: 7493             # mCaptcha (CAPTCHA service)
     # AI Life Counseling service
     yamix: 3026                # Yamix (AI counseling)
 
@@ -92,8 +91,6 @@ cloudflared_ingress:
       service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
     - hostname: "uptime.{{ domain }}"
       service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
-    - hostname: "captcha.{{ domain }}"
-      service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
     # Yamix service
     - hostname: "mix.{{ domain }}"
       service: "http://localhost:{{ host_services.caspar.modsecurity_nginx }}"
@@ -121,7 +118,6 @@ ctfd_server_name: "ctf.{{ domain }}"
 grafana_server_name: "grafana.{{ domain }}"
 cryptpad_server_name: "pad.{{ domain }}"
 uptime_server_name: "uptime.{{ domain }}"
-mcaptcha_server_name: "captcha.{{ domain }}"
 neo_quesdon_server_name: "neo-quesdon.{{ domain }}"
 garage_api_server_name: "drive.{{ domain }}"
 yamix_server_name: "mix.{{ domain }}"
