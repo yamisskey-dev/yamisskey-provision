@@ -8,7 +8,6 @@ packages:
   - mecab
   - libmecab-dev
   - mecab-ipadic-utf8
-  - prometheus
   - rclone
   - unattended-upgrades
   - debsums
