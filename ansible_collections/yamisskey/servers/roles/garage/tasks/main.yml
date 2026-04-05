@@ -212,22 +212,16 @@
       changed_when: false
       failed_when: false
 
-    - name: Delete existing API key before re-import
-      command: docker exec garage /garage key delete {{ garage_s3_access_key }} --yes
-      failed_when: false
-      changed_when: false
-      no_log: true
-      when: garage_key_info.rc == 0
-
-    - name: Import API key for Misskey
+    - name: Import API key for Misskey (only if not exists)
       command: >
         docker exec garage /garage key import
         {{ garage_s3_access_key }} {{ garage_s3_secret_key }}
         --yes
       register: garage_key_import
       changed_when: garage_key_import.rc == 0
-      failed_when: false
+      failed_when: garage_key_import.rc != 0
       no_log: true
+      when: garage_key_info.rc != 0
 
     - name: Rename imported key to misskey-key
       command: >
@@ -235,7 +229,10 @@
         {{ garage_s3_access_key }} misskey-key
       changed_when: true
       failed_when: false
-      when: garage_key_import.rc == 0
+      when:
+        - garage_key_info.rc != 0
+        - garage_key_import.rc is defined
+        - garage_key_import.rc == 0
 
     - name: Allow key read/write access to bucket
       command: >
