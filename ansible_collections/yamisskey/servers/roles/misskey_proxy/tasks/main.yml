@@ -109,6 +109,15 @@
   become: true
   notify: restart squid
 
+- name: Allow Misskey servers to access Squid port via UFW
+  ansible.builtin.command: ufw allow from {{ item }} to any port {{ squid_port }} proto tcp
+  changed_when: false
+  loop: "{{ misskey_server_ips }}"
+  become: true
+  when:
+    - ansible_service_mgr | default('') == 'systemd'
+    - misskey_server_ips | length > 0
+
 - name: Check Squid service status
   systemd:
     name: squid
