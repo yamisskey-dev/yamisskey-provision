@@ -233,7 +233,7 @@ mediaProxy: https://media.{{ domain | default('yami.ski') }}/proxy
 # but exceptions can be made from the following settings. Default value is "undefined".
 # Read changelog to learn more (Improvements of 12.90.0 (2021/09/04)).
 allowedPrivateNetworks: [
-  '172.16.0.0/12'   # Docker bridge networks (external_network for Misskey-Garage S3 communication)
+  '192.168.80.0/20'   # storage_network subnet (Misskey-Garage S3 communication)
 ]
 
 # Upload or download file size limits (bytes)
