@@ -66,11 +66,6 @@
   tags: ['garage', 'setup', 'config']
 
 # === DOCKER PHASE ===
-- name: Create Docker network if not exists
-  community.docker.docker_network:
-    name: external_network
-  tags: ['garage', 'setup', 'docker']
-
 - name: Start Garage using Docker Compose v2
   community.docker.docker_compose_v2:
     project_src: "{{ garage_dir }}"
