@@ -7,8 +7,6 @@ security_packages:
   - logrotate
   - ufw
   - lynis
-  - clamav
-  - clamav-daemon
   - dnscrypt-proxy
 
 # UFW firewall configuration

@@ -5,7 +5,6 @@ packages:
   - inetutils-traceroute
   - rsync
   - zip
-  - tor
   - mecab
   - libmecab-dev
   - mecab-ipadic-utf8
@@ -14,8 +13,6 @@ packages:
   - unattended-upgrades
   - debsums
   - apt-show-versions
-  - clamav
-  - clamav-daemon
   - lynis
   - apparmor
   - auditd
