@@ -23,13 +23,10 @@ squid_dns_servers:
   - '1.1.1.1'
   - '8.8.8.8'
 
-# Misskey servers Tailscale IPs (should be defined in host_vars or group_vars)
-# misskey_server_ips:
-#   - '{{ misskey_production_tailscale_ip }}'  # Misskey production server
-#   - '{{ misskey_test_tailscale_ip }}'        # Misskey test server
-#
-# Default fallback (should be overridden)
-misskey_server_ips: '{{ misskey_tailscale_ips | default([]) }}'
+# Misskey servers allowed to use Squid proxy (derived from inventory ansible_host)
+misskey_server_ips:
+  - "{{ hostvars['balthasar']['ansible_host'] }}"
+  - "{{ hostvars['caspar']['ansible_host'] }}"
 
 # Repository URLs
 summaly_repo: 'https://github.com/{{ github_org }}/summaly-docker.git'

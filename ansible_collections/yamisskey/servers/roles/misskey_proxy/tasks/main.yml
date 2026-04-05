@@ -167,6 +167,7 @@
   when:
     - ansible_service_mgr | default('') == 'systemd'
     - squid_alt_start_result is defined
+    - squid_alt_start_result.rc is defined
     - squid_alt_start_result.rc == 0
   changed_when: false
   failed_when: false
