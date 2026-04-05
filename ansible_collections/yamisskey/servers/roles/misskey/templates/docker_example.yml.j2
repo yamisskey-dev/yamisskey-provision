@@ -193,19 +193,19 @@ id: 'aidx'
 #disableHsts: true
 
 # Number of worker processes
-#clusterLimit: 1
+clusterLimit: 16
 
 # Job concurrency per worker
-# deliverJobConcurrency: 128
-# inboxJobConcurrency: 16
+deliverJobConcurrency: 512
+inboxJobConcurrency: 512
 
 # Job rate limiter
-# deliverJobPerSec: 128
-# inboxJobPerSec: 32
+deliverJobPerSec: 256
+inboxJobPerSec: 256
 
 # Job attempts
-# deliverJobMaxAttempts: 12
-# inboxJobMaxAttempts: 8
+deliverJobMaxAttempts: 12
+inboxJobMaxAttempts: 12
 
 # IP address family used for outgoing request (ipv4, ipv6 or dual)
 #outgoingAddressFamily: ipv4
@@ -233,7 +233,7 @@ mediaProxy: https://media.{{ domain | default('yami.ski') }}/proxy
 # but exceptions can be made from the following settings. Default value is "undefined".
 # Read changelog to learn more (Improvements of 12.90.0 (2021/09/04)).
 allowedPrivateNetworks: [
-  '192.168.80.0/20'   # The external_network subnet shared by garage and misskey-backup, located on the balthasar host
+  '172.16.0.0/12'   # Docker bridge networks (external_network for Misskey-Garage S3 communication)
 ]
 
 # Upload or download file size limits (bytes)
