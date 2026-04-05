@@ -11,3 +11,6 @@ minecraft_server_type: "java"
 minecraft_version: "latest"
 minecraft_memory: "2G"
 minecraft_data_dir: "/opt/minecraft"
+
+# ClamAV disabled - Minecraft (4GB) + ClamAV (1GB) で RAM 圧迫
+security_manage_clamav: false
