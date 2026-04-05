@@ -76,6 +76,26 @@
     dest: '{{ misskey_dir }}/.config/postgresql.conf'
     mode: '0644'
 
+- name: Check if external network exists
+  shell: 'docker network ls | grep -w external_network || true'
+  register: external_network_check
+  changed_when: false
+
+- name: Create external network if not exists
+  command: docker network create external_network
+  when: external_network_check.stdout == ""
+  failed_when: false
+
+- name: Check if storage network exists
+  shell: 'docker network ls | grep -w storage_network || true'
+  register: storage_network_check
+  changed_when: false
+
+- name: Create storage network if not exists
+  command: docker network create storage_network
+  when: storage_network_check.stdout == ""
+  failed_when: false
+
 - name: Check if database is initialized
   ansible.builtin.stat:
     path: '{{ misskey_dir }}/db/PG_VERSION'

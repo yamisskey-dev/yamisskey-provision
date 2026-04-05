@@ -26,9 +26,14 @@ services:
       - {{ garage_dir }}/garage.toml:/etc/garage.toml:ro
       - {{ garage_meta_dir }}:/var/lib/garage/meta
       - {{ garage_data_dir }}:/var/lib/garage/data
+    networks:
+      - storage_network
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "3"
 
+networks:
+  storage_network:
+    external: true

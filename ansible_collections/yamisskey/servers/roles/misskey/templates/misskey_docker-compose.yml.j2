@@ -17,6 +17,7 @@ services:
     networks:
       - internal_network
       - external_network
+      - storage_network
     volumes:
       - ./files:/misskey/files
       - ./.config:/misskey/.config:ro
@@ -99,4 +100,8 @@ networks:
   backup_network:
     internal: true
   external_network:
-    driver: bridge
+    name: external_network
+    external: true
+  storage_network:
+    name: storage_network
+    external: true
