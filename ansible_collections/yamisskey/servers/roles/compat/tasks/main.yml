@@ -1,13 +1,13 @@
 ---
-- name: Check if docker-compose command exists
-  command: which docker-compose
-  register: docker_compose_check
+- name: Check if docker compose (v2 plugin) is available
+  command: docker compose version
+  register: docker_compose_v2_check
   failed_when: false
   changed_when: false
 
 - name: Set Docker Compose command based on availability
   set_fact:
-    docker_compose_cmd: "{% if docker_compose_check.rc == 0 %}docker-compose{% else %}docker compose{% endif %}"
+    docker_compose_cmd: "{% if docker_compose_v2_check.rc == 0 %}docker compose{% else %}docker-compose{% endif %}"
 
 - name: Debug Docker Compose command
   debug:
