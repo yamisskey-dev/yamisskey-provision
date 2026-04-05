@@ -16,6 +16,7 @@ services:
       - "127.0.0.1:{{ misskey_port }}:3001"  # Internal access only for ModSecurity-Nginx
     networks:
       - internal_network
+      - external_network
     volumes:
       - ./files:/misskey/files
       - ./.config:/misskey/.config:ro
@@ -97,3 +98,5 @@ networks:
       com.docker.network.driver.mtu: 9000
   backup_network:
     internal: true
+  external_network:
+    driver: bridge
