@@ -18,7 +18,7 @@ misskey_redis_host: 'localhost'
 misskey_redis_port: 6379
 
 # Proxy configuration
-misskey_proxy: "http://127.0.0.1:{{ host_services.linode_prox.squid | default(3128) }}"
+misskey_proxy: "http://{{ hostvars['linode_prox']['ansible_host'] }}:{{ host_services.linode_prox.squid | default(3128) }}"
 
 # Domain and URLs (override in host_vars for different subdomains)
 misskey_url: "https://{{ misskey_host | default(domain) }}"
