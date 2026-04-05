@@ -38,3 +38,6 @@ networks:
   storage_network:
     name: storage_network
     driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.80.0/20
