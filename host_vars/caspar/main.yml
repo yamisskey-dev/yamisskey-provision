@@ -31,12 +31,12 @@ monitor_targets:
     cadvisor_port: 8085
     role: monitoring_server
   - name: balthasar
-    host: "balthasar"
+    host: "{{ hostvars['balthasar']['ansible_host'] }}"
     port: 9100
     cadvisor_port: 8085
     role: social_server
   - name: linode_prox
-    host: "linode-prox"
+    host: "{{ hostvars['linode_prox']['ansible_host'] }}"
     port: 9100
     cadvisor_port: 8085
     role: proxy_server
