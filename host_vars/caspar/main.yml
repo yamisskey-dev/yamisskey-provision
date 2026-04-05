@@ -40,3 +40,7 @@ monitor_targets:
     port: 9100
     cadvisor_port: 8085
     role: proxy_server
+  - name: raspberrypi
+    host: "{{ hostvars['raspberrypi']['ansible_host'] }}"
+    port: 9100
+    role: game_server
