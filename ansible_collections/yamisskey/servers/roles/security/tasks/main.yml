@@ -178,6 +178,13 @@
 
 - name: Ensure ClamAV configuration
   block:
+    - name: Install ClamAV packages
+      ansible.builtin.apt:
+        name:
+          - clamav
+          - clamav-daemon
+      become: true
+
     - name: Ensure log directory for ClamAV exists
       ansible.builtin.file:
         path: /var/log/clamav

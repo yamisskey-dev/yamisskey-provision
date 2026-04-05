@@ -21,8 +21,6 @@
           - zip
           - htop
           - debsums
-          - clamav
-          - clamav-daemon
           - apparmor
           - auditd
           - sysstat
