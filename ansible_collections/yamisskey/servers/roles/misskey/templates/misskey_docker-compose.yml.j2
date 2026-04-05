@@ -17,6 +17,7 @@ services:
     networks:
       - internal_network
       - external_network
+      - storage_network
     volumes:
       - ./files:/misskey/files
       - ./.config:/misskey/.config:ro
@@ -96,8 +97,12 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.driver.mtu: 9000
+  backup_network:
+    name: backup_network
+    internal: true
   external_network:
     name: external_network
+    driver: bridge
+  storage_network:
+    name: storage_network
     external: true
-  backup_network:
-    internal: true

@@ -27,7 +27,7 @@ services:
       - {{ garage_meta_dir }}:/var/lib/garage/meta
       - {{ garage_data_dir }}:/var/lib/garage/data
     networks:
-      - external_network
+      - storage_network
     logging:
       driver: "json-file"
       options:
@@ -35,5 +35,6 @@ services:
         max-file: "3"
 
 networks:
-  external_network:
-    external: true
+  storage_network:
+    name: storage_network
+    driver: bridge
