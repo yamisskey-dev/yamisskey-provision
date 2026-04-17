@@ -12,5 +12,9 @@ minecraft_version: "latest"
 minecraft_memory: "2G"
 minecraft_data_dir: "/opt/minecraft"
 
-# ClamAV disabled - Minecraft (4GB) + ClamAV (1GB) で RAM 圧迫
+# ClamAV disabled - Minecraft (2GB) + ClamAV (1GB) で RAM 圧迫
 security_manage_clamav: false
+
+# RAM 削減: raspberrypi は playit 経由で egress するため WARP 不要 (約 585MiB 節約)
+warp_enabled: false
+install_warp: false
