@@ -12,7 +12,7 @@ cloudflared_group: "taka"
 cloudflared_config_file: "{{ cloudflared_config_dir }}/config.yml"
 
 # Tunnel configuration
-cloudflared_protocol: "http2"
+cloudflared_protocol: "quic"
 cloudflared_retries: 5
 cloudflared_timeout: "5s"
 cloudflared_compression: true
@@ -20,22 +20,25 @@ cloudflared_no_tls_verify: false
 cloudflared_max_backoff: "15s"
 cloudflared_connection_strategy: "race"
 cloudflared_metrics_port: "49312"
+cloudflared_metrics_bind: "localhost"
 
-# DNS configuration
+# DNS configuration (only used when cloudflared_enable_dns_proxy is true)
+cloudflared_enable_dns_proxy: false
 cloudflared_dns_upstreams:
   - "127.0.0.1:5353"
 
 # Origin request configuration
 cloudflared_origin_request:
   disableChunkedEncoding: true
-  connectTimeout: "2s"
-  keepAliveTimeout: "15s"
+  connectTimeout: "10s"
+  keepAliveTimeout: "30s"
   http2Origin: true
-  tcpKeepAlive: "15s"
+  tcpKeepAlive: "30s"
   noHappyEyeballs: true
 
 # Installation configuration
 cloudflared_skip_install: true   # Default to true - use 'make install' as recommended
+cloudflared_auto_upgrade: false  # Set true to upgrade outdated binary via Ansible
 cloudflared_version: "latest"    # GitHub release version (only used if skip_install is false)
 
 # Service configuration

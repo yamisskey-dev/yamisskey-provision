@@ -5,11 +5,13 @@ origincert: {{ cloudflared_config_dir }}/cert.pem
 {% endif %}
 
 protocol: {{ cloudflared_protocol }}
+{% if cloudflared_dns_upstreams | length > 0 and (cloudflared_enable_dns_proxy | default(false) | bool) %}
 dns:
   upstreams:
 {% for upstream in cloudflared_dns_upstreams %}
     - {{ upstream }}
 {% endfor %}
+{% endif %}
 
 retries: {{ cloudflared_retries }}
 timeout: {{ cloudflared_timeout }}
@@ -26,8 +28,8 @@ originRequest:
 metrics: {{ cloudflared_metrics_bind | default('0.0.0.0') }}:{{ cloudflared_metrics_port }}
 
 ingress:
-{% if cloudflared_ingress[ansible_hostname] is defined %}
-{% for service in cloudflared_ingress[ansible_hostname] %}
+{% if cloudflared_ingress[inventory_hostname] is defined %}
+{% for service in cloudflared_ingress[inventory_hostname] %}
   - hostname: {{ service.hostname }}
     service: {{ service.service }}
 {% endfor %}

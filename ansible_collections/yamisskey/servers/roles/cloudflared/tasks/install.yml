@@ -1,13 +1,20 @@
 ---
 # Cloudflared installation task
 # This is only used when cloudflared_skip_install is false
-# For manual installation, set cloudflared_skip_install: true and use 'make install'
+# Set cloudflared_auto_upgrade: true to upgrade outdated binaries safely
 
 - name: Check if cloudflared is already installed
   command: which cloudflared
   register: cloudflared_installed
   failed_when: false
   changed_when: false
+
+- name: Get current cloudflared version
+  command: cloudflared --version
+  register: cloudflared_current_version_check
+  failed_when: false
+  changed_when: false
+  when: cloudflared_installed.rc == 0
 
 - name: Get latest cloudflared release info from GitHub API
   uri:
@@ -16,42 +23,118 @@
     return_content: true
   register: cloudflared_release
   when:
-    - cloudflared_installed.rc != 0
+    - cloudflared_installed.rc != 0 or cloudflared_auto_upgrade | bool
     - cloudflared_version == "latest"
+
+- name: Determine latest cloudflared version tag
+  set_fact:
+    cloudflared_latest_tag: "{{ cloudflared_release.json.tag_name }}"
+  when:
+    - cloudflared_installed.rc != 0 or cloudflared_auto_upgrade | bool
+    - cloudflared_version == "latest"
+
+- name: Detect if upgrade is needed
+  set_fact:
+    cloudflared_upgrade_needed: >-
+      {{
+        cloudflared_installed.rc != 0
+        or (
+          cloudflared_auto_upgrade | bool
+          and cloudflared_version != "latest"
+          and cloudflared_version not in (cloudflared_current_version_check.stdout | default(''))
+        )
+        or (
+          cloudflared_auto_upgrade | bool
+          and cloudflared_version == "latest"
+          and cloudflared_latest_tag is defined
+          and cloudflared_latest_tag not in (cloudflared_current_version_check.stdout | default(''))
+        )
+      }}
+
+- name: Display version check result
+  debug:
+    msg: |
+      cloudflared version status:
+      Current : {{ cloudflared_current_version_check.stdout | default('not installed') }}
+      Target  : {{ cloudflared_latest_tag | default(cloudflared_version) }}
+      Upgrade needed : {{ cloudflared_upgrade_needed }}
 
 - name: Set cloudflared download URL for latest version
   set_fact:
     cloudflared_download_url: "{{ cloudflared_release.json.assets | selectattr('name', 'match', '.*linux-amd64$') | map(attribute='browser_download_url') | first }}"
   when:
-    - cloudflared_installed.rc != 0
+    - cloudflared_upgrade_needed | bool
     - cloudflared_version == "latest"
 
 - name: Set cloudflared download URL for specific version
   set_fact:
     cloudflared_download_url: "https://github.com/cloudflare/cloudflared/releases/download/{{ cloudflared_version }}/cloudflared-linux-amd64"
   when:
-    - cloudflared_installed.rc != 0
+    - cloudflared_upgrade_needed | bool
     - cloudflared_version != "latest"
 
-- name: Download cloudflared binary
-  ansible.builtin.get_url:
-    url: "{{ cloudflared_download_url }}"
-    dest: "{{ cloudflared_install_dir }}/cloudflared"
+- name: Resolve actual cloudflared binary path (follow which output for upgrades)
+  set_fact:
+    cloudflared_active_path: "{{ cloudflared_installed.stdout | trim if cloudflared_installed.rc == 0 else (cloudflared_install_dir + '/cloudflared') }}"
+
+- name: Backup current cloudflared binary before upgrade
+  ansible.builtin.copy:
+    src: "{{ cloudflared_active_path }}"
+    dest: "{{ cloudflared_active_path }}.bak"
+    remote_src: true
     mode: '0755'
     owner: root
     group: root
   become: true
-  when: cloudflared_installed.rc != 0
+  when:
+    - cloudflared_upgrade_needed | bool
+    - cloudflared_installed.rc == 0
 
-- name: Verify cloudflared installation
+- name: Download cloudflared binary to staging path
+  ansible.builtin.get_url:
+    url: "{{ cloudflared_download_url }}"
+    dest: "{{ cloudflared_active_path }}.new"
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+  when: cloudflared_upgrade_needed | bool
+
+- name: Verify staged binary runs and reports version
+  command: "{{ cloudflared_active_path }}.new --version"
+  register: cloudflared_staged_version
+  changed_when: false
+  when: cloudflared_upgrade_needed | bool
+
+- name: Atomically replace cloudflared binary
+  ansible.builtin.copy:
+    src: "{{ cloudflared_active_path }}.new"
+    dest: "{{ cloudflared_active_path }}"
+    remote_src: true
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+  when: cloudflared_upgrade_needed | bool
+  notify: "restart cloudflared"
+
+- name: Clean up staged binary
+  ansible.builtin.file:
+    path: "{{ cloudflared_active_path }}.new"
+    state: absent
+  become: true
+  when: cloudflared_upgrade_needed | bool
+
+- name: Verify cloudflared post-install version
   command: cloudflared --version
   register: cloudflared_version_check
   changed_when: false
-  when: cloudflared_installed.rc != 0
 
 - name: Display installation result
   debug:
     msg: |
-      Cloudflared installation completed:
-      Version: {{ cloudflared_version_check.stdout if cloudflared_version_check is defined else 'Already installed' }}
-      Location: {{ cloudflared_install_dir }}/cloudflared
+      Cloudflared installation/upgrade result:
+      Version after change : {{ cloudflared_version_check.stdout }}
+      Location             : {{ cloudflared_active_path }}
+      Backup kept at       : {{ cloudflared_active_path }}.bak
+      Rollback command     : sudo mv {{ cloudflared_active_path }}.bak {{ cloudflared_active_path }} && sudo systemctl restart cloudflared
