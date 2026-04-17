@@ -7,6 +7,7 @@ nginx_port: "{{ host_services.linode_prox.nginx }}"
 media_proxy_rs_port: "{{ host_services.linode_prox.media_proxy_rs }}"
 summaly_port: "{{ host_services.linode_prox.summaly }}"
 squid_port: "{{ host_services.linode_prox.squid }}"
+cloudflared_tunnel_uuid: "{{ linode_prox_cloudflared_tunnel_uuid }}"
 
 # Proxy service configuration
 proxy_upstream_timeout: "30s"

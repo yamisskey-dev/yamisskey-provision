@@ -2,6 +2,9 @@
 # Balthasar - Main production server (Social & Apps)
 # ansible_host should be set to actual IP or hostname in production
 
+# Cloudflared tunnel UUID is stored in secrets.sops.yml (balthasar_cloudflared_tunnel_uuid)
+cloudflared_tunnel_uuid: "{{ balthasar_cloudflared_tunnel_uuid }}"
+
 # Service-specific configurations
 modsecurity_nginx_port: "{{ host_services.balthasar.modsecurity_nginx }}"
 misskey_port: "{{ host_services.balthasar.misskey }}"
