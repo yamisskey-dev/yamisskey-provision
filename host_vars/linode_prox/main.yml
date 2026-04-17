@@ -18,5 +18,5 @@ external_proxy_enabled: true
 media_proxy_cache_size: "1G"
 summaly_cache_ttl: "3600"
 
-# ClamAV disabled - RAM 1.9GiB では常駐デーモン (640MB) が重すぎる
+# ClamAV disabled - 4GB RAM だが Squid/media-proxy-rs/Summaly/Nginx 同居のため常駐デーモン (640MB) は避ける
 security_manage_clamav: false
