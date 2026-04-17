@@ -9,6 +9,7 @@
     group: "{{ cloudflared_group }}"
     mode: '0640'
   register: config_deployed
+  notify: "restart cloudflared"
 
 - name: Display configuration file location
   debug:
@@ -27,6 +28,7 @@
     remote_src: true
   become: true
   register: system_config_deployed
+  notify: "restart cloudflared"
 
 - name: Copy tunnel credentials to system directory
   ansible.builtin.copy:

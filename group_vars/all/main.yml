@@ -105,7 +105,7 @@ cloudflared_ingress:
     - hostname: "media.{{ domain }}"
       service: "http://localhost:{{ host_services.linode_prox.media_proxy_rs }}"
     - hostname: "summaly.{{ domain }}"
-      service: "http://localhost:{{ host_services.linode_prox.nginx }}"
+      service: "http://localhost:{{ host_services.linode_prox.summaly }}"
   # Test services can be added to the lists above as needed
 
 # =========================================

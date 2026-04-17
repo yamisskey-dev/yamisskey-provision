@@ -2,7 +2,7 @@
 # Caspar - Security & monitoring hub + Beta Misskey
 
 # Cloudflared tunnel configuration
-cloudflared_tunnel_uuid: "636a9974-0dd6-4a89-97a4-e2268493d5f4"
+cloudflared_tunnel_uuid: "{{ caspar_cloudflared_tunnel_uuid }}"
 cloudflared_config_dir: "/root/.cloudflared"
 
 # Service-specific configurations

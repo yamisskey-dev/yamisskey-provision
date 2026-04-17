@@ -3,9 +3,10 @@
 # Supports both manual (make install) and automatic installation modes
 
 # Installation phase (conditional based on cloudflared_skip_install)
-- name: Install cloudflared
+# Also run install.yml when auto_upgrade is requested to detect/apply updates
+- name: Install or upgrade cloudflared
   include_tasks: install.yml
-  when: not cloudflared_skip_install
+  when: (not cloudflared_skip_install) or (cloudflared_auto_upgrade | bool)
 
 # Directory setup
 - name: Ensure cloudflared config directory exists
@@ -14,7 +15,7 @@
     state: directory
     owner: "{{ cloudflared_user }}"
     group: "{{ cloudflared_group }}"
-    mode: '0755'
+    mode: '0700'
 
 - name: Ensure system cloudflared config directory exists
   file:
