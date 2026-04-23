@@ -135,52 +135,39 @@
     mode: '0755'
   when: not ansible_check_mode
 
-- name: Check if VAPID keys file exists
-  ansible.builtin.stat:
-    path: '{{ backup_dir }}/misskey/vapid_keys.yml'
-  register: vapid_keys_file
+- name: Check existing VAPID public key in Misskey meta table
+  shell: |
+    {{ docker_compose_cmd }} exec -T db sh -c \
+      'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT \"swPublicKey\" FROM meta;"'
+  args:
+    chdir: '{{ misskey_dir }}'
+  register: vapid_db_check
+  changed_when: false
   when: not ansible_check_mode
 
-- name: Generate VAPID keys
-  command: docker run node npx web-push generate-vapid-keys --json
-  register: vapid_keys
+- name: Generate new VAPID keys (only if DB has none)
+  command: >
+    {{ docker_compose_cmd }} exec -T web
+    node -e "console.log(JSON.stringify(require('web-push').generateVAPIDKeys()))"
+  args:
+    chdir: '{{ misskey_dir }}'
+  register: vapid_gen
+  no_log: true
   when:
     - not ansible_check_mode
-    - not (vapid_keys_file.stat.exists | default(true))
+    - vapid_db_check.stdout | default('') | trim == ''
 
-- name: Save VAPID keys to a file
-  ansible.builtin.copy:
-    content: '{{ vapid_keys.stdout }}'
-    dest: '{{ backup_dir }}/misskey/vapid_keys.yml'
+- name: Apply generated VAPID keys to Misskey meta table
+  shell: |
+    {{ docker_compose_cmd }} exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+    UPDATE meta SET
+      "swPublicKey" = '{{ (vapid_gen.stdout | from_json).publicKey }}',
+      "swPrivateKey" = '{{ (vapid_gen.stdout | from_json).privateKey }}',
+      "enableServiceWorker" = true;
+    SQL
+  args:
+    chdir: '{{ misskey_dir }}'
+  no_log: true
   when:
     - not ansible_check_mode
-    - not (vapid_keys_file.stat.exists | default(true))
-
-- name: Load VAPID keys from file
-  ansible.builtin.slurp:
-    src: '{{ backup_dir }}/misskey/vapid_keys.yml'
-  register: vapid_keys_content
-  when: not ansible_check_mode
-
-- name: Debug VAPID keys content
-  debug:
-    var: vapid_keys_content.content
-  when: not ansible_check_mode
-
-- name: Decode VAPID keys data
-  set_fact:
-    vapid_keys_data: "{{ vapid_keys_content.content | b64decode | from_yaml }}"
-  when: not ansible_check_mode
-
-- name: Set VAPID keys variables
-  set_fact:
-    vapid_public_key: "{{ vapid_keys_data.publicKey }}"
-    vapid_private_key: "{{ vapid_keys_data.privateKey }}"
-  when: not ansible_check_mode
-
-- name: Print VAPID keys
-  debug:
-    msg:
-      - 'Public Key: {{ vapid_public_key }}'
-      - 'Private Key: {{ vapid_private_key }}'
-  when: not ansible_check_mode
+    - vapid_db_check.stdout | default('') | trim == ''
