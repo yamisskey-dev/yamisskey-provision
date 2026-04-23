@@ -14,14 +14,14 @@
 
 - name: Create required directories
   file:
-    path: '{{ item }}'
+    path: '{{ misskey_dir }}/{{ item.path }}'
     state: directory
-    mode: '0755'
+    mode: '{{ item.mode }}'
   loop:
-    - '{{ misskey_dir }}/.config'
-    - '{{ misskey_dir }}/files'
-    - '{{ misskey_dir }}/redis'
-    - '{{ misskey_dir }}/db'
+    - { path: '.config', mode: '0755' }
+    - { path: 'files',   mode: '0777' }  # Misskey コンテナが upload を書き込むため
+    - { path: 'redis',   mode: '0755' }
+    - { path: 'db',      mode: '0700' }  # PostgreSQL data directory の要件
 
 - name: Check if required files exist
   ansible.builtin.stat:
@@ -118,13 +118,6 @@
   when: not ansible_check_mode
   register: start_output
   failed_when: start_output.rc != 0
-
-- name: Change permissions of files directory
-  file:
-    path: '{{ misskey_dir }}/files'
-    state: directory
-    mode: '0777'
-  when: not ansible_check_mode
 
 - name: Ensure backup directory exists
   file:
