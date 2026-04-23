@@ -105,11 +105,6 @@
         fail_msg: "Backup directory was not created"
         success_msg: "Backup directory created successfully"
 
-    - name: Check if VAPID keys file exists (generated during deployment)
-      ansible.builtin.stat:
-        path: "{{ backup_dir }}/misskey/vapid_keys.yml"
-      register: vapid_keys_check
-
     - name: Check files directory permissions
       ansible.builtin.stat:
         path: "{{ misskey_dir }}/files"
