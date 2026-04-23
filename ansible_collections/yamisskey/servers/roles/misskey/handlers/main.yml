@@ -8,3 +8,9 @@
     name: docker
     state: restarted
   become: true
+
+- name: Restart Misskey web
+  command: '{{ docker_compose_cmd }} restart web'
+  args:
+    chdir: '{{ misskey_dir }}'
+  when: not ansible_check_mode

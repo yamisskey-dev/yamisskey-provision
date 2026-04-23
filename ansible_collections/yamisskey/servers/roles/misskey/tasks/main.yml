@@ -44,7 +44,7 @@
     src: docker_example.yml.j2
     dest: '{{ misskey_dir }}/.config/default.yml'
     mode: '0644'
-  when: not required_files.results[1].stat.exists
+  notify: Restart Misskey web
 
 - name: Deploy docker.env from template
   template:
