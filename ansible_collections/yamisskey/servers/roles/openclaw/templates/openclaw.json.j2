@@ -1,6 +1,6 @@
 {
   "meta": {
-    "lastTouchedVersion": "{{ openclaw_version | default('2026.2.9') }}"
+    "lastTouchedVersion": "{{ openclaw_version | default('2026.5.27') }}"
   },
   "agents": {
     "list": [
@@ -29,15 +29,15 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(8) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(16) }},
-        "model": "{{ openclaw_subagents_model | default('openai-codex/gpt-5.1-codex-mini') }}"
+        "model": "{{ openclaw_subagents_model | default('openrouter/deepseek/deepseek-v3.2') }}"
       },
       "model": {
-        "primary": "{{ openclaw_default_model | default('openai-codex/gpt-5.3-codex') }}",
+        "primary": "{{ openclaw_default_model | default('openai-codex/gpt-5.5') }}",
         "fallbacks": {{ openclaw_model_fallbacks | default('["openrouter/deepseek/deepseek-v3.2", "anthropic/claude-opus-4-6"]') }}
       },
       "models": {
-        "openai-codex/gpt-5.3-codex": { "alias": "codex" },
-        "openai-codex/gpt-5.1-codex-mini": { "alias": "mini" },
+        "openai-codex/gpt-5.5": { "alias": "codex" },
+        "openai-codex/gpt-5.4": { "alias": "codex-prev" },
         "anthropic/claude-opus-4-6": { "alias": "opus" },
         "anthropic/claude-sonnet-4-6": { "alias": "sonnet" },
         "openrouter/deepseek/deepseek-v3.2": { "alias": "ds" }
@@ -129,8 +129,8 @@
     },
     "controlUi": {
       "enabled": true,
-      "allowInsecureAuth": {{ openclaw_allow_insecure_auth | default('true') | lower }},
-      "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default('true') | lower }}
+      "allowInsecureAuth": {{ openclaw_allow_insecure_auth | default('false') | lower }},
+      "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default('false') | lower }}
     }
   },
   "discovery": {
@@ -155,14 +155,14 @@
         "api": "openai-responses",
         "models": [
           {
-            "id": "gpt-5.3-codex",
-            "name": "GPT-5.3 Codex",
-            "contextWindow": 192000,
+            "id": "gpt-5.5",
+            "name": "GPT-5.5 (Codex)",
+            "contextWindow": 256000,
             "maxTokens": 65536
           },
           {
-            "id": "gpt-5.1-codex-mini",
-            "name": "GPT-5.1 Codex Mini",
+            "id": "gpt-5.4",
+            "name": "GPT-5.4 (Codex)",
             "contextWindow": 192000,
             "maxTokens": 65536
           }

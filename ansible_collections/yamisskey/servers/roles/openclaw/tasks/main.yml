@@ -89,6 +89,14 @@
     group: "{{ ansible_user }}"
   register: openclaw_sandbox_dockerfile_result
 
+- name: Pull upstream OpenClaw base image
+  community.docker.docker_image:
+    name: "{{ openclaw_image }}"
+    source: pull
+    force_source: true
+  become: true
+  register: openclaw_base_pull_result
+
 - name: Build sandbox image
   community.docker.docker_image:
     name: "{{ openclaw_sandbox_image_name | default('openclaw-sandbox') }}"
@@ -157,7 +165,7 @@
     project_src: "{{ openclaw_dir }}"
     state: present
     recreate: always
-  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false)) or (openclaw_compose_config_result.changed | default(false)) or (openclaw_dockerfile_result.changed | default(false))
+  when: (openclaw_config_result.changed | default(false)) or (openclaw_env_result.changed | default(false)) or (openclaw_compose_config_result.changed | default(false)) or (openclaw_dockerfile_result.changed | default(false)) or (openclaw_base_pull_result.changed | default(false))
   failed_when: false
 
 - name: Expose OpenClaw via Tailscale Serve (HTTPS fallback)
