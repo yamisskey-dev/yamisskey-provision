@@ -1,2 +1,5 @@
 ---
 # OpenClaw - AI Assistant Server
+# Note: openclaw_image is set in the role's vars/main.yml because role vars
+# outrank host_vars. Override there if you need to bump the upstream tag.
+openclaw_version: '2026.5.27'
