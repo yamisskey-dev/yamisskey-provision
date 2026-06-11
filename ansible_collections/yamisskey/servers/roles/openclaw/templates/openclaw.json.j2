@@ -29,18 +29,17 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(8) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(16) }},
-        "model": "{{ openclaw_subagents_model | default('openrouter/deepseek/deepseek-v3.2') }}"
+        "model": "{{ openclaw_subagents_model | default('opencode-go/deepseek-v4-flash') }}"
       },
       "model": {
-        "primary": "{{ openclaw_default_model | default('openai-codex/gpt-5.5') }}",
-        "fallbacks": {{ openclaw_model_fallbacks | default('["openrouter/deepseek/deepseek-v3.2", "anthropic/claude-opus-4-6"]') }}
+        "primary": "{{ openclaw_default_model | default('opencode-go/deepseek-v4-pro') }}",
+        "fallbacks": {{ openclaw_model_fallbacks | default('["openai-codex/gpt-5.5"]') }}
       },
       "models": {
+        "opencode-go/deepseek-v4-pro": { "alias": "ds" },
+        "opencode-go/deepseek-v4-flash": { "alias": "ds-flash" },
         "openai-codex/gpt-5.5": { "alias": "codex" },
-        "openai-codex/gpt-5.4": { "alias": "codex-prev" },
-        "anthropic/claude-opus-4-6": { "alias": "opus" },
-        "anthropic/claude-sonnet-4-6": { "alias": "sonnet" },
-        "openrouter/deepseek/deepseek-v3.2": { "alias": "ds" }
+        "openai-codex/gpt-5.4": { "alias": "codex-prev" }
       },
       "memorySearch": {
         "enabled": true,
@@ -60,7 +59,7 @@
       },
       "heartbeat": {
         "every": "{{ openclaw_heartbeat_every | default('55m') }}",
-        "model": "{{ openclaw_heartbeat_model | default('openai-codex/gpt-5.1-codex-mini') }}",
+        "model": "{{ openclaw_heartbeat_model | default('opencode-go/deepseek-v4-flash') }}",
         "target": "{{ openclaw_heartbeat_target | default('telegram') }}",
         "prompt": "{{ openclaw_heartbeat_prompt | default('Read HEARTBEAT.md if it exists. Then: (1) Review .learnings/ for recurring patterns (recurrence >= 3) and promote to project memory. (2) Check for unresolved errors and attempt safe fixes. (3) If a conversation was left mid-task, summarize status. (4) If nothing needs attention, reply HEARTBEAT_OK. If HEARTBEAT.md does not exist, create it with your own improvement checklist, then reply HEARTBEAT_OK.') }}",
         "activeHours": {
@@ -165,37 +164,6 @@
             "name": "GPT-5.4 (Codex)",
             "contextWindow": 192000,
             "maxTokens": 65536
-          }
-        ]
-      },
-      "openrouter": {
-        "baseUrl": "{{ openclaw_openrouter_base_url | default('https://openrouter.ai/api/v1') }}",
-        "apiKey": "${OPENROUTER_API_KEY}",
-        "api": "openai-completions",
-        "models": [
-          {
-            "id": "deepseek/deepseek-v3.2",
-            "name": "DeepSeek V3.2",
-            "contextWindow": 163840,
-            "maxTokens": 131072
-          }
-        ]
-      },
-      "anthropic": {
-        "baseUrl": "{{ openclaw_anthropic_base_url | default('https://api.anthropic.com/v1') }}",
-        "apiKey": "${ANTHROPIC_API_KEY}",
-        "models": [
-          {
-            "id": "claude-opus-4-6",
-            "name": "Claude Opus 4.6",
-            "contextWindow": 200000,
-            "maxTokens": 32768
-          },
-          {
-            "id": "claude-sonnet-4-6",
-            "name": "Claude Sonnet 4.6",
-            "contextWindow": 1000000,
-            "maxTokens": 32768
           }
         ]
       },
