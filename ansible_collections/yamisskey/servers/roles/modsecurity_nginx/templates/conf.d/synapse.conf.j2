@@ -49,12 +49,14 @@ server {
         # CORS is already included in server-level headers
     }
 
-    location /.well-known/matrix/client {
-        alias /var/www/synapse/.well-known/matrix/client;
+    # Served inline: the ModSecurity-Nginx container does not mount the Synapse
+    # well-known dir, so the alias 404s. Keep in sync with the matrix role's
+    # synapse_well_known_client.json.j2 — org.matrix.msc4143.rtc_foci points
+    # Element Call (MatrixRTC) at the self-hosted LiveKit backend.
+    location = /.well-known/matrix/client {
         default_type application/json;
-        # Security headers (must be included in location blocks that use add_header)
-        include /etc/nginx/conf.d/00-security-headers-deny.conf;
-        # CORS is already included in server-level headers
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        return 200 '{"m.homeserver":{"base_url":"https://{{ synapse_server_name }}","server_name":"{{ synapse_server_name }}"},"m.identity_server":{"base_url":"https://vector.im"},"org.matrix.msc4143.rtc_foci":[{"type":"livekit","livekit_service_url":"https://{{ livekit_jwt_server_name }}"}]}';
     }
 
     # Main Matrix endpoints
