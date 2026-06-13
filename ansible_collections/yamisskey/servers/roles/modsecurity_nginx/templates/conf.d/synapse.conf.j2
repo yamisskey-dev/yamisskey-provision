@@ -41,12 +41,14 @@ server {
     proxy_set_header Connection $connection_upgrade;
 
     # Well-known endpoints for Matrix federation
-    location /.well-known/matrix/server {
-        alias /var/www/synapse/.well-known/matrix/server;
+    # Federation discovery: delegate to :443 (Cloudflare Tunnel). The native
+    # 8448 port is not exposed (Tunnel only serves 443), which made lk-jwt-service
+    # time out on /_matrix/federation/v1/openid/userinfo and Element Call fail at
+    # the JWT step. Routing federation through 443 reaches Synapse via nginx.
+    location = /.well-known/matrix/server {
         default_type application/json;
-        # Security headers (must be included in location blocks that use add_header)
-        include /etc/nginx/conf.d/00-security-headers-deny.conf;
-        # CORS is already included in server-level headers
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        return 200 '{"m.server":"{{ synapse_server_name }}:443"}';
     }
 
     # Served inline: the ModSecurity-Nginx container does not mount the Synapse
