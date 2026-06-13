@@ -1,0 +1,35 @@
+# coturn configuration for Matrix VoIP (Synapse turn_uris)
+listening-port={{ coturn_listening_port }}
+min-port={{ coturn_min_port }}
+max-port={{ coturn_max_port }}
+{% if matrix_rtc_external_ip | default('') %}
+# Advertise the public IP in relay candidates (host-networked container would
+# otherwise pick the private/interface address and break NAT traversal).
+external-ip={{ matrix_rtc_external_ip }}
+{% endif %}
+
+use-auth-secret
+static-auth-secret={{ matrix_rtc.turn_shared_secret }}
+realm={{ turn_server_name }}
+
+fingerprint
+no-cli
+no-multicast-peers
+no-rfc5780
+no-stun-backward-compatibility
+response-origin-only-with-rfc5780
+
+# Synapse docs recommendation: cap per-user and total allocations
+user-quota=12
+total-quota=1200
+
+# Block relaying into private networks (incl. Tailscale CGNAT range)
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=100.64.0.0-100.127.255.255
+denied-peer-ip=127.0.0.0-127.255.255.255
+denied-peer-ip=169.254.0.0-169.254.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=::1
+denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff

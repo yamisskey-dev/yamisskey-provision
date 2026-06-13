@@ -52,4 +52,23 @@ push:
   include_content: true
 report_stats: true
 
+# VoIP / TURN (coturn on linode_prox) for legacy 1:1 calls across NAT
+turn_uris:
+  - "turn:{{ turn_server_name }}:3478?transport=udp"
+  - "turn:{{ turn_server_name }}:3478?transport=tcp"
+turn_shared_secret: "{{ synapse.turn_shared_secret }}"
+turn_user_lifetime: 86400000
+turn_allow_guests: true
+
+# Element Call (MatrixRTC) requirements
+experimental_features:
+  msc3266_enabled: true
+max_event_delay_duration: 24h
+rc_message:
+  per_second: 0.5
+  burst_count: 30
+rc_delayed_event_mgmt:
+  per_second: 1
+  burst_count: 20
+
 # vim:ft=yaml

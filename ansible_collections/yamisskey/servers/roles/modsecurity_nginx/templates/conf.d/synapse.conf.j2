@@ -41,20 +41,24 @@ server {
     proxy_set_header Connection $connection_upgrade;
 
     # Well-known endpoints for Matrix federation
-    location /.well-known/matrix/server {
-        alias /var/www/synapse/.well-known/matrix/server;
+    # Federation discovery: delegate to :443 (Cloudflare Tunnel). The native
+    # 8448 port is not exposed (Tunnel only serves 443), which made lk-jwt-service
+    # time out on /_matrix/federation/v1/openid/userinfo and Element Call fail at
+    # the JWT step. Routing federation through 443 reaches Synapse via nginx.
+    location = /.well-known/matrix/server {
         default_type application/json;
-        # Security headers (must be included in location blocks that use add_header)
-        include /etc/nginx/conf.d/00-security-headers-deny.conf;
-        # CORS is already included in server-level headers
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        return 200 '{"m.server":"{{ synapse_server_name }}:443"}';
     }
 
-    location /.well-known/matrix/client {
-        alias /var/www/synapse/.well-known/matrix/client;
+    # Served inline: the ModSecurity-Nginx container does not mount the Synapse
+    # well-known dir, so the alias 404s. Keep in sync with the matrix role's
+    # synapse_well_known_client.json.j2 — org.matrix.msc4143.rtc_foci points
+    # Element Call (MatrixRTC) at the self-hosted LiveKit backend.
+    location = /.well-known/matrix/client {
         default_type application/json;
-        # Security headers (must be included in location blocks that use add_header)
-        include /etc/nginx/conf.d/00-security-headers-deny.conf;
-        # CORS is already included in server-level headers
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        return 200 '{"m.homeserver":{"base_url":"https://{{ synapse_server_name }}","server_name":"{{ synapse_server_name }}"},"m.identity_server":{"base_url":"https://vector.im"},"org.matrix.msc4143.rtc_foci":[{"type":"livekit","livekit_service_url":"https://{{ livekit_jwt_server_name }}"}]}';
     }
 
     # Main Matrix endpoints

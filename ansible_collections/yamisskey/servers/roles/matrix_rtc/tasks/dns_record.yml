@@ -1,0 +1,44 @@
+---
+# Create or update a single Cloudflare DNS record (dns_record: {name, type, content, proxied})
+- name: Look up existing DNS record for {{ dns_record.name }}
+  uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records?name={{ dns_record.name }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ cloudflare_api_token }}"
+      Content-Type: "application/json"
+  register: matrix_rtc_dns_lookup
+
+- name: Create DNS record for {{ dns_record.name }}
+  uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ cloudflare_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      type: "{{ dns_record.type }}"
+      name: "{{ dns_record.name }}"
+      content: "{{ dns_record.content }}"
+      proxied: "{{ dns_record.proxied }}"
+      ttl: 1
+  when: matrix_rtc_dns_lookup.json.result | length == 0
+
+- name: Update DNS record for {{ dns_record.name }}
+  uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ cloudflare_zone_id }}/dns_records/{{ matrix_rtc_dns_lookup.json.result[0].id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ cloudflare_api_token }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      type: "{{ dns_record.type }}"
+      name: "{{ dns_record.name }}"
+      content: "{{ dns_record.content }}"
+      proxied: "{{ dns_record.proxied }}"
+      ttl: 1
+  when:
+    - matrix_rtc_dns_lookup.json.result | length > 0
+    - matrix_rtc_dns_lookup.json.result[0].content != dns_record.content

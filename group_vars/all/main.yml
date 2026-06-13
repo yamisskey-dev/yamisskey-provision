@@ -43,6 +43,9 @@ host_services:
     nginx: 80                  # Nginx for summaly
     summaly: 3030              # Summaly (behind nginx)
     squid: 3128                # Squid proxy
+    # Matrix RTC stack (NAT traversal for calls; media ports are exposed directly)
+    livekit: 7880              # LiveKit SFU signaling (WebSocket, behind tunnel)
+    livekit_jwt: 8380          # lk-jwt-service (MatrixRTC auth, behind tunnel)
 
   raspberrypi:
     # Minecraft dedicated server
@@ -106,6 +109,11 @@ cloudflared_ingress:
       service: "http://localhost:{{ host_services.linode_prox.media_proxy_rs }}"
     - hostname: "summaly.{{ domain }}"
       service: "http://localhost:{{ host_services.linode_prox.summaly }}"
+    # Matrix RTC (signaling/auth over tunnel; media goes direct via UDP)
+    - hostname: "livekit.{{ domain }}"
+      service: "http://localhost:{{ host_services.linode_prox.livekit }}"
+    - hostname: "livekit-jwt.{{ domain }}"
+      service: "http://localhost:{{ host_services.linode_prox.livekit_jwt }}"
   # Test services can be added to the lists above as needed
 
 # =========================================
@@ -121,3 +129,7 @@ uptime_server_name: "uptime.{{ domain }}"
 neo_quesdon_server_name: "neo-quesdon.{{ domain }}"
 garage_api_server_name: "drive.{{ domain }}"
 yamix_server_name: "mix.{{ domain }}"
+# Matrix RTC (turn.* is DNS-only A record to linode_prox; media cannot go through the tunnel)
+turn_server_name: "turn.{{ domain }}"
+livekit_server_name: "livekit.{{ domain }}"
+livekit_jwt_server_name: "livekit-jwt.{{ domain }}"

@@ -10,6 +10,7 @@
       "registration_shared_secret": "{{ synapse_inventory_secrets.registration_shared_secret | default('CHANGE_ME_REGISTRATION_SECRET') }}",
       "macaroon_secret_key": "{{ synapse_inventory_secrets.macaroon_secret_key | default('CHANGE_ME_MACAROON_SECRET') }}",
       "form_secret": "{{ synapse_inventory_secrets.form_secret | default('CHANGE_ME_FORM_SECRET') }}",
+      "turn_shared_secret": "{{ synapse_inventory_secrets.turn_shared_secret | default('CHANGE_ME_TURN_SECRET') }}",
       "postgresql_user": "{{ synapse_inventory_postgresql.user | default('synapse') }}",
       "postgresql_password": "{{ synapse_inventory_postgresql.password | default('CHANGE_ME_DB_PASSWORD') }}",
       "postgresql_database": "{{ synapse_inventory_postgresql.database | default('synapse') }}",
@@ -114,12 +115,13 @@
 - name: Start Synapse container
   community.docker.docker_compose_v2:
     project_src: /var/www/synapse
-    recreate: never
+    pull: always
 
 - name: Start element
   community.docker.docker_compose_v2:
     project_src: /var/www/element
-    state: restarted
+    pull: always
+    state: present
 
 - name: Copy element custom configuration file
   template:

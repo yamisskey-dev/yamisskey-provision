@@ -1,0 +1,32 @@
+services:
+  coturn:
+    image: {{ coturn_image }}:{{ coturn_tag }}
+    container_name: coturn
+    restart: always
+    # Host networking: TURN relays allocate from a UDP port range
+    network_mode: host
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+
+  livekit:
+    image: {{ livekit_image }}:{{ livekit_tag }}
+    container_name: livekit
+    restart: always
+    network_mode: host
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    command: --config /etc/livekit.yaml
+
+  lk-jwt-service:
+    image: {{ lk_jwt_image }}:{{ lk_jwt_tag }}
+    container_name: lk-jwt-service
+    restart: always
+    ports:
+      - "127.0.0.1:{{ lk_jwt_port }}:8080"
+    environment:
+      LK_JWT_PORT: "8080"
+      LIVEKIT_URL: "wss://{{ livekit_server_name }}"
+      LIVEKIT_KEY: "{{ matrix_rtc.livekit_api_key }}"
+      LIVEKIT_SECRET: "{{ matrix_rtc.livekit_api_secret }}"
+      LIVEKIT_FULL_ACCESS_HOMESERVERS: "{{ synapse_server_name }}"
