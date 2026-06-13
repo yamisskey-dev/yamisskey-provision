@@ -1,0 +1,6 @@
+---
+- name: Deploy Matrix RTC stack (coturn + LiveKit + lk-jwt-service)
+  hosts: proxy_servers
+  become: true
+  roles:
+    - yamisskey.servers.matrix_rtc

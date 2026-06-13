@@ -1,0 +1,110 @@
+---
+- name: Load Matrix RTC secrets from inventory
+  set_fact:
+    matrix_rtc_inventory_secrets: "{{ hostvars[inventory_hostname].matrix_rtc | default({}) }}"
+
+- name: Build Matrix RTC secret values
+  set_fact:
+    matrix_rtc: {
+      "turn_shared_secret": "{{ matrix_rtc_inventory_secrets.turn_shared_secret | default('CHANGE_ME_TURN_SECRET') }}",
+      "livekit_api_key": "{{ matrix_rtc_inventory_secrets.livekit_api_key | default('CHANGE_ME_LIVEKIT_KEY') }}",
+      "livekit_api_secret": "{{ matrix_rtc_inventory_secrets.livekit_api_secret | default('CHANGE_ME_LIVEKIT_SECRET') }}"
+    }
+
+- name: Surface placeholder Matrix RTC secrets
+  debug:
+    msg: >-
+      Matrix RTC secret '{{ item.key }}' is using a placeholder value. Update
+      host_vars/{{ inventory_hostname }}/secrets.sops.yml → matrix_rtc.{{ item.key }}.
+  loop: "{{ matrix_rtc | dict2items }}"
+  when: item.value is string and item.value is search('^CHANGE_ME_')
+
+- name: Create matrix-rtc directory
+  file:
+    path: "{{ matrix_rtc_dir }}"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Deploy coturn configuration
+  template:
+    src: turnserver.conf.j2
+    dest: "{{ matrix_rtc_dir }}/turnserver.conf"
+    mode: '0640'
+  become: true
+  notify: Restart matrix-rtc
+
+- name: Deploy LiveKit configuration
+  template:
+    src: livekit.yaml.j2
+    dest: "{{ matrix_rtc_dir }}/livekit.yaml"
+    mode: '0640'
+  become: true
+  notify: Restart matrix-rtc
+
+- name: Deploy matrix-rtc docker-compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ matrix_rtc_dir }}/docker-compose.yml"
+    mode: '0640'
+  become: true
+  notify: Restart matrix-rtc
+
+- name: Allow TURN and RTC media ports via UFW
+  ansible.builtin.command: ufw allow {{ item }}
+  changed_when: false
+  loop:
+    - "{{ coturn_listening_port }}/tcp"
+    - "{{ coturn_listening_port }}/udp"
+    - "{{ coturn_min_port }}:{{ coturn_max_port }}/udp"
+    - "{{ livekit_rtc_tcp_port }}/tcp"
+    - "{{ livekit_rtc_udp_port }}/udp"
+  become: true
+  when: ansible_service_mgr | default('') == 'systemd'
+
+- name: Start matrix-rtc stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ matrix_rtc_dir }}"
+    state: present
+  become: true
+  # In --check mode the directory/templates above are never written
+  when: not ansible_check_mode
+
+# --- DNS records (Cloudflare API) ---
+# turn.{{ domain }} must resolve directly to this host (DNS only, not proxied):
+# TURN/SFU media is UDP and cannot traverse the Cloudflare proxy or Tunnel.
+- name: Detect public IP for TURN DNS record
+  uri:
+    url: https://api.ipify.org?format=json
+    return_content: true
+  register: matrix_rtc_public_ip_response
+  when:
+    - not ansible_check_mode
+    - matrix_rtc_manage_dns | bool
+    - cloudflare_api_token is defined
+    - cloudflare_zone_id is defined
+
+- name: Manage Matrix RTC DNS records
+  include_tasks: dns_record.yml
+  loop:
+    # default() guards: loop is expanded even when the task is skipped
+    - name: "{{ turn_server_name }}"
+      type: A
+      content: "{{ (matrix_rtc_public_ip_response.json | default({})).ip | default('') }}"
+      proxied: false
+    - name: "{{ livekit_server_name }}"
+      type: CNAME
+      content: "{{ cloudflared_tunnel_uuid | default('') }}.cfargotunnel.com"
+      proxied: true
+    - name: "{{ livekit_jwt_server_name }}"
+      type: CNAME
+      content: "{{ cloudflared_tunnel_uuid | default('') }}.cfargotunnel.com"
+      proxied: true
+  loop_control:
+    loop_var: dns_record
+  when:
+    - not ansible_check_mode
+    - matrix_rtc_manage_dns | bool
+    - cloudflare_api_token is defined
+    - cloudflare_zone_id is defined
+    - (cloudflared_tunnel_uuid | default('')) | length > 0

@@ -1,0 +1,11 @@
+port: {{ livekit_port }}
+rtc:
+  tcp_port: {{ livekit_rtc_tcp_port }}
+  # Single-port UDP mux: keeps the firewall surface small
+  udp_port: {{ livekit_rtc_udp_port }}
+  # Linode binds the public IP directly on the interface
+  use_external_ip: false
+keys:
+  {{ matrix_rtc.livekit_api_key }}: {{ matrix_rtc.livekit_api_secret }}
+logging:
+  level: info

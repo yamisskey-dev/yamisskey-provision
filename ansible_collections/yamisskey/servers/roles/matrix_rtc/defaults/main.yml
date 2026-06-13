@@ -1,0 +1,25 @@
+---
+# Matrix RTC stack (coturn + LiveKit SFU + lk-jwt-service) for NAT traversal
+matrix_rtc_dir: /var/www/matrix-rtc
+
+# coturn (TURN relay for legacy 1:1 Matrix VoIP)
+coturn_image: coturn/coturn
+coturn_tag: 4-alpine
+coturn_listening_port: 3478
+coturn_min_port: 49160
+coturn_max_port: 49360
+
+# LiveKit SFU (Element Call / MatrixRTC backend)
+livekit_image: livekit/livekit-server
+livekit_tag: v1.13.1
+livekit_port: "{{ host_services[inventory_hostname].livekit | default(7880) }}"
+livekit_rtc_tcp_port: 7881
+livekit_rtc_udp_port: 7882
+
+# lk-jwt-service (MatrixRTC authorization service)
+lk_jwt_image: ghcr.io/element-hq/lk-jwt-service
+lk_jwt_tag: "0.5.0"  # image tags have no "v" prefix (GitHub release v0.5.0 = image 0.5.0)
+lk_jwt_port: "{{ host_services[inventory_hostname].livekit_jwt | default(8380) }}"
+
+# DNS record management via Cloudflare API (requires cloudflare_api_token / cloudflare_zone_id)
+matrix_rtc_manage_dns: true

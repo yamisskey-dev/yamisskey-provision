@@ -18,6 +18,9 @@
     - role: yamisskey.servers.misskey_proxy
       tags: [proxy, nginx]
 
+    - role: yamisskey.servers.matrix_rtc
+      tags: [matrix_rtc, rtc]
+
     - role: yamisskey.servers.monitor
       tags: [monitoring, observability]
       when: "enable_monitoring | default(false) | bool"
