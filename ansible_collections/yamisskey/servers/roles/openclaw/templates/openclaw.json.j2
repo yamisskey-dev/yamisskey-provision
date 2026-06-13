@@ -1,6 +1,6 @@
 {
   "meta": {
-    "lastTouchedVersion": "{{ openclaw_version | default('2026.6.5') }}"
+    "lastTouchedVersion": "{{ openclaw_version | default('2026.6.6') }}"
   },
   "agents": {
     "list": [
@@ -43,7 +43,12 @@
       },
       "memorySearch": {
         "enabled": true,
-        "provider": "openai"
+        "provider": "openai",
+        "model": "text-embedding-3-small",
+        "remote": {
+          "baseUrl": "https://api.openai.com/v1",
+          "apiKey": "${OPENAI_API_KEY}"
+        }
       },
       "contextPruning": {
         "mode": "{{ openclaw_context_pruning_mode | default('cache-ttl') }}",
@@ -75,7 +80,14 @@
       "openai:default": {
         "provider": "openai",
         "mode": "oauth"
+      },
+      "openai:api-key": {
+        "provider": "openai",
+        "mode": "api_key"
       }
+    },
+    "order": {
+      "openai": ["openai:default", "openai:api-key"]
     }
   },
   "skills": {},
@@ -152,6 +164,11 @@
     }
   },
   "models": {
-    "mode": "merge"
+    "mode": "merge",
+    "providers": {
+      "openai": {
+        "apiKey": "${OPENAI_API_KEY}"
+      }
+    }
   }
 }
