@@ -52,7 +52,7 @@
 - name: Pull CryptPad Docker image
   community.docker.docker_image:
     name: cryptpad/cryptpad
-    tag: version-2024.9.1
+    tag: version-2026.5.1
     source: pull
     force_source: true
 
