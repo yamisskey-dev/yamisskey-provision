@@ -2,6 +2,11 @@
 listening-port={{ coturn_listening_port }}
 min-port={{ coturn_min_port }}
 max-port={{ coturn_max_port }}
+{% if matrix_rtc_external_ip | default('') %}
+# Advertise the public IP in relay candidates (host-networked container would
+# otherwise pick the private/interface address and break NAT traversal).
+external-ip={{ matrix_rtc_external_ip }}
+{% endif %}
 
 use-auth-secret
 static-auth-secret={{ matrix_rtc.turn_shared_secret }}

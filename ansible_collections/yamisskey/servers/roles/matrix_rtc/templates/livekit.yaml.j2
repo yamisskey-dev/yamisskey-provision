@@ -3,8 +3,14 @@ rtc:
   tcp_port: {{ livekit_rtc_tcp_port }}
   # Single-port UDP mux: keeps the firewall surface small
   udp_port: {{ livekit_rtc_udp_port }}
-  # Linode binds the public IP directly on the interface
+{% if matrix_rtc_external_ip | default('') %}
+  # Advertise the detected public IP in ICE candidates
+  node_ip: {{ matrix_rtc_external_ip }}
   use_external_ip: false
+{% else %}
+  # Fall back to STUN-based external IP discovery
+  use_external_ip: true
+{% endif %}
 keys:
   {{ matrix_rtc.livekit_api_key }}: {{ matrix_rtc.livekit_api_secret }}
 logging:

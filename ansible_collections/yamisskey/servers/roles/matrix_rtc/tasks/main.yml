@@ -26,6 +26,20 @@
     mode: '0755'
   become: true
 
+- name: Detect public IP (coturn/LiveKit external-ip and DNS A record)
+  uri:
+    url: https://api.ipify.org?format=json
+    return_content: true
+  register: matrix_rtc_public_ip_response
+  when: not ansible_check_mode
+
+- name: Set external IP fact for ICE candidates
+  set_fact:
+    matrix_rtc_external_ip: "{{ matrix_rtc_public_ip_response.json.ip }}"
+  when:
+    - not ansible_check_mode
+    - matrix_rtc_public_ip_response.json is defined
+
 - name: Deploy coturn configuration
   template:
     src: turnserver.conf.j2
@@ -73,17 +87,7 @@
 # --- DNS records (Cloudflare API) ---
 # turn.{{ domain }} must resolve directly to this host (DNS only, not proxied):
 # TURN/SFU media is UDP and cannot traverse the Cloudflare proxy or Tunnel.
-- name: Detect public IP for TURN DNS record
-  uri:
-    url: https://api.ipify.org?format=json
-    return_content: true
-  register: matrix_rtc_public_ip_response
-  when:
-    - not ansible_check_mode
-    - matrix_rtc_manage_dns | bool
-    - cloudflare_api_token is defined
-    - cloudflare_zone_id is defined
-
+# Public IP is detected earlier (matrix_rtc_public_ip_response) for external-ip.
 - name: Manage Matrix RTC DNS records
   include_tasks: dns_record.yml
   loop:

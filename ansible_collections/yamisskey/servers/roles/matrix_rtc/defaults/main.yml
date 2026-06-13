@@ -2,6 +2,10 @@
 # Matrix RTC stack (coturn + LiveKit SFU + lk-jwt-service) for NAT traversal
 matrix_rtc_dir: /var/www/matrix-rtc
 
+# Public IPv4 advertised by coturn/LiveKit in ICE candidates.
+# Empty = auto-detected via ipify at deploy time (see tasks/main.yml).
+matrix_rtc_external_ip: ""
+
 # coturn (TURN relay for legacy 1:1 Matrix VoIP)
 coturn_image: coturn/coturn
 coturn_tag: 4-alpine
