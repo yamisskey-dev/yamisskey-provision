@@ -115,12 +115,13 @@
 - name: Start Synapse container
   community.docker.docker_compose_v2:
     project_src: /var/www/synapse
-    recreate: never
+    pull: always
 
 - name: Start element
   community.docker.docker_compose_v2:
     project_src: /var/www/element
-    state: restarted
+    pull: always
+    state: present
 
 - name: Copy element custom configuration file
   template:

@@ -1,6 +1,6 @@
 services:
   synapse:
-    image: matrixdotorg/synapse:latest
+    image: matrixdotorg/synapse:{{ synapse_tag }}
     container_name: synapse
     restart: unless-stopped
     volumes:

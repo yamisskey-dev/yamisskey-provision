@@ -1,4 +1,8 @@
 ---
+# Container image tags (pin explicitly for reproducible deploys)
+synapse_tag: v1.154.0
+element_tag: v1.12.21
+
 # Default PostgreSQL connection values used when secrets are generated on first run.
 matrix_postgresql_user: synapse
 matrix_postgresql_database: synapse
