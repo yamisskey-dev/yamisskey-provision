@@ -99,7 +99,8 @@
     "telegram": {
       "enabled": true,
       "botToken": "${TELEGRAM_BOT_TOKEN}",
-      "dmPolicy": "pairing",
+      "dmPolicy": "{{ openclaw_telegram_dm_policy | default('allowlist') }}",
+      "allowFrom": {{ openclaw_telegram_allow_from | default([]) | to_json }},
       "groupPolicy": "open",
       "commands": {
         "native": "auto"
