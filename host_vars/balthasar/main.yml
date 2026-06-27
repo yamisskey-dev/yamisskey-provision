@@ -11,7 +11,7 @@ misskey_port: "{{ host_services.balthasar.misskey }}"
 
 # Misskey configuration (production)
 misskey_host: "{{ domain }}"
-misskey_tag: "2026.6.0-yami-1.9.38"
+misskey_tag: "2026.6.0-yami-1.9.39"
 
 # Nginx services to deploy (user-facing app services only)
 # Note: ctfd moved to Proxmox VM

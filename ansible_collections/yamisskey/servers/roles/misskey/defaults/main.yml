@@ -28,7 +28,7 @@ misskey_host: "{{ domain }}"
 # host_vars で必ず上書きすること。このデフォルトは host 側の指定漏れで
 # 未知のバージョンに追従してしまう事故を防ぐセーフガード。
 # リリース: https://github.com/yamisskey-dev/yamisskey/releases
-misskey_tag: '2026.6.0-yami-1.9.38'
+misskey_tag: '2026.6.0-yami-1.9.39'
 misskey_enable_dev_mode: false
 
 # Backup directory
