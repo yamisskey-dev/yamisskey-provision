@@ -9,7 +9,8 @@
         path: "{{ item }}"
       register: backup_dirs
       loop:
-        - /opt/backups/misskey
+        # backup_dir は vars/main.yml で /home/{{ ansible_user }}/backups に解決される
+        - /home/root/backups/misskey
         - /opt/misskey-backup
         - /opt/misskey-backup/backups
 

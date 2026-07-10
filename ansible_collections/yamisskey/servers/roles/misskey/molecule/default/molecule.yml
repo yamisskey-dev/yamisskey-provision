@@ -32,6 +32,7 @@ provisioner:
       misskey-test-instance:
         # Misskey test configuration
         domain: "test.example.com"
+        garage_api_server_name: "garage.test.example.com"
         misskey_dir: "/opt/test-misskey"
         backup_dir: "/tmp/test-backup"
         docker_compose_cmd: "docker compose"

@@ -9,9 +9,10 @@
         path: "{{ item }}"
       register: openclaw_dirs
       loop:
+        # openclaw_dir と openclaw_home（defaults/main.yml 参照）
         - /opt/openclaw
-        - /opt/openclaw/config
-        - /opt/openclaw/workspace
+        - /home/node/.openclaw
+        - /home/node/.openclaw/workspace
 
     - name: Assert directories exist
       ansible.builtin.assert:
@@ -22,7 +23,7 @@
 
     - name: Check OpenClaw config file
       ansible.builtin.stat:
-        path: /opt/openclaw/config/openclaw.json
+        path: /home/node/.openclaw/openclaw.json
       register: openclaw_config
 
     - name: Assert config file exists with correct permissions

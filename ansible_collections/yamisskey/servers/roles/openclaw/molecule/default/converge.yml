@@ -44,6 +44,13 @@
       ansible.builtin.add_host:
         name: balthasar
         ansible_host: "127.0.0.1"
+      changed_when: false
+
+    # テストコンテナに Docker Engine は無いが GID 解決タスクが要求する
+    - name: Ensure docker group exists
+      ansible.builtin.group:
+        name: docker
+        state: present
 
   tasks:
     - name: Apply openclaw role

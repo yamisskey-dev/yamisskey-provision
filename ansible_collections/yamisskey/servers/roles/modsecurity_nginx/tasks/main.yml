@@ -114,7 +114,10 @@
   loop: "{{ existing_configs.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
-  when: (item.path | basename | replace('.conf', '')) not in modsecurity_services_effective
+  # 00- プレフィックスは後続タスクが作る security headers ファイルなので削除対象外
+  when:
+    - not (item.path | basename).startswith('00-')
+    - (item.path | basename | replace('.conf', '')) not in modsecurity_services_effective
   notify: reload modsecurity nginx
 
 - name: Create security headers configuration files
