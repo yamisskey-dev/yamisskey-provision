@@ -1,7 +1,4 @@
 ansible_user: taka
-source_sudo_password: "source_user_password"
-destination_sudo_password: "destination_user_password"
-set_dir: '/home/{{ ansible_user }}/yamisskey-provision'
 domain: yami.ski
 github_org: yamisskey-dev
 
