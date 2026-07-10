@@ -46,4 +46,5 @@
     name: "{{ db_backup_truenas_host }}"
     key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 ' + db_backup_truenas_host + ' 2>/dev/null') }}"
     state: present
-  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  # コンテナ内の ansible_env ではなくコントローラ側の env で molecule 実行を判定する
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''

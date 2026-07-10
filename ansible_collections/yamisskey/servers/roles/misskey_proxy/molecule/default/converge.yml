@@ -94,6 +94,15 @@
       loop:
         - /tmp/test
 
+    # squid.conf.j2 が hostvars['balthasar'] / hostvars['caspar'] を参照するため
+    - name: Add fake Misskey hosts for squid ACL resolution
+      ansible.builtin.add_host:
+        name: "{{ item }}"
+        ansible_host: "127.0.0.1"
+      loop:
+        - balthasar
+        - caspar
+
   tasks:
     - name: Apply misskey-proxy role
       include_role:
