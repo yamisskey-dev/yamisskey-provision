@@ -33,6 +33,8 @@ provisioner:
         # Role-specific test configuration will be added here
         ansible_user: "root"
         domain: "example.com"
+        turn_server_name: "turn.example.com"
+        livekit_jwt_server_name: "livekit-jwt.example.com"
         synapse:
           registration_shared_secret: reg-secret
           macaroon_secret_key: macaroon-secret

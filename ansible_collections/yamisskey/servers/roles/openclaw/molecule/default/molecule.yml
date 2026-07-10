@@ -41,6 +41,7 @@ provisioner:
           openai_api_key: "test-openai-key"
           discord_webhook_url: "https://discord.com/api/webhooks/test"
           discord_bot_token: "test-discord-token"
+          telegram_bot_token: "test-telegram-token"
           matrix_password: "test-matrix-password"
         # Required by vars/main.yml
         host_services:

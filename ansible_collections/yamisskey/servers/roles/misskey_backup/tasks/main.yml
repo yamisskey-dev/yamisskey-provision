@@ -13,7 +13,8 @@
     dest: "{{ misskey_backup_dir }}"
     version: "{{ misskey_backup_version }}"
     force: true
-  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  # コンテナ内の ansible_env ではなくコントローラ側の env で molecule 実行を判定する
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''
 
 - name: Create backups directory
   file:
@@ -32,7 +33,7 @@
   when:
     - misskey_backup_r2_access_key_id is defined
     - misskey_backup_b2_account is defined
-    - ansible_env.MOLECULE_SCENARIO_NAME is not defined
+    - lookup('env', 'MOLECULE_SCENARIO_NAME') == ''
 
 - name: Build and start backup container
   community.docker.docker_compose_v2:
@@ -40,4 +41,4 @@
     build: always
     pull: always
   register: compose_result
-  when: ansible_env.MOLECULE_SCENARIO_NAME is not defined
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''
