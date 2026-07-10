@@ -1,13 +1,25 @@
-# yamisskey-provision
+# yamisskey-ansible
 
 Linux server infrastructure management with Ansible and SOPS secrets management.
+
+> **Note**: This repository was formerly named `yamisskey-provision`. Some internal files and documents still use the old name.
+
+## Related Repositories
+
+- [yamisskey-host](https://github.com/yamisskey-dev/yamisskey-host) - Infrastructure overview and diagrams
+- [yamisskey-terraform](https://github.com/yamisskey-dev/yamisskey-terraform) - Proxmox VM provisioning
+- [yamisskey-backup](https://github.com/yamisskey-dev/yamisskey-backup) - Database backups
+- [yamisskey-doctor](https://github.com/yamisskey-dev/yamisskey-doctor) - Restore and verification
 
 ## Managed Servers
 
 - **balthasar** - Production services (Misskey, Matrix, CryptPad)
-- **caspar** - Monitoring & Auth (Prometheus, Grafana)
+- **caspar** - Monitoring & Beta (Prometheus, Grafana, Misskey Beta)
 - **linode_prox** - External proxy (Squid, MediaProxy, Summaly)
 - **raspberrypi** - Game server (Minecraft) - Raspberry Pi OS
+- **ctfd** - CTF platform (CTFd) - Proxmox VM on mary
+- **tpot** - Honeypot (T-Pot) - Proxmox VM on mary
+- **openclaw** - AI assistant (OpenClaw)
 
 ## Infrastructure as Code
 
@@ -26,9 +38,11 @@ graph LR
         linode_prox[linode-proxy]:::target
         rpi[Raspberry Pi]:::target
         ctfd[Proxmox mary/ctfd]:::target
+        tpot[Proxmox mary/tpot]:::target
+        openclaw:::target
     end
 
-    ansible -->|SSH/Tailscale| balthasar & caspar & linode_prox & rpi & ctfd
+    ansible -->|SSH/Tailscale| balthasar & caspar & linode_prox & rpi & ctfd & tpot & openclaw
 ```
 
 ## System Requirements
@@ -67,8 +81,8 @@ tailscale ssh <hostname>
 ## Install
 
 ```bash
-git clone https://github.com/yamisskey-dev/yamisskey-provision.git
-cd yamisskey-provision
+git clone https://github.com/yamisskey-dev/yamisskey-ansible.git
+cd yamisskey-ansible
 task install
 task inventory
 ```
@@ -94,7 +108,7 @@ task help
 ## Project Structure
 
 ```
-yamisskey-provision/
+yamisskey-ansible/
 ├── playbooks/          # Ansible playbooks
 ├── group_vars/         # Group variables
 ├── host_vars/          # Host-specific variables

@@ -2,7 +2,7 @@
 
 ## 概要
 
-本書は Yamisskey Provision 環境のセキュリティ運用手順を定めるものです。特にシークレット管理、KMS キー回転、災害復旧（DR）について詳細に記載しています。
+本書は yamisskey-ansible（旧称 yamisskey-provision）環境のセキュリティ運用手順を定めるものです。特にシークレット管理、KMS キー回転、災害復旧（DR）について詳細に記載しています。
 
 ## 目次
 
@@ -30,7 +30,7 @@
 ├─────────────────────────────────────────────────────────┤
 │ Layer 4: Encrypted Storage (Garage + Age)               │
 ├─────────────────────────────────────────────────────────┤
-│ Layer 5: Secure Backup (R2 + Filen with encryption)    │
+│ Layer 5: Secure Backup (R2 + B2 with encryption)       │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -41,7 +41,7 @@
 | SOPS | ✅ AES256-GCM | 🔐 Age Keys | ✅ Git + 分離保管 | ✅ Commit hooks |
 | Garage | ✅ AES256-GCM | 🔐 IAM Policy | ✅ Cross-region | ✅ Audit logs |
 | Cloudflare | ✅ TLS 1.3 | 🔐 Zero Trust | ✅ Config backup | ✅ Security events |
-| Database | ✅ At-rest + TLS | 🔐 User roles | ✅ Point-in-time | ✅ Query logs |
+| Database | ✅ At-rest + TLS | 🔐 User roles | ✅ 定期ダンプ (R2/B2) | ✅ Query logs |
 
 ---
 
@@ -52,51 +52,48 @@
 #### 初期設定
 
 ```bash
-# 既存の Age 秘密鍵が無い場合は生成
-age-keygen -o age-key.txt
+# 既存の Age 秘密鍵が無い場合は生成（Taskfile の既定パス）
+mkdir -p ~/.sops
+age-keygen -o ~/.sops/key.txt
 
 # 権限を制限
-chmod 600 age-key.txt
+chmod 600 ~/.sops/key.txt
 
-# SOPS 用に環境変数を設定（推奨）
-export SOPS_AGE_KEY_FILE=$(pwd)/age-key.txt
+# SOPS 用に環境変数を設定（task 実行時は自動設定される）
+export SOPS_AGE_KEY_FILE=~/.sops/key.txt
 ```
 
-Age 公開鍵は `.sops.yaml` の `keys:` に登録済みです。鍵の追加・入れ替えを行う場合は `.sops.yaml` を更新してコミットしてください。
+Age 公開鍵は `.sops.yaml` の `creation_rules` に受信者として登録済みです。鍵の追加・入れ替えを行う場合は `.sops.yaml` を更新してコミットしてください。
 
 ### シークレット保管場所
 
-- 共通シークレット: `deploy/servers/group_vars/all/secrets.yml`
-- ホスト専用シークレット: `deploy/servers/host_vars/<host>/secrets.yml`
-- アプライアンス系: `deploy/appliances/group_vars/all/secrets.yml`（必要に応じて作成）
+- ホスト専用シークレット: `host_vars/<host>/secrets.sops.yml`（全7ホスト: balthasar, caspar, ctfd, linode_prox, openclaw, raspberrypi, tpot）
+- 共通シークレット: `group_vars/all/secrets.yml`（`task secrets` の既定パス。現在は未作成）
 
 いずれも SOPS で暗号化された YAML です。復号済みの内容はコミットしないでください。
 
-### 編集フロー（make secrets 推奨）
+### 編集フロー（task secrets 推奨）
 
 ```bash
-# グローバルシークレットを編集
-make secrets OPERATION=edit TARGET=servers
-
 # balthasar 用シークレットを編集
-make secrets OPERATION=edit TARGET=servers HOST=balthasar
+task secrets OPERATION=edit FILE=host_vars/balthasar/secrets.sops.yml
 
 # 暗号化状態を検証
-make secrets OPERATION=status TARGET=servers HOST=balthasar
+task secrets OPERATION=status FILE=host_vars/balthasar/secrets.sops.yml
 ```
 
-`HOST` にハイフンを含む場合は自動でアンダースコアに変換されます（例: `HOST=linode-prox` → `host_vars/linode_prox/`）。 `FILE` を指定すると任意の YAML を直接開くことも可能です。
+`HOST=<host>` 指定は `host_vars/<host>/secrets.yml` という旧命名を参照するため、現行の `secrets.sops.yml` に対しては `FILE=` を指定してください（`HOST` のハイフンはアンダースコアに変換されます。例: `HOST=linode-prox` → `host_vars/linode_prox/`）。
 
 ### SOPS 直接操作
 
-`make` を使わない場合は以下を利用します。
+`task` を使わない場合は以下を利用します。
 
 ```bash
 # 復号して閲覧
-SOPS_AGE_KEY_FILE=age-key.txt sops -d deploy/servers/group_vars/all/secrets.yml
+SOPS_AGE_KEY_FILE=~/.sops/key.txt sops -d host_vars/balthasar/secrets.sops.yml
 
 # 編集
-SOPS_AGE_KEY_FILE=age-key.txt sops deploy/servers/host_vars/balthasar/secrets.yml
+SOPS_AGE_KEY_FILE=~/.sops/key.txt sops host_vars/balthasar/secrets.sops.yml
 ```
 
 ### 鍵ローテーション
@@ -107,14 +104,14 @@ SOPS_AGE_KEY_FILE=age-key.txt sops deploy/servers/host_vars/balthasar/secrets.ym
 2. 既存ファイルの受信者を更新
 
    ```bash
-   make secrets OPERATION=updatekeys TARGET=servers
-   make secrets OPERATION=updatekeys TARGET=servers HOST=balthasar
-   # 必要に応じて appliances も同様に実施
+   for f in host_vars/*/secrets.sops.yml; do
+     task secrets OPERATION=updatekeys FILE="$f"
+   done
    ```
 
 3. 古い鍵を `.sops.yaml` から削除し、Age 秘密鍵を安全に破棄
 
-4. `make secrets OPERATION=status ...` で復号確認
+4. `task secrets OPERATION=status FILE=...` で復号確認
 
 ---
 
@@ -162,7 +159,7 @@ NEW_KEY=$(openssl rand -base64 32)
 echo "Generated new key: $NEW_KEY"
 
 # SOPS に新キーを追加（例）
-make secrets OPERATION=edit TARGET=servers
+task secrets OPERATION=edit FILE=host_vars/balthasar/secrets.sops.yml
 # garage_secret_key_new: "new-key-here"
 ```
 
@@ -246,11 +243,11 @@ garage bucket allow --read --write --owner emergency-key-$(date +%Y%m%d) --bucke
 # - Specific zones: yami.ski
 
 # 2. SOPS シークレット更新
-make secrets OPERATION=edit TARGET=servers
+task secrets OPERATION=edit FILE=host_vars/balthasar/secrets.sops.yml
 # cloudflare_api_token: "new-token-here"
 
-# 3. デプロイテスト
-yamisskey-provision check cloudflared
+# 3. デプロイテスト（dry-run）
+task check PLAYBOOK=cloudflared
 
 # 4. 旧トークン無効化（Cloudflare dashboard）
 ```
@@ -267,10 +264,10 @@ cloudflared tunnel create yamisskey-balthasar-v2
 cloudflared tunnel route dns yamisskey-balthasar-v2 yami.ski
 
 # 3. SOPS 変数更新
-make secrets OPERATION=edit TARGET=servers
+task secrets OPERATION=edit FILE=host_vars/balthasar/secrets.sops.yml
 
 # 4. 段階的切り替え
-yamisskey-provision run cloudflared LIMIT=balthasar
+task run PLAYBOOK=cloudflared LIMIT=balthasar
 
 # 5. 旧トンネル削除
 cloudflared tunnel delete yamisskey-balthasar-v1
@@ -323,8 +320,8 @@ cloudflared tunnel delete yamisskey-balthasar-v1
 
 3. **Garage サービス復旧**
    ```bash
-   # Garage 再起動（設定読み込み）
-   yamisskey-provision run garage servers "" restart
+   # Garage 再デプロイ（設定読み込み）
+   task run PLAYBOOK=garage
 
    # データアクセステスト
    garage bucket list
@@ -341,30 +338,24 @@ cloudflared tunnel delete yamisskey-balthasar-v1
 
 ### データベース災害復旧
 
-#### PostgreSQL Point-in-Time Recovery
+#### PostgreSQL リストア（Docker + yamisskey-backup 連携）
+
+Misskey の PostgreSQL は Docker コンテナ `misskey_db`（`postgres:15-alpine`、データは Docker ボリューム `/var/lib/docker/volumes/misskey_db/_data`）で稼働しています。バックアップは以下で取得されます。
+
+- `playbooks/misskey-backup.yml`: pg dump を Cloudflare R2 / Backblaze B2 へ保存
+- `playbooks/db-backup.yml`: TrueNAS へのデータベースバックアップ（balthasar）
+
+復元は [yamisskey-backup](https://github.com/yamisskey-dev/yamisskey-backup) と連携した DR プレイブックで実施します。
 
 ```bash
-# 1. R2から最新ベースバックアップ取得
-mc cp r2-backup/postgres/base-backup-latest.tar.gz /tmp/
+# DR リハーサル / 実復元（確認プロンプトあり、現行DBのバックアップ・検証・ロールバック付き）
+task run PLAYBOOK=restore-db
 
-# 2. WALファイル同期
-mc mirror r2-backup/postgres/wal/ /var/lib/postgresql/wal-restore/
-
-# 3. PostgreSQL復旧開始
-sudo systemctl stop postgresql
-sudo rm -rf /var/lib/postgresql/14/main/*
-sudo tar -xzf /tmp/base-backup-latest.tar.gz -C /var/lib/postgresql/14/main/
-
-# 4. recovery.conf設定
-cat > /var/lib/postgresql/14/main/recovery.conf <<EOF
-restore_command = 'cp /var/lib/postgresql/wal-restore/%f %p'
-recovery_target_time = '2024-01-15 14:00:00 JST'
-EOF
-
-# 5. PostgreSQL 起動・復旧完了待ち
-sudo systemctl start postgresql
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+# 復元ポイント指定（既定: latest）
+task run PLAYBOOK=restore-db -- -e restore_timestamp=<timestamp>
 ```
+
+WAL ベースの Point-in-Time Recovery は現行構成では未実装です（dump ベースの復元のみ）。
 
 ### 全環境再構築手順
 
@@ -375,19 +366,19 @@ sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
 gpg --decrypt emergency-kit.gpg > emergency-credentials.json
 
 # 2. 基本インフラ再構築
-yamisskey-provision run system-init servers all
-yamisskey-provision run security servers all
+task run PLAYBOOK=system-init
+task run PLAYBOOK=security
 
 # 3. ストレージ復旧
-yamisskey-provision run garage appliances
+task run PLAYBOOK=garage
 
 # 4. アプリケーション復旧
-yamisskey-provision run misskey
-yamisskey-provision run monitor
+task run PLAYBOOK=misskey
+task run PLAYBOOK=monitor
 
 # 5. 外部接続復旧
-yamisskey-provision run cloudflared
-yamisskey-provision run modsecurity-nginx
+task run PLAYBOOK=cloudflared
+task run PLAYBOOK=modsecurity-nginx
 ```
 
 ---
@@ -457,7 +448,9 @@ sudo grep "Failed password" /var/log/auth.log | wc -l
 
 # 3. SOPS ファイル整合性チェック
 echo "3. SOPS integrity check..."
-SOPS_AGE_KEY_FILE=age-key.txt sops -d deploy/servers/group_vars/all/secrets.yml >/dev/null && echo "✅ SOPS OK"
+for f in host_vars/*/secrets.sops.yml; do
+  SOPS_AGE_KEY_FILE=~/.sops/key.txt sops -d "$f" >/dev/null && echo "✅ SOPS OK: $f"
+done
 
 # 4. Garage 健全性
 echo "4. Garage health..."
@@ -497,8 +490,9 @@ emergency-kit/
 ### Emergency Kit 更新手順
 
 ```bash
-# 1. キット内容更新（月次）
-./scripts/update-emergency-kit.sh
+# 1. キット内容更新（月次・手動）
+#    最新の SSH/Age 鍵、API トークン、設定スナップショットを emergency-kit/ に集約
+#    ※ 更新スクリプトは未実装（要検証: 自動化する場合は scripts/ に追加）
 
 # 2. GPG暗号化
 tar czf emergency-kit-$(date +%Y%m%d).tar.gz emergency-kit/
@@ -519,9 +513,9 @@ gpg --armor --cipher-algo AES256 --compress-algo 2 \
 
 ```bash
 # よく使用するセキュリティコマンド
-SOPS_AGE_KEY_FILE=age-key.txt sops -d deploy/servers/group_vars/all/secrets.yml
-SOPS_AGE_KEY_FILE=age-key.txt sops deploy/servers/host_vars/balthasar/secrets.yml
-make secrets OPERATION=updatekeys TARGET=servers
+SOPS_AGE_KEY_FILE=~/.sops/key.txt sops -d host_vars/balthasar/secrets.sops.yml
+SOPS_AGE_KEY_FILE=~/.sops/key.txt sops host_vars/balthasar/secrets.sops.yml
+task secrets OPERATION=updatekeys FILE=host_vars/balthasar/secrets.sops.yml
 garage key list
 garage repair --yes blocks
 age --encrypt -R ~/.age/public-key.txt < secrets.txt > secrets.age
@@ -560,6 +554,6 @@ age --decrypt -i ~/.age/key.txt secrets.age
 
 **文書管理**
 - 作成日: 2024-01-15
-- 最終更新: 2024-01-15
-- バージョン: 1.0
-- 次回レビュー: 2024-04-15
+- 最終更新: 2026-07-10
+- バージョン: 2.0
+- 次回レビュー: 2026-10-10
