@@ -102,6 +102,7 @@ cryptpad_server_name: "cryptpad.example.com"
 uptime_server_name: "uptime.example.com"
 neo_quesdon_server_name: "neo-quesdon.example.com"
 garage_api_server_name: "garage.example.com"
+livekit_jwt_server_name: "livekit-jwt.example.com"
 
 # Garage configuration
 garage_bucket_name_for_misskey: "misskey-files"

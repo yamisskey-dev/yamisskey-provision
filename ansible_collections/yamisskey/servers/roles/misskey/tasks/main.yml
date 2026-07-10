@@ -19,9 +19,9 @@
     mode: '{{ item.mode }}'
   loop:
     - { path: '.config', mode: '0755' }
-    - { path: 'files',   mode: '0777' }  # Misskey コンテナが upload を書き込むため
-    - { path: 'redis',   mode: '0755' }
-    - { path: 'db',      mode: '0700' }  # PostgreSQL data directory の要件
+    - { path: 'files', mode: '0777' }  # Misskey コンテナが upload を書き込むため
+    - { path: 'redis', mode: '0755' }
+    - { path: 'db', mode: '0700' }  # PostgreSQL data directory の要件
 
 - name: Check if required files exist
   ansible.builtin.stat:
