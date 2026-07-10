@@ -3,8 +3,9 @@
   ansible.builtin.systemd:
     daemon_reload: true
   become: true
-  # molecule コンテナは PID1 が bash のため systemd 操作をスキップ
-  when: ansible_service_mgr == 'systemd'
+  # コンテナでも ansible_service_mgr は distro フォールバックで systemd になる
+  # ため、コントローラ側 env で molecule 実行を判定する
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''
 
 - name: Enable db-backup timer
   ansible.builtin.systemd:
@@ -12,4 +13,4 @@
     enabled: true
     state: started
   become: true
-  when: ansible_service_mgr == 'systemd'
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''
