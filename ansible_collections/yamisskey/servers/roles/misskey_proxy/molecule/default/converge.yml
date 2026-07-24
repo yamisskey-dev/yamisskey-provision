@@ -102,6 +102,7 @@
       loop:
         - balthasar
         - caspar
+      changed_when: false
 
   tasks:
     - name: Apply misskey-proxy role

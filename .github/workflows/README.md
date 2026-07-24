@@ -1,8 +1,8 @@
 # CI/CD Workflows
 
-このディレクトリには、yamisskey-provisionプロジェクトの自動化ワークフローが含まれています。
+このディレクトリには、yamisskey-ansible（旧称 yamisskey-provision）プロジェクトの自動化ワークフローが含まれています。
 
-## 📋 ワークフロー一覧
+## 📋 ワークフロー一覧（全9本）
 
 ### 🔍 品質管理ワークフロー (分離型)
 
@@ -11,7 +11,7 @@
 - **目的**: コード品質とスタイルの統一
 - **実行内容**:
   - YAML Lint (yamllint)
-  - Ansible Lint (ansible-lint) - 並列実行
+  - Ansible Lint (ansible-lint) - `ansible_collections/yamisskey/servers` 対象
   - Ansible Sanity Tests (ansible-test sanity)
   - Collections構造検証
 
@@ -19,8 +19,7 @@
 - **トリガー**: Pull Request、mainブランチへのpush
 - **目的**: Ansible構文の検証
 - **実行内容**:
-  - Servers/Appliances プレイブックの構文チェック
-  - 並列実行による高速化
+  - `playbooks/*.yml` 全プレイブックの構文チェック
 
 #### 🔐 **Security Scan** (`security.yml`)
 - **トリガー**: Pull Request、mainブランチへのpush
@@ -36,34 +35,29 @@
 - **目的**: Ansibleプレイブックのべき等性検証
 - **実行内容**:
   - `--check --diff`モードでのドライラン
-  - Servers: Core Infrastructure + Application Stack
-  - Appliances: TrueNAS Setup
+  - Core Infrastructure: [common, security, system-init]
+  - Application Stack: [misskey, garage, monitor]
   - 並列実行とアーティファクト共有
 
 ### ⚛ **テスティングワークフロー**
 
 #### 📋 **Role-Specific Molecule Tests** (`molecule-tests.yml`)
-- **トリガー**: Role変更時の自動検出 (PR/push)
+- **トリガー**: `ansible_collections/**` 変更時 (PR/push)
 - **目的**: 変更されたロールの効率的テスト
 - **実行内容**:
   - 変更検出による動的テスト対象選択
   - ロール単位でのMoleculeテスト実行
   - 高速フィードバックループ
 
-#### 🧪 **Full Test Suite** (`molecule-full-suite.yml`)
-- **トリガー**: mainブランチpush、スケジュール実行 (毎晩2時JST)、手動実行
-- **目的**: 包括的な品質保証とパフォーマンス分析
-- **実行内容**:
-  - **Full Test Suite**: 全コレクション横断テスト
-  - **Comprehensive Validation**: 構造・依存関係・互換性検証
-  - **Performance Analysis**: プレイブック・ロール複雑性分析
-  - **Scheduled Deep Testing**: 定期的な品質監査
-
 ### 🚀 **リリース管理**
-- **Collections Release** (`release-collections.yml`): Ansibleコレクションリリース
-- **General Release** (`release.yml`): プロジェクト全体のリリース
+- **Collections Release** (`release-collections.yml`): `v*` タグpushで `yamisskey.servers` コレクションをビルドし、Ansible Galaxyへ公開
+- **General Release** (`release.yml`): `infra-*` タグpushでSBOM生成 (Syft) + Trivyスキャン + GitHub Release作成
 
-## 🔧 新しいワークフロー設計の利点
+### 🤖 **Claude Code 連携**
+- **Claude Code** (`claude.yml`): Issue/PRコメント等での `@claude` メンションに応答
+- **Claude Code Review** (`claude-code-review.yml`): PR作成・更新時の自動コードレビュー
+
+## 🔧 ワークフロー設計の利点
 
 ### 🚀 **パフォーマンス向上**
 - **並列実行**: 各ワークフローが独立して実行
@@ -86,13 +80,12 @@
 ### 🔍 Lint Workflow
 
 #### ジョブ構成
-1. **yaml-lint**: YAML構文・スタイルチェック
-2. **ansible-lint**: Ansibleベストプラクティス検証 (servers/appliances並列)
-3. **ansible-test-sanity**: Ansibleコレクション内部検証
+1. **yaml-lint**: YAML構文・スタイルチェック (`.github`, `ansible_collections`, `playbooks`, `group_vars`, `host_vars` 対象)
+2. **ansible-lint**: Ansibleベストプラクティス検証 (`ansible_collections/yamisskey/servers`)
+3. **ansible-test-sanity**: `yamisskey.servers` コレクション内部検証
 4. **verify-structure**: ディレクトリ構造確認
 
 #### 特徴
-- **マトリックス戦略**: servers/appliancesの並列処理
 - **外部Collection**: 自動インストール・キャッシュ
 - **非ブロッキング**: 一部警告は許可
 
@@ -100,11 +93,9 @@
 
 #### ジョブ構成
 - **syntax-check**: 全プレイブックの構文検証
-- **マトリックス**: servers/appliances並列実行
 
 #### 実行範囲
-- `deploy/servers/playbooks/*.yml`
-- `deploy/appliances/playbooks/*.yml`
+- `playbooks/*.yml`
 
 ### 🔐 Security Workflow
 
@@ -124,7 +115,6 @@
 1. **prepare-inventory**: テスト用インベントリ作成・共有
 2. **servers-core-infrastructure**: [common, security, system-init]
 3. **servers-application-stack**: [misskey, garage, monitor]
-4. **appliances-truenas**: [setup, migrate-garage-truenas]
 
 #### テスト戦略
 - **ドライラン**: `--check --diff`での安全な検証
@@ -145,7 +135,7 @@ on:
 ### 並行性制御
 ```yaml
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}-<category>
   cancel-in-progress: true
 ```
 
@@ -154,13 +144,13 @@ concurrency:
 ### 事前実行推奨 (カテゴリー別)
 ```bash
 # Lint
-yamllint .
+yamllint .github ansible_collections playbooks group_vars host_vars
 ansible-lint ansible_collections/yamisskey/servers
-ansible-lint ansible_collections/yamisskey/appliances
 
 # Syntax
-ansible-playbook --syntax-check deploy/servers/playbooks/*.yml
-ansible-playbook --syntax-check deploy/appliances/playbooks/*.yml
+for f in playbooks/*.yml; do
+  ansible-playbook -i 'localhost,' -c local "$f" --syntax-check
+done
 
 # Security (手動確認)
 grep -r "AGE-SECRET-KEY" . --exclude-dir=.git
@@ -183,17 +173,6 @@ ansible-playbook -i inventory playbooks/common.yml --check --diff
 - **Security**: 5分以内
 - **Idempotency**: 8分以内
 
-## 🔄 マイグレーション情報
-
-### 変更点
-- **責務分離**: 明確なカテゴリー別実行
-- **並列化強化**: matrix strategyの活用拡大
-
-### 互換性
-- **既存機能**: 全て新ワークフローで継承
-- **追加機能**: セキュリティスキャンの拡充
-- **設定**: トリガー条件・環境変数は維持
-
 ## 🐛 トラブルシューティング
 
 ### カテゴリー別デバッグ
@@ -201,14 +180,14 @@ ansible-playbook -i inventory playbooks/common.yml --check --diff
 #### Lint 失敗
 ```bash
 # ローカル再現
-yamllint .github ansible_collections deploy
+yamllint .github ansible_collections playbooks group_vars host_vars
 ansible-lint --offline -v ansible_collections/yamisskey/servers
 ```
 
 #### Syntax 失敗
 ```bash
 # 個別チェック
-ansible-playbook -i localhost, -c local deploy/servers/playbooks/common.yml --syntax-check
+ansible-playbook -i 'localhost,' -c local playbooks/common.yml --syntax-check
 ```
 
 #### Security 失敗
@@ -228,7 +207,7 @@ ansible-playbook -i inventory playbook.yml --check --diff -e ansible_become=fals
 - [**GitHub Actions**](https://docs.github.com/en/actions) - ワークフロー仕様
 - [**Ansible Lint**](https://ansible-lint.readthedocs.io/) - リンティングルール
 - [**Trivy**](https://trivy.dev/) - セキュリティスキャナー
-- [**プロジェクト概要**](../README.md) - 全体アーキテクチャ
+- [**プロジェクト概要**](../../README.md) - 全体アーキテクチャ
 
 ## 📋 今後の改善計画
 

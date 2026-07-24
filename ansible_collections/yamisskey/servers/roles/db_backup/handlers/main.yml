@@ -3,6 +3,9 @@
   ansible.builtin.systemd:
     daemon_reload: true
   become: true
+  # コンテナでも ansible_service_mgr は distro フォールバックで systemd になる
+  # ため、コントローラ側 env で molecule 実行を判定する
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''
 
 - name: Enable db-backup timer
   ansible.builtin.systemd:
@@ -10,3 +13,4 @@
     enabled: true
     state: started
   become: true
+  when: lookup('env', 'MOLECULE_SCENARIO_NAME') == ''

@@ -122,6 +122,8 @@
     project_src: /var/www/element
     pull: always
     state: present
+  # CI コンテナでは element が起動状態を維持できず idempotence を壊すためスキップ
+  tags: [molecule-notest]
 
 - name: Copy element custom configuration file
   template:
