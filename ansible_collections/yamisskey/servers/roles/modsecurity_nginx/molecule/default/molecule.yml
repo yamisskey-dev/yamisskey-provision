@@ -15,7 +15,7 @@ platforms:
     capabilities:
       - SYS_ADMIN
     command: bash -c "mkdir -p /tmp/.ansible-tmp && chmod 1777 /tmp/.ansible-tmp && chown root:root /tmp/.ansible-tmp && touch /tmp/.ansible-tmp/.ansible-test && while true; do sleep 30; done"
-    environment:
+    env:
       MOLECULE_SCENARIO_NAME: default
     networks:
       - name: molecule-test-network
