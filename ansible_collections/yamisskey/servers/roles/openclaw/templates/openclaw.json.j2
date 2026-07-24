@@ -137,7 +137,7 @@
     }
   },
   "plugins": {
-    "allow": ["telegram", "tavily"],
+    "allow": ["telegram", "tavily", "openai"],
     "entries": {
       "telegram": {
         "enabled": true
@@ -149,6 +149,9 @@
             "apiKey": "${TAVILY_API_KEY}"
           }
         }
+      },
+      "openai": {
+        "enabled": true
       }
     }
   },
