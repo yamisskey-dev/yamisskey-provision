@@ -29,17 +29,14 @@
       "maxConcurrent": {{ openclaw_max_concurrent | default(8) }},
       "subagents": {
         "maxConcurrent": {{ openclaw_subagents_max_concurrent | default(16) }},
-        "model": "{{ openclaw_subagents_model | default('opencode-go/deepseek-v4-flash') }}"
+        "model": "{{ openclaw_subagents_model | default('opencode-go/kimi-k3') }}"
       },
       "model": {
-        "primary": "{{ openclaw_default_model | default('opencode-go/deepseek-v4-pro') }}",
-        "fallbacks": {{ openclaw_model_fallbacks | default('["openai/gpt-5.5"]') }}
+        "primary": "{{ openclaw_default_model | default('opencode-go/kimi-k3') }}",
+        "fallbacks": {{ openclaw_model_fallbacks | default('[]') }}
       },
       "models": {
-        "opencode-go/deepseek-v4-pro": { "alias": "ds" },
-        "opencode-go/deepseek-v4-flash": { "alias": "ds-flash" },
-        "openai/gpt-5.5": { "alias": "codex" },
-        "openai/gpt-5.4": { "alias": "codex-prev" }
+        "opencode-go/kimi-k3": { "alias": "kimi" }
       },
       "memorySearch": {
         "enabled": true,
@@ -64,7 +61,7 @@
       },
       "heartbeat": {
         "every": "{{ openclaw_heartbeat_every | default('55m') }}",
-        "model": "{{ openclaw_heartbeat_model | default('opencode-go/deepseek-v4-flash') }}",
+        "model": "{{ openclaw_heartbeat_model | default('opencode-go/kimi-k3') }}",
         "target": "{{ openclaw_heartbeat_target | default('telegram') }}",
         "prompt": "{{ openclaw_heartbeat_prompt | default('Read HEARTBEAT.md if it exists. Then: (1) Review .learnings/ for recurring patterns (recurrence >= 3) and promote to project memory. (2) Check for unresolved errors and attempt safe fixes. (3) If a conversation was left mid-task, summarize status. (4) If nothing needs attention, reply HEARTBEAT_OK. If HEARTBEAT.md does not exist, create it with your own improvement checklist, then reply HEARTBEAT_OK.') }}",
         "activeHours": {
@@ -76,19 +73,8 @@
     }
   },
   "auth": {
-    "profiles": {
-      "openai:default": {
-        "provider": "openai",
-        "mode": "oauth"
-      },
-      "openai:api-key": {
-        "provider": "openai",
-        "mode": "api_key"
-      }
-    },
-    "order": {
-      "openai": ["openai:default", "openai:api-key"]
-    }
+    "profiles": {},
+    "order": {}
   },
   "skills": {},
   "commands": {
@@ -151,24 +137,10 @@
     }
   },
   "plugins": {
-    "allow": ["telegram", "codex", "openai"],
+    "allow": ["telegram"],
     "entries": {
       "telegram": {
         "enabled": true
-      },
-      "codex": {
-        "enabled": true
-      },
-      "openai": {
-        "enabled": true
-      }
-    }
-  },
-  "models": {
-    "mode": "merge",
-    "providers": {
-      "openai": {
-        "apiKey": "${OPENAI_API_KEY}"
       }
     }
   }
