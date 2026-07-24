@@ -37,7 +37,7 @@ jobs:
           fi
 
           PAIRS=$(echo "$CHANGED_FILES" \
-            | awk -F/ '/^ansible_collections\/[^/]+\/[^/]+\/roles\// {print $3 "/" $5}' \
+            | awk -F/ '/^ansible_collections\/[^/]+\/[^/]+\/roles\// {print $2 "/" $5}' \
             | sort -u || true)
 
           if [ -n "$PAIRS" ]; then

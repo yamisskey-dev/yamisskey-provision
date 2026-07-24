@@ -30,7 +30,7 @@ vars:
   INV: './inventory'
   PLAY: './playbooks'
   CONFIG: './ansible.cfg'
-  SOPS_GROUP_FILE: './group_vars/all/secrets.yml'
+  SOPS_GROUP_FILE: './group_vars/all/secrets.sops.yml'
   TIMESTAMP: '{{now | date "20060102T150405"}}'
   ANSIBLE_CORE_SPEC: '{{.ANSIBLE_CORE_VERSION | default "ansible-core"}}'
 
@@ -490,9 +490,9 @@ tasks:
             echo "✏️ Editing secrets..."
             if [ -n "$FILE_EFF" ]; then SOPS_FILE_PATH="$FILE_EFF"
             elif [ -n "$HOST_EFF" ]; then
-              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.yml"
+              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.sops.yml"
             else
-              SOPS_FILE_PATH="./group_vars/all/secrets.yml"
+              SOPS_FILE_PATH="./group_vars/all/secrets.sops.yml"
             fi
             if [ ! -f "$SOPS_FILE_PATH" ]; then
               echo "ℹ️ Initializing new SOPS file at $SOPS_FILE_PATH"
@@ -507,9 +507,9 @@ tasks:
             echo "👁️ Viewing secrets..."
             if [ -n "$FILE_EFF" ]; then SOPS_FILE_PATH="$FILE_EFF"
             elif [ -n "$HOST_EFF" ]; then
-              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.yml"
+              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.sops.yml"
             else
-              SOPS_FILE_PATH="./group_vars/all/secrets.yml"
+              SOPS_FILE_PATH="./group_vars/all/secrets.sops.yml"
             fi
             if [ ! -f "$SOPS_FILE_PATH" ]; then echo "❌ Secrets file not found: $SOPS_FILE_PATH"; exit 1; fi
             export SOPS_AGE_KEY_FILE="{{.SOPS_AGE_KEY_FILE}}"
@@ -519,9 +519,9 @@ tasks:
             echo "🔍 Validating secrets..."
             if [ -n "$FILE_EFF" ]; then SOPS_FILE_PATH="$FILE_EFF"
             elif [ -n "$HOST_EFF" ]; then
-              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.yml"
+              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.sops.yml"
             else
-              SOPS_FILE_PATH="./group_vars/all/secrets.yml"
+              SOPS_FILE_PATH="./group_vars/all/secrets.sops.yml"
             fi
             if [ ! -f "$SOPS_FILE_PATH" ]; then echo "❌ Secrets file not found: $SOPS_FILE_PATH"; exit 1; fi
             echo "📄 File: $SOPS_FILE_PATH"
@@ -535,9 +535,9 @@ tasks:
             echo "🔄 Updating encryption keys..."
             if [ -n "$FILE_EFF" ]; then SOPS_FILE_PATH="$FILE_EFF"
             elif [ -n "$HOST_EFF" ]; then
-              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.yml"
+              SOPS_FILE_PATH="./host_vars/$HOST_PATH/secrets.sops.yml"
             else
-              SOPS_FILE_PATH="./group_vars/all/secrets.yml"
+              SOPS_FILE_PATH="./group_vars/all/secrets.sops.yml"
             fi
             if [ ! -f "$SOPS_FILE_PATH" ]; then echo "❌ Secrets file not found: $SOPS_FILE_PATH"; exit 1; fi
             export SOPS_AGE_KEY_FILE="{{.SOPS_AGE_KEY_FILE}}"

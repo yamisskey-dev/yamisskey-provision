@@ -137,10 +137,28 @@
     }
   },
   "plugins": {
-    "allow": ["telegram"],
+    "allow": ["telegram", "tavily", "openai"],
     "entries": {
       "telegram": {
         "enabled": true
+      },
+      "tavily": {
+        "enabled": true,
+        "config": {
+          "webSearch": {
+            "apiKey": "${TAVILY_API_KEY}"
+          }
+        }
+      },
+      "openai": {
+        "enabled": true
+      }
+    }
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "provider": "tavily"
       }
     }
   }
