@@ -18,7 +18,7 @@ services:
       HOME: /home/node
       TERM: xterm-256color
       # read_only ルートFSでは $HOME/.npm を作れないため、起動時プラグイン
-      # 導入(brave 等)の npm cache を書き込み可能な永続ボリューム配下に逃がす
+      # 導入(tavily 等)の npm cache を書き込み可能な永続ボリューム配下に逃がす
       NPM_CONFIG_CACHE: {{ openclaw_home }}/.npm-cache
     env_file:
       - .env-docker-compose
