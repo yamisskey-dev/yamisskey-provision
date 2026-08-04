@@ -4,6 +4,9 @@
 # Cloudflared tunnel configuration
 cloudflared_tunnel_uuid: "{{ caspar_cloudflared_tunnel_uuid }}"
 cloudflared_config_dir: "/root/.cloudflared"
+# Docker ブリッジ経由で Prometheus (host.docker.internal) から metrics を scrape させる。
+# 0.0.0.0 にすると /debug/pprof まで外部公開されるため docker0 のみに限定する。
+cloudflared_metrics_bind: "172.17.0.1"
 
 # Service-specific configurations
 modsecurity_nginx_port: "{{ host_services.caspar.modsecurity_nginx }}"
