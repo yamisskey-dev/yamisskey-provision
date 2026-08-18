@@ -23,6 +23,8 @@
     openclaw_openai_api_key: "{{ openclaw_inventory_secrets.openai_api_key }}"
     openclaw_telegram_bot_token: "{{ openclaw_inventory_secrets.telegram_bot_token }}"
     openclaw_tavily_api_key: "{{ openclaw_inventory_secrets.tavily_api_key | default('') }}"
+    # SOPSで暗号化された telegram_allow_from を読み込む（存在すれば上書き）
+    openclaw_telegram_allow_from: "{{ openclaw_inventory_secrets.telegram_allow_from | default(openclaw_telegram_allow_from | default([])) }}"
 
 - name: Install development tools
   include_tasks: devtools.yml
