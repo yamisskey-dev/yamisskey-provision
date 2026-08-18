@@ -2,6 +2,9 @@
 # OpenClaw - AI Assistant Server
 # Note: openclaw_image is set in the role's vars/main.yml because role vars
 # outrank host_vars. Override there if you need to bump the upstream tag.
+# meta.lastTouchedVersion は openclaw が自身の package.json version で書き戻す
+# auto-managed フィールド。イメージタグ(-2 等の hotfix suffix)ではなくアプリの
+# 申告バージョンに合わせないと、毎回 template が差分扱いになり再作成が走る。
 openclaw_version: '2026.7.1'
 
 # Telegram DM: ペアリング承認を不要にするため allowlist 方式で事前許可する
