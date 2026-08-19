@@ -1,3 +1,12 @@
+{#
+  このテンプレートは openclaw doctor / openclaw 自身が config へ書き戻す正規化形に
+  レンダ結果を一致させている（差分が出ると毎回 template 差分→コンテナ再作成が走る。
+  openclaw_version と同じ理由）。以下は意図的なので「修正」しないこと:
+    - skills.entries: bundled skill の disable 状態の書き戻し（リストは host_vars）
+    - plugins.entries.memory-core: {"config": {}} の形のまま
+    - plugins.bundledDiscovery: "compat"
+    - ファイル末尾に改行を付けない
+-#}
 {
   "meta": {
     "lastTouchedVersion": "{{ openclaw_version | default('2026.6.6') }}"
@@ -90,7 +99,13 @@
 {% endif %}
     }
   },
-  "skills": {},
+  "skills": {
+    "entries": {
+{% for skill in openclaw_skills_disabled | default([]) %}
+      "{{ skill }}": { "enabled": false }{{ "," if not loop.last }}
+{% endfor %}
+    }
+  },
   "commands": {
     "native": "auto",
     "nativeSkills": "auto"
@@ -101,7 +116,7 @@
       "botToken": "${TELEGRAM_BOT_TOKEN}",
       "dmPolicy": "{{ openclaw_telegram_dm_policy | default('allowlist') }}",
       "allowFrom": {{ openclaw_telegram_allow_from | default([]) | to_json }},
-      "groupPolicy": "open",
+      "groupPolicy": "{{ openclaw_telegram_group_policy | default('open') }}",
       "commands": {
         "native": "auto"
       },
@@ -109,7 +124,8 @@
         "*": {
           "requireMention": {{ openclaw_telegram_require_mention | default('false') | lower }}
         }
-      }
+      },
+      "groupAllowFrom": {{ openclaw_telegram_group_allow_from | default(openclaw_telegram_allow_from | default([])) | to_json }}
     }
   },
   "messages": {
@@ -151,7 +167,7 @@
     }
   },
   "plugins": {
-    "allow": ["telegram", "tavily", "openai", "codex"],
+    "allow": ["telegram", "tavily", "openai", "codex", "opencode-go", "memory-core"],
     "entries": {
       "telegram": {
         "enabled": true
@@ -169,8 +185,15 @@
       },
       "codex": {
         "enabled": true
+      },
+      "memory-core": {
+        "config": {}
+      },
+      "opencode-go": {
+        "enabled": true
       }
-    }
+    },
+    "bundledDiscovery": "compat"
   },
   "tools": {
     "web": {

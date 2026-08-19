@@ -27,3 +27,41 @@ openclaw_agent_models:
     alias: kimi
   openai/gpt-5.6-sol: {}
   openai/gpt-5.6-terra: {}
+
+# bundled skill は外部 CLI 依存で未インストールのため全て無効化している。
+# openclaw が disable 状態を config へ書き戻すため、テンプレート側も同じ
+# entries を持たないと毎回 template が差分扱いになる（openclaw_version と同じ理由）。
+# イメージ更新で bundled skill が増えたら doctor の指摘に合わせてここへ追記する。
+openclaw_skills_disabled:
+  - 1password
+  - blogwatcher
+  - blucli
+  - camsnap
+  - coding-agent
+  - eightctl
+  - gemini
+  - gh-issues
+  - gifgrep
+  - github
+  - gog
+  - goplaces
+  - himalaya
+  - mcporter
+  - nano-pdf
+  - obsidian
+  - openai-whisper
+  - openai-whisper-api
+  - openhue
+  - oracle
+  - ordercli
+  - sag
+  - session-logs
+  - sherpa-onnx-tts
+  - songsee
+  - sonoscli
+  - spotify-player
+  - summarize
+  - tmux
+  - trello
+  - video-frames
+  - xurl
