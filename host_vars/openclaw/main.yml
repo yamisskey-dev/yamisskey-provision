@@ -11,3 +11,19 @@ openclaw_version: '2026.7.1'
 openclaw_telegram_dm_policy: allowlist
 openclaw_telegram_allow_from:
   - 5224101491
+
+# モデル: ChatGPT サブスク(Codex app-server 経由)を主系にし、
+# レート上限に当たったときだけ opencode-go へ退避する
+openclaw_default_model: 'openai/gpt-5.6-terra'
+openclaw_subagents_model: 'openai/gpt-5.6-luna'
+openclaw_heartbeat_model: 'openai/gpt-5.6-luna'
+openclaw_model_fallbacks: '["opencode-go/kimi-k3"]'
+
+# codex プラグインが起動時に自身のカタログモデルを config へ書き戻すため、
+# テンプレート側にも同じエントリを持たせないと毎回 template が差分扱いになる
+# （openclaw_version と同じ理由）
+openclaw_agent_models:
+  opencode-go/kimi-k3:
+    alias: kimi
+  openai/gpt-5.6-sol: {}
+  openai/gpt-5.6-terra: {}
