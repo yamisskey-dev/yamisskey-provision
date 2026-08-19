@@ -47,9 +47,7 @@
         "primary": "{{ openclaw_default_model | default('opencode-go/kimi-k3') }}",
         "fallbacks": {{ openclaw_model_fallbacks | default('[]') }}
       },
-      "models": {
-        "opencode-go/kimi-k3": { "alias": "kimi" }
-      },
+      "models": {{ openclaw_agent_models | default({'opencode-go/kimi-k3': {'alias': 'kimi'}}) | to_json }},
       "memorySearch": {
         "enabled": true,
         "provider": "openai",
@@ -86,7 +84,11 @@
   },
   "auth": {
     "profiles": {},
-    "order": {}
+    "order": {
+{% if openclaw_openai_oauth_profile | default('') %}
+      "openai": ["{{ openclaw_openai_oauth_profile }}"]
+{% endif %}
+    }
   },
   "skills": {},
   "commands": {
@@ -149,7 +151,7 @@
     }
   },
   "plugins": {
-    "allow": ["telegram", "tavily", "openai"],
+    "allow": ["telegram", "tavily", "openai", "codex"],
     "entries": {
       "telegram": {
         "enabled": true
@@ -163,6 +165,9 @@
         }
       },
       "openai": {
+        "enabled": true
+      },
+      "codex": {
         "enabled": true
       }
     }
