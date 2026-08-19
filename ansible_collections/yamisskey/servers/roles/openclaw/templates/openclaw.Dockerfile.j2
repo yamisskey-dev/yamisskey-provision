@@ -1,1 +1,10 @@
 FROM {{ openclaw_image }}
+
+# bundled skill の依存 CLI を追加する（skill 側の requires.bins に対応）
+#   jq, ripgrep: session-logs
+# 実行時は read_only rootfs のため、ここ（ビルド時）でしか入れられない
+USER root
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends jq ripgrep \
+ && rm -rf /var/lib/apt/lists/*
+USER node
