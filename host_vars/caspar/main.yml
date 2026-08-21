@@ -18,6 +18,10 @@ misskey_port: "{{ host_services.caspar.misskey_beta }}"
 misskey_host: "beta.{{ domain }}"
 misskey_tag: "staging"
 
+# Yamix AI backend (OpenRouter)
+yamix_openai_base_url: "https://openrouter.ai/api/v1"
+yamix_openai_model: "deepseek/deepseek-v4-pro-0813"
+
 # Nginx services to deploy (monitoring + beta misskey + yamix)
 modsecurity_nginx_services:
   - "grafana"

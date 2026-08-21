@@ -18,6 +18,9 @@ yamix_redis_port: 6379
 yamix_port: 3026
 yamix_host: "0.0.0.0"
 
-# OpenAI API configuration (required for AI counseling)
+# OpenAI 互換 API configuration (required for AI counseling)
 # yamix_openai_api_key: set in secrets.sops.yml
 # yamix_yamii_api_key: set in secrets.sops.yml
+# OpenRouter やローカル LLM を使う場合は base_url / model を上書きする
+yamix_openai_base_url: "https://api.openai.com/v1"
+yamix_openai_model: "gpt-4.1"
