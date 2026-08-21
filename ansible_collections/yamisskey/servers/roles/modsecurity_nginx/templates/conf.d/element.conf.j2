@@ -46,15 +46,11 @@ server {
         proxy_pass http://element_backend/config.{{ element_server_name }}.json;
         proxy_http_version 1.1;
 
-        # Cache config for performance
-        proxy_cache static_cache;
-        proxy_cache_valid 200 1h;
-        expires 1h;
+        # config はデプロイ即反映が必要なためキャッシュしない
+        expires -1;
 
         # Security headers (must be included in location blocks that use add_header)
         include /etc/nginx/conf.d/00-security-headers-sameorigin.conf;
-        add_header Cache-Control "public";
-        add_header X-Cache-Status $upstream_cache_status;
     }
 
     # Main Element application
