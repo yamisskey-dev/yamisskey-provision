@@ -117,14 +117,6 @@
     project_src: /var/www/synapse
     pull: always
 
-- name: Start element
-  community.docker.docker_compose_v2:
-    project_src: /var/www/element
-    pull: always
-    state: present
-  # CI コンテナでは element が起動状態を維持できず idempotence を壊すためスキップ
-  tags: [molecule-notest]
-
 - name: Copy element custom configuration file
   template:
     src: "config.{{ element_server_name }}.json.j2"
@@ -134,4 +126,13 @@
   when:
     - element_server_name is defined
     - element_server_name | length > 0
-  failed_when: false
+  # CI では domain=example.com のため src テンプレートが存在せずスキップ
+  tags: [molecule-notest]
+
+- name: Start element
+  community.docker.docker_compose_v2:
+    project_src: /var/www/element
+    pull: always
+    state: present
+  # CI コンテナでは element が起動状態を維持できず idempotence を壊すためスキップ
+  tags: [molecule-notest]
