@@ -38,6 +38,13 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto https;
 
+    # Strip backend-leaked headers (Express sets both; httpUnsafeOrigin ==
+    # httpSafeOrigin == this host, so no cross-origin request is ever made and
+    # the CORS wildcard is re-scoped to this origin below). Inherited by all
+    # locations since none redefine proxy_hide_header.
+    proxy_hide_header X-Powered-By;
+    proxy_hide_header Access-Control-Allow-Origin;
+
     # WebSocket support
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection $connection_upgrade;
@@ -63,6 +70,7 @@ server {
         # No caching for service worker
         # Security headers (must be included in location blocks that use add_header)
         include /etc/nginx/conf.d/00-security-headers-sameorigin.conf;
+        add_header Access-Control-Allow-Origin "https://{{ cryptpad_server_name }}" always;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         expires 0;
     }
@@ -92,6 +100,7 @@ server {
 
         # Security headers (must be included in location blocks that use add_header)
         include /etc/nginx/conf.d/00-security-headers-sameorigin.conf;
+        add_header Access-Control-Allow-Origin "https://{{ cryptpad_server_name }}" always;
         add_header X-Cache-Status $upstream_cache_status;
     }
 
@@ -107,6 +116,7 @@ server {
         expires 1d;
         # Security headers (must be included in location blocks that use add_header)
         include /etc/nginx/conf.d/00-security-headers-sameorigin.conf;
+        add_header Access-Control-Allow-Origin "https://{{ cryptpad_server_name }}" always;
         add_header Cache-Control "public";
         add_header X-Cache-Status $upstream_cache_status;
     }
