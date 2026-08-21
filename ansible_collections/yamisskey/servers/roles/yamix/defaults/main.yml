@@ -19,6 +19,8 @@ yamix_port: 3026
 yamix_host: "0.0.0.0"
 
 # OpenAI 互換 API configuration (required for AI counseling)
+# yamix_jwt_secret: set in secrets.sops.yml
+# yamix_message_encryption_key: set in secrets.sops.yml
 # yamix_openai_api_key: set in secrets.sops.yml
 # yamix_yamii_api_key: set in secrets.sops.yml
 # OpenRouter やローカル LLM を使う場合は base_url / model を上書きする
