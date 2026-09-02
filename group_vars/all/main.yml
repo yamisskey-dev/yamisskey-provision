@@ -66,6 +66,10 @@ host_services:
     openclaw_gateway: 18789    # OpenClaw Gateway/Web UI
     openclaw_bridge: 18790     # OpenClaw Bridge
 
+  melchior:
+    # Password manager host (Arch Linux)
+    vaultwarden: 8222          # Vaultwarden (loopback only, behind cloudflared)
+
 # Cloudflared ingress mapping
 cloudflared_ingress:
   balthasar:
@@ -111,6 +115,11 @@ cloudflared_ingress:
       service: "http://localhost:{{ host_services.linode_prox.livekit }}"
     - hostname: "livekit-jwt.{{ domain }}"
       service: "http://localhost:{{ host_services.linode_prox.livekit_jwt }}"
+
+  melchior:
+    # Vaultwarden (separate zone from {{ domain }}; hostname set in host_vars/melchior/main.yml)
+    - hostname: "{{ vaultwarden_domain }}"
+      service: "http://localhost:{{ host_services.melchior.vaultwarden }}"
   # Test services can be added to the lists above as needed
 
 # =========================================

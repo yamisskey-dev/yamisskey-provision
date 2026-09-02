@@ -20,6 +20,7 @@ Linux server infrastructure management with Ansible and SOPS secrets management.
 - **ctfd** - CTF platform (CTFd) - Proxmox VM on mary
 - **tpot** - Honeypot (T-Pot) - Proxmox VM on mary
 - **openclaw** - AI assistant (OpenClaw)
+- **melchior** - Password manager (Vaultwarden) - Arch Linux
 
 ## Infrastructure as Code
 
@@ -40,9 +41,10 @@ graph LR
         ctfd[Proxmox mary/ctfd]:::target
         tpot[Proxmox mary/tpot]:::target
         openclaw:::target
+        melchior:::target
     end
 
-    ansible -->|SSH/Tailscale| balthasar & caspar & linode_prox & rpi & ctfd & tpot & openclaw
+    ansible -->|SSH/Tailscale| balthasar & caspar & linode_prox & rpi & ctfd & tpot & openclaw & melchior
 ```
 
 ## System Requirements

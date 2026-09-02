@@ -22,6 +22,9 @@ cloudflared_connection_strategy: "race"
 cloudflared_metrics_port: "49312"
 cloudflared_metrics_bind: "localhost"
 
+# WARP-to-tunnel private routing (Cloudflare One). Off unless a host opts in.
+cloudflared_warp_routing_enabled: false
+
 # DNS configuration (only used when cloudflared_enable_dns_proxy is true)
 cloudflared_enable_dns_proxy: false
 cloudflared_dns_upstreams:

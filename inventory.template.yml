@@ -158,6 +158,18 @@ all:
             openclaw:
               ansible_host: ${IP_OPENCLAW}
 
+        vault_servers:
+          vars:
+            egress_route: direct
+            host_roles:
+              - password_manager
+            service_priority: high
+            security_level: high
+            modsecurity_enabled: false
+          hosts:
+            melchior:
+              ansible_host: ${IP_MELCHIOR}  # Arch Linux (physical)
+
     # === Development/Testing ===
     development:
       vars:

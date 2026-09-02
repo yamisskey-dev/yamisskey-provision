@@ -1,0 +1,53 @@
+---
+- name: Verify vaultwarden deployment
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Check Vaultwarden directories exist
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: vaultwarden_dirs
+      loop:
+        - /opt/vaultwarden
+        - /opt/vaultwarden/vw-data
+
+    - name: Assert directories exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+      loop: "{{ vaultwarden_dirs.results }}"
+
+    - name: Check docker-compose file
+      ansible.builtin.stat:
+        path: /opt/vaultwarden/docker-compose.yml
+      register: vaultwarden_compose
+
+    - name: Assert compose file exists with restrictive permissions (contains ADMIN_TOKEN)
+      ansible.builtin.assert:
+        that:
+          - vaultwarden_compose.stat.exists
+          - vaultwarden_compose.stat.mode == '0600'
+
+    - name: Read rendered compose file
+      ansible.builtin.slurp:
+        path: /opt/vaultwarden/docker-compose.yml
+      register: vaultwarden_compose_content
+
+    - name: Assert compose binds to loopback and carries the domain
+      ansible.builtin.assert:
+        that:
+          - "'127.0.0.1:8222:80' in compose_text"
+          - "'DOMAIN=https://vault.test.example.com' in compose_text"
+          - "'ADMIN_TOKEN=test-admin-token' in compose_text"
+      vars:
+        compose_text: "{{ vaultwarden_compose_content.content | b64decode }}"
+
+    - name: Display verification summary
+      debug:
+        msg: |
+          Vaultwarden Role Verification Summary:
+          ====================================
+          Directories: OK
+          Docker Compose (0600, loopback bind): OK

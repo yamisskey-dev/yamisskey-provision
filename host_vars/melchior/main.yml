@@ -1,0 +1,18 @@
+---
+# melchior - Password manager host (Vaultwarden) - Arch Linux
+# Secrets (host_vars/melchior/secrets.sops.yml):
+#   vaultwarden.admin_token   - Vaultwarden /admin token
+#   cloudflared_tunnel_uuid   - existing tunnel (created manually with `cloudflared tunnel create`)
+
+# Cloudflared: tunnel/credentials live in /root/.cloudflared, service reads /etc/cloudflared/config.yml
+cloudflared_app_name: vaultwarden
+cloudflared_hostname: "{{ vaultwarden_domain }}"
+cloudflared_config_dir: /root/.cloudflared
+cloudflared_user: root
+cloudflared_group: root
+# 既存 config.yml が warp-routing を有効にしていたので維持する
+cloudflared_warp_routing_enabled: true
+
+# Vaultwarden (zone differs from {{ domain }})
+vaultwarden_domain: vault.hital.in
+vaultwarden_port: "{{ host_services.melchior.vaultwarden }}"
