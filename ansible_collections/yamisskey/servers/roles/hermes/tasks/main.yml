@@ -1,0 +1,139 @@
+---
+- name: Ensure Hermes secrets are provided
+  assert:
+    that:
+      - hermes_env | length > 0
+      - hermes_env.telegram_bot_token is defined
+    fail_msg: >-
+      Missing Hermes secrets for host {{ inventory_hostname }}. Define the .env keys under
+      "hermes" (e.g. hermes.telegram_bot_token) in host_vars/{{ inventory_hostname }}/secrets.sops.yml.
+    success_msg: "Validated Hermes secrets from host_vars."
+
+# Arch has no package module without community.general; the installer only needs git + curl,
+# which the base system already provides. Fail early with a hint instead of installing.
+- name: Check installer prerequisites are available
+  command: which {{ hermes_packages | join(' ') }}
+  register: hermes_prereqs
+  changed_when: false
+  failed_when: hermes_prereqs.rc != 0
+  check_mode: false
+
+- name: Resolve Hermes user uid
+  command: id -u {{ hermes_user }}
+  register: hermes_uid_result
+  changed_when: false
+  check_mode: false  # read-only; later tasks need the uid even under --check
+
+- name: Set Hermes user facts
+  set_fact:
+    hermes_uid: "{{ hermes_uid_result.stdout | trim }}"
+    # user-scope systemd/D-Bus need these when running via become_user
+    hermes_user_env:
+      XDG_RUNTIME_DIR: "/run/user/{{ hermes_uid_result.stdout | trim }}"
+      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ hermes_uid_result.stdout | trim }}/bus"
+
+- name: Create Hermes home
+  file:
+    path: "{{ hermes_home }}"
+    state: directory
+    mode: '0700'
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+
+- name: Run Hermes installer (first install only)
+  shell: >-
+    curl -fsSL {{ hermes_installer_url }} | bash -s --
+    --non-interactive --skip-setup --hermes-home {{ hermes_home }} --branch {{ hermes_branch }}
+    {% if hermes_commit | length > 0 %}--commit {{ hermes_commit }}{% endif %}
+  args:
+    creates: "{{ hermes_install_dir }}/venv/bin/hermes"
+  vars:
+    ansible_become: "{{ hermes_user != ansible_user }}"
+    ansible_become_user: "{{ hermes_user }}"
+  environment:
+    HOME: "/home/{{ hermes_user }}"
+  tags: [molecule-notest]
+
+- name: Deploy Hermes .env
+  template:
+    src: env.j2
+    dest: "{{ hermes_home }}/.env"
+    mode: '0600'
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+  no_log: true
+  diff: false
+  notify:
+    - Restart hermes gateway
+    - Restart hermes dashboard
+
+# hermes also writes to config.yaml (setup wizard, dashboard, doctor --fix); the template is the
+# source of truth, so mirror any field hermes rewrites into templates/config.yaml.j2.
+- name: Deploy Hermes config.yaml
+  template:
+    src: config.yaml.j2
+    dest: "{{ hermes_home }}/config.yaml"
+    mode: '0600'
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+  notify:
+    - Restart hermes gateway
+    - Restart hermes dashboard
+
+- name: Create user systemd directory
+  file:
+    path: "/home/{{ hermes_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+
+- name: Deploy Hermes user systemd units
+  template:
+    src: "{{ item }}.service.j2"
+    dest: "/home/{{ hermes_user }}/.config/systemd/user/{{ item }}.service"
+    mode: '0644'
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+  loop:
+    - hermes-gateway
+    - hermes-dashboard
+  notify:
+    - Restart hermes gateway
+    - Restart hermes dashboard
+
+# Keep the user manager alive without a login session (survives reboot / SSH logout)
+- name: Enable systemd linger for Hermes user
+  command: loginctl enable-linger {{ hermes_user }}
+  args:
+    creates: "/var/lib/systemd/linger/{{ hermes_user }}"
+  tags: [molecule-notest]
+
+- name: Enable and start Hermes gateway
+  systemd_service:
+    name: hermes-gateway.service
+    scope: user
+    daemon_reload: true
+    enabled: true
+    state: started
+  # systemctl --user must run as the unit's owner. Inventory sets ansible_become(_user) as
+  # variables, which outrank the become keywords, so override the variables here.
+  vars:
+    ansible_become: "{{ hermes_user != ansible_user }}"
+    ansible_become_user: "{{ hermes_user }}"
+  environment: "{{ hermes_user_env }}"
+  tags: [molecule-notest]
+
+- name: Enable and start Hermes dashboard
+  systemd_service:
+    name: hermes-dashboard.service
+    scope: user
+    enabled: "{{ hermes_dashboard_enabled }}"
+    state: "{{ 'started' if hermes_dashboard_enabled else 'stopped' }}"
+  # systemctl --user must run as the unit's owner. Inventory sets ansible_become(_user) as
+  # variables, which outrank the become keywords, so override the variables here.
+  vars:
+    ansible_become: "{{ hermes_user != ansible_user }}"
+    ansible_become_user: "{{ hermes_user }}"
+  environment: "{{ hermes_user_env }}"
+  tags: [molecule-notest]

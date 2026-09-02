@@ -1,0 +1,60 @@
+---
+- name: Verify hermes deployment
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Check Hermes .env
+      ansible.builtin.stat:
+        path: /home/hermes/.hermes/.env
+      register: hermes_env
+
+    - name: Assert .env exists, is private and owned by the agent user
+      ansible.builtin.assert:
+        that:
+          - hermes_env.stat.exists
+          - hermes_env.stat.mode == '0600'
+          - hermes_env.stat.pw_name == 'hermes'
+
+    - name: Read rendered .env and config.yaml
+      ansible.builtin.slurp:
+        path: "/home/hermes/.hermes/{{ item }}"
+      register: hermes_files
+      loop:
+        - .env
+        - config.yaml
+
+    - name: Assert .env keys are upper-cased and config carries the model settings
+      ansible.builtin.assert:
+        that:
+          - "'TELEGRAM_BOT_TOKEN=test-token' in files[0]"
+          - "'OPENCODE_GO_API_KEY=test-key' in files[0]"
+          - "'provider: opencode_go' in files[1]"
+          - "'max_turns: 90' in files[1]"
+      vars:
+        files: "{{ hermes_files.results | map(attribute='content') | map('b64decode') | list }}"
+
+    - name: Read user systemd units
+      ansible.builtin.slurp:
+        path: "/home/hermes/.config/systemd/user/{{ item }}.service"
+      register: hermes_units
+      loop:
+        - hermes-gateway
+        - hermes-dashboard
+
+    - name: Assert units point at the agent's venv and dashboard binds to loopback in test
+      ansible.builtin.assert:
+        that:
+          - "'/home/hermes/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run' in units[0]"
+          - "'HERMES_HOME=/home/hermes/.hermes' in units[0]"
+          - "'--host 127.0.0.1 --port 9119' in units[1]"
+      vars:
+        units: "{{ hermes_units.results | map(attribute='content') | map('b64decode') | list }}"
+
+    - name: Display verification summary
+      debug:
+        msg: |
+          Hermes Role Verification Summary:
+          ====================================
+          .env (0600, owned by hermes): OK
+          user systemd units (gateway, dashboard): OK

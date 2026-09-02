@@ -163,6 +163,7 @@ all:
             egress_route: direct
             host_roles:
               - password_manager
+              - ai_assistant
             service_priority: high
             security_level: high
             modsecurity_enabled: false

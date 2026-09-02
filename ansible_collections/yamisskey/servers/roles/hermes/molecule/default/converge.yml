@@ -1,0 +1,31 @@
+---
+- name: Converge hermes role
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      retries: 3
+      delay: 10
+      failed_when: false
+
+    - name: Install installer prerequisites for the test instance
+      ansible.builtin.apt:
+        name: [git, curl]
+        state: present
+      failed_when: false
+
+    - name: Create Hermes login user
+      ansible.builtin.user:
+        name: hermes
+        create_home: true
+        shell: /bin/bash
+
+  tasks:
+    - name: Apply hermes role
+      include_role:
+        name: yamisskey.servers.hermes

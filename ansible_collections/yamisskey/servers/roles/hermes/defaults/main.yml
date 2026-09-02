@@ -1,0 +1,82 @@
+---
+# Hermes Agent (https://github.com/NousResearch/hermes-agent) default variables
+# The agent runs as the login user (not root): code, venv, node, data all live under hermes_home.
+hermes_user: "{{ ansible_user }}"
+hermes_home: "/home/{{ hermes_user }}/.hermes"
+hermes_install_dir: "{{ hermes_home }}/hermes-agent"
+hermes_installer_url: "https://hermes-agent.nousresearch.com/install.sh"
+hermes_branch: main
+# Pin upstream to a commit SHA (empty = branch head at install time)
+hermes_commit: ""
+# Commands the installer needs on the host (it manages its own uv/node under hermes_home)
+hermes_packages:
+  - git
+  - curl
+
+# Dashboard (remote backend for Hermes Desktop). Bind to the Tailscale IP only.
+hermes_dashboard_enabled: true
+hermes_dashboard_bind: "{{ ansible_host | default('127.0.0.1') }}"
+hermes_dashboard_port: "{{ host_services[inventory_hostname].hermes_dashboard | default(9119) }}"
+
+# ~/.hermes/.env: every key under "hermes" in host_vars/<host>/secrets.sops.yml is written
+# as KEY=value with the key upper-cased (e.g. telegram_bot_token -> TELEGRAM_BOT_TOKEN)
+hermes_env: "{{ hermes | default({}) }}"
+# Non-secret .env settings (upstream .env.example defaults). Merged under the SOPS keys;
+# the same key in SOPS wins. Keep secrets out of here.
+hermes_env_settings:
+  terminal_env: local
+  terminal_docker_image: nikolaik/python-nodejs:python3.11-nodejs20
+  terminal_timeout: 60
+  terminal_lifetime_seconds: 300
+  browserbase_proxies: "true"
+  browserbase_advanced_stealth: "false"
+  browser_session_timeout: 300
+  browser_inactivity_timeout: 120
+  gateway_allow_all_users: "false"
+  web_tools_debug: "false"
+  vision_tools_debug: "false"
+  moa_tools_debug: "false"
+  image_tools_debug: "false"
+
+# ~/.hermes/config.yaml (templates/config.yaml.j2). Values below are the tunable knobs;
+# everything else in the template stays as hermes' migrated defaults (_config_version 39).
+hermes_model: kimi-k3
+hermes_model_provider: opencode_go
+hermes_model_base_url: https://opencode.ai/zen/go/v1
+hermes_model_api_mode: chat_completions
+hermes_max_turns: 90
+hermes_compression_enabled: false
+hermes_memory_enabled: false
+hermes_timezone: ""
+# Toolsets kept off (dependencies / API keys not provided on the host)
+hermes_disabled_toolsets:
+  - a2a
+  - bot_room
+  - browser
+  - clarify
+  - code_execution
+  - computer_use
+  - context_engine
+  - cronjob
+  - delegation
+  - desktop_ui
+  - discord
+  - discord_admin
+  - feishu_doc
+  - feishu_drive
+  - homeassistant
+  - image_gen
+  - kanban
+  - memory
+  - project
+  - search
+  - session_search
+  - spotify
+  - stt
+  - todo
+  - tts
+  - video
+  - video_gen
+  - web
+  - x_search
+  - yuanbao
