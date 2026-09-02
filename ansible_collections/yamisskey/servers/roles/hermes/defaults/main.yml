@@ -13,10 +13,15 @@ hermes_packages:
   - git
   - curl
 
-# Dashboard (remote backend for Hermes Desktop). Bind to the Tailscale IP only.
+# Dashboard (remote backend for Hermes Desktop). Listens on loopback; Tailscale Serve
+# publishes it as https://<host>.<tailnet>.ts.net inside the tailnet (needs MagicDNS + HTTPS).
 hermes_dashboard_enabled: true
-hermes_dashboard_bind: "{{ ansible_host | default('127.0.0.1') }}"
+hermes_dashboard_bind: 127.0.0.1
 hermes_dashboard_port: "{{ host_services[inventory_hostname].hermes_dashboard | default(9119) }}"
+hermes_dashboard_tailscale_serve: true
+hermes_dashboard_tailscale_https_port: 443
+# Written to dashboard.public_url in config.yaml (e.g. https://melchior.tail5b24da.ts.net)
+hermes_dashboard_public_url: ""
 
 # ~/.hermes/.env: every key under "hermes" in host_vars/<host>/secrets.sops.yml is written
 # as KEY=value with the key upper-cased (e.g. telegram_bot_token -> TELEGRAM_BOT_TOKEN)

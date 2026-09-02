@@ -124,6 +124,24 @@
   environment: "{{ hermes_user_env }}"
   tags: [molecule-notest]
 
+- name: Read Tailscale Serve status
+  command: tailscale serve status --json
+  register: hermes_serve_status
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: hermes_dashboard_enabled and hermes_dashboard_tailscale_serve
+  tags: [molecule-notest]
+
+- name: Publish Hermes dashboard via Tailscale Serve (HTTPS inside the tailnet)
+  command: >-
+    tailscale serve --bg --https={{ hermes_dashboard_tailscale_https_port }}
+    http://127.0.0.1:{{ hermes_dashboard_port }}
+  when:
+    - hermes_dashboard_enabled and hermes_dashboard_tailscale_serve
+    - hermes_serve_status.stdout | default('') is not search('http://127.0.0.1:' ~ hermes_dashboard_port)
+  tags: [molecule-notest]
+
 - name: Enable and start Hermes dashboard
   systemd_service:
     name: hermes-dashboard.service

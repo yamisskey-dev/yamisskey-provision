@@ -9,6 +9,6 @@ Hermes Agent（NousResearch）をログインユーザーの `~/.hermes` に導�
 - 非シークレットの `.env` 設定（timeout / debug フラグ等）は `defaults/main.yml` の `hermes_env_settings`。同名キーは SOPS 側が優先
 - `config.yaml` は `templates/config.yaml.j2` が source of truth。hermes 自身も書き戻す（setup / dashboard / `doctor --fix`）ので、
   ホスト側で変わったフィールドはテンプレートへ反映する。可変にしている項目は `defaults/main.yml` の `hermes_model*` / `hermes_max_turns` / `hermes_disabled_toolsets` など
-- dashboard は `ansible_host`（Tailscale IP）にのみ bind する。Hermes Desktop の接続先はそこを指定する
+- dashboard は loopback にのみ bind し、`tailscale serve` で `https://<host>.<tailnet>.ts.net` として tailnet 内に公開する（`hermes_dashboard_public_url`）。Hermes Desktop の接続先はその URL
 - バージョン更新: `hermes_commit` を書き換えて再実行、または melchior 上で `hermes update` 後に sha を追従させる。
   hermes の config 移行（`_config_version`）が進んだらテンプレートも更新する

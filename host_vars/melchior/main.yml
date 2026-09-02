@@ -24,3 +24,5 @@ vaultwarden_port: "{{ host_services.melchior.vaultwarden }}"
 # melchior 上で `hermes update` を実行する（実行後はここも合わせて更新する）
 hermes_commit: dbb6acd333aa4b01be551fa4edb51edc721846dd
 hermes_dashboard_port: "{{ host_services.melchior.hermes_dashboard }}"
+# Tailscale Serve で tailnet 内に HTTPS 公開。Hermes Desktop の接続先はこの URL
+hermes_dashboard_public_url: https://melchior.tail5b24da.ts.net

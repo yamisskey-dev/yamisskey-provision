@@ -69,7 +69,7 @@ host_services:
   melchior:
     # Password manager host (Arch Linux)
     vaultwarden: 8222          # Vaultwarden (loopback only, behind cloudflared)
-    hermes_dashboard: 9119     # Hermes Agent dashboard (Tailscale IP only, for Hermes Desktop)
+    hermes_dashboard: 9119     # Hermes Agent dashboard (loopback; published via Tailscale Serve)
 
 # Cloudflared ingress mapping
 cloudflared_ingress:
