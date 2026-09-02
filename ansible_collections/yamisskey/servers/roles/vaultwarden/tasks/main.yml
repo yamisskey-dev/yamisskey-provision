@@ -1,0 +1,45 @@
+---
+- name: Ensure Vaultwarden admin token is provided
+  assert:
+    that:
+      - vaultwarden_admin_token | length > 0
+    fail_msg: >-
+      Missing Vaultwarden admin token for host {{ inventory_hostname }}. Define
+      "vaultwarden.admin_token" in host_vars/{{ inventory_hostname }}/secrets.sops.yml.
+    success_msg: "Validated Vaultwarden secrets from host_vars."
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Create Vaultwarden directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+    owner: root
+    group: root
+  loop:
+    - { path: "{{ vaultwarden_dir }}", mode: '0755' }
+    # vault DB / attachments live here; container runs as root
+    - { path: "{{ vaultwarden_dir }}/vw-data", mode: '0700' }
+
+- name: Deploy Vaultwarden docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ vaultwarden_dir }}/docker-compose.yml"
+    mode: '0600'
+    owner: root
+    group: root
+  # rendered file contains ADMIN_TOKEN; keep it out of --diff output
+  diff: false
+
+# compose up recreates the container when the rendered file changed
+- name: Start Vaultwarden with Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ vaultwarden_dir }}"
+    state: present
+    pull: missing
+  tags: [molecule-notest]

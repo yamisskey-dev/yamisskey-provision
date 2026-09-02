@@ -1,0 +1,58 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: hermes-test-instance
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    pre_build_image: true
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /run
+    capabilities:
+      - SYS_ADMIN
+    command: bash -c "mkdir -p /tmp/.ansible-tmp && chmod 1777 /tmp/.ansible-tmp && chown root:root /tmp/.ansible-tmp && touch /tmp/.ansible-tmp/.ansible-test && while true; do sleep 30; done"
+    networks:
+      - name: molecule-test-network
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      callbacks_enabled: profile_tasks,timer
+      remote_tmp: /tmp/.ansible-tmp
+      roles_path: ../../../
+  options:
+    # installer / linger / user-scope systemd need a real login user session
+    skip-tags: molecule-notest
+  env:
+    ANSIBLE_REMOTE_TMP: /tmp/.ansible-tmp
+  inventory:
+    host_vars:
+      hermes-test-instance:
+        ansible_user: "root"
+        hermes_user: "hermes"
+        # Mock secret required by tasks/main.yml assertion
+        hermes:
+          telegram_bot_token: "test-token"
+          opencode_go_api_key: "test-key"
+        host_services:
+          hermes-test-instance:
+            hermes_dashboard: 9119
+        domain: "test.example.com"
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - converge
+    - idempotence
+    - verify
+    - cleanup
+    - destroy

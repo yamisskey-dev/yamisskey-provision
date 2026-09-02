@@ -1,0 +1,13 @@
+---
+# Vaultwarden default variables
+vaultwarden_dir: /opt/vaultwarden
+# Pin the upstream tag; bump deliberately (compose recreates the container on change)
+vaultwarden_image: "vaultwarden/server:1.37.2"
+vaultwarden_domain: "vault.{{ domain }}"
+# Bind to loopback only; public access goes through cloudflared
+vaultwarden_bind: 127.0.0.1
+vaultwarden_port: "{{ host_services[inventory_hostname].vaultwarden | default(8222) }}"
+vaultwarden_signups_allowed: false
+
+# Loaded from SOPS-encrypted host_vars/<host>/secrets.sops.yml (key: vaultwarden.admin_token)
+vaultwarden_admin_token: "{{ vaultwarden.admin_token | default('') }}"

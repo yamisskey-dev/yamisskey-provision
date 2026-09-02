@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+# Mirrors the unit `hermes gateway install` generates (hermes_cli/gateway.py); keep in sync on upgrades.
+[Unit]
+Description=Hermes Agent Gateway - Messaging Platform Integration
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart={{ hermes_install_dir }}/venv/bin/python -m hermes_cli.main gateway run
+WorkingDirectory={{ hermes_home }}
+Environment="PATH={{ hermes_install_dir }}/venv/bin:{{ hermes_install_dir }}/node_modules/.bin:{{ hermes_home }}/node/bin:{{ hermes_home }}/node:{{ hermes_home }}/bin:/home/{{ hermes_user }}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV={{ hermes_install_dir }}/venv"
+Environment="HERMES_HOME={{ hermes_home }}"
+Environment="HERMES_SUPERVISED_CHILD=1"
+Restart=always
+RestartSec=5
+RestartForceExitStatus=75
+RestartPreventExitStatus=78
+KillMode=mixed
+KillSignal=SIGTERM
+ExecReload=/bin/kill -USR1 $MAINPID
+ExecStopPost=-{{ hermes_install_dir }}/venv/bin/python -m gateway.cgroup_cleanup
+TimeoutStopSec=210
+StandardError=journal
+
+[Install]
+WantedBy=default.target

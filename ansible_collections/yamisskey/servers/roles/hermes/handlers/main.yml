@@ -1,0 +1,27 @@
+---
+- name: Restart hermes gateway
+  systemd_service:
+    name: hermes-gateway.service
+    scope: user
+    daemon_reload: true
+    state: restarted
+  # systemctl --user must run as the unit's owner. Inventory sets ansible_become(_user) as
+  # variables, which outrank the become keywords, so override the variables here.
+  vars:
+    ansible_become: "{{ hermes_user != ansible_user }}"
+    ansible_become_user: "{{ hermes_user }}"
+  environment: "{{ hermes_user_env }}"
+  when: hermes_user_env is defined
+
+- name: Restart hermes dashboard
+  systemd_service:
+    name: hermes-dashboard.service
+    scope: user
+    state: restarted
+  # systemctl --user must run as the unit's owner. Inventory sets ansible_become(_user) as
+  # variables, which outrank the become keywords, so override the variables here.
+  vars:
+    ansible_become: "{{ hermes_user != ansible_user }}"
+    ansible_become_user: "{{ hermes_user }}"
+  environment: "{{ hermes_user_env }}"
+  when: hermes_user_env is defined and hermes_dashboard_enabled

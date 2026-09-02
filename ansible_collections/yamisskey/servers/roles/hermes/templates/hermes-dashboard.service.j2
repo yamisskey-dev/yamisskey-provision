@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Hermes Agent web dashboard (remote backend for Hermes Desktop)
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile={{ hermes_home }}/.env
+Environment="HERMES_HOME={{ hermes_home }}"
+WorkingDirectory={{ hermes_install_dir }}
+ExecStart={{ hermes_install_dir }}/venv/bin/hermes dashboard --host {{ hermes_dashboard_bind }} --port {{ hermes_dashboard_port }} --no-open --skip-build
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

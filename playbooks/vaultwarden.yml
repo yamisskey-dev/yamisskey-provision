@@ -1,0 +1,6 @@
+---
+- name: Deploy Vaultwarden
+  hosts: melchior
+  become: true
+  roles:
+    - yamisskey.servers.vaultwarden

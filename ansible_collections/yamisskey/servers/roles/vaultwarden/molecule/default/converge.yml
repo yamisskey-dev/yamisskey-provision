@@ -1,0 +1,32 @@
+---
+- name: Converge vaultwarden role
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    # テストコンテナに Docker Engine は無いが service タスクが unit を要求する
+    - name: Mock docker service unit
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service
+        content: |
+          [Unit]
+          Description=Mock Docker (molecule)
+
+          [Service]
+          Type=oneshot
+          ExecStart=/bin/true
+          RemainAfterExit=yes
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+
+    - name: Reload systemd for mock unit
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+  tasks:
+    - name: Apply vaultwarden role
+      include_role:
+        name: yamisskey.servers.vaultwarden

@@ -3,6 +3,11 @@ credentials-file: {{ cloudflared_config_dir }}/{{ cloudflared_tunnel_uuid | defa
 {% if cloudflared_tunnel_uuid is not defined %}
 origincert: {{ cloudflared_config_dir }}/cert.pem
 {% endif %}
+{% if cloudflared_warp_routing_enabled | bool %}
+
+warp-routing:
+  enabled: true
+{% endif %}
 
 protocol: {{ cloudflared_protocol }}
 {% if cloudflared_dns_upstreams | length > 0 and (cloudflared_enable_dns_proxy | default(false) | bool) %}
